@@ -1,0 +1,36 @@
+{
+  "cycle_name": "2026年04月周期",
+  "cycle_start": "2026-04-04",
+  "cycle_end": "2026-04-30",
+  "duration_map": {
+    "hard": 3.0,
+    "medium": 2.5,
+    "easy": 2.0
+  },
+  "boxes": {
+    "博士工作": {
+      "emoji": "📚",
+      "quota": 21
+    },
+    "AI创业工作": {
+      "emoji": "💼",
+      "quota": 21
+    },
+    "健康运动": {
+      "emoji": "🏃",
+      "quota": 15
+    },
+    "治愈休息": {
+      "emoji": "😴",
+      "quota": 14
+    },
+    "空间探索": {
+      "emoji": "🌌",
+      "quota": 7
+    },
+    "家务整理": {
+      "emoji": "🧹",
+      "quota": 3
+    }
+  }
+}

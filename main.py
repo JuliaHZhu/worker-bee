@@ -12,12 +12,15 @@ import argparse
 import json
 import os
 import sys
+import threading
 
 # Import tools to trigger registration
 import tools.terminal
 import tools.file
 import tools.web
 import tools.subagent
+import tools.cronjob
+import tools.todo_dealer
 
 from agent import AIAgent
 from memory import SessionDB
@@ -27,6 +30,20 @@ from infra_toolsets import InfraToolSet
 from deck import DeckBuilder
 
 VERSION = "0.1.0"
+
+_tick_stop = threading.Event()
+_tick_thread = None
+
+
+def _cron_tick_loop(config: dict, skill_mgr):
+    """Background thread: tick every 60 seconds."""
+    from cron import scheduler
+    while not _tick_stop.is_set():
+        try:
+            scheduler.tick(config, skill_mgr)
+        except Exception as e:
+            print(f"  [Cron tick error: {e}]")
+        _tick_stop.wait(60)
 
 
 def get_config_path():
@@ -167,6 +184,19 @@ def run_session():
         print(f"Infra tools: {', '.join(available) if available else 'none'}")
     print()
 
+    # Start cron scheduler in background
+    global _tick_thread
+    _tick_stop.clear()
+    _tick_thread = threading.Thread(
+        target=_cron_tick_loop,
+        args=(config, skill_mgr),
+        daemon=True,
+        name="cron-tick"
+    )
+    _tick_thread.start()
+    print("[Cron scheduler] started — tick every 60s")
+    print()
+
     sessions = db.list_sessions()
     if sessions:
         print(f"Found {len(sessions)} session(s). Type 'new' for new session, or number to resume.")
@@ -288,6 +318,14 @@ def run_session():
 
         messages.append({"role": "assistant", "content": response})
         db.save_message(session_id, "assistant", response)
+
+    # Stop cron scheduler
+    _tick_stop.set()
+    if _tick_thread:
+        _tick_thread.join(timeout=5)
+        from cron import scheduler
+        scheduler.shutdown()
+        print("[Cron scheduler] stopped")
 
     print(f"\nSession {session_id} saved.")
 

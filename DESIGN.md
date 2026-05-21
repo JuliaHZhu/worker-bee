@@ -93,26 +93,46 @@ We needed a **boundary**.
 
 ---
 
-## Phase 3: The Deck
+## Phase 3: The Deck — Formula, Engine, Gameplay
 
-> *"活用字典，粗筛粗，细筛细，先组卡组，再抽卡。"*
+> *"公式组装成引擎，引擎包装成玩法，这就是工程。"*
 
-The Deck architecture separates **procurement** from **execution**:
+### The Dwarf Fortress Analogy
 
-### Procurement (Compile Time)
+[Dwarf Fortress](https://www.bay12games.com/dwarves/) has three layers:
+
+| Layer | What It Is | Example |
+|-------|-----------|---------|
+| **Formula** | Discovered rules from exploration | Fluid dynamics, temperature transfer, social relationship decay |
+| **Engine** | Formulas assembled into a runnable system | The simulation loop that updates temperature, fluid pressure, dwarf moods every tick |
+| **Gameplay** | Engine packaged into player-facing interaction | You tell dwarves to dig, build, trade. You don't touch the fluid equations directly. |
+
+**The formulas came from discovery.** The creator didn't invent gravity — he observed it, abstracted it, encoded it. Then **engineering** wrapped those formulas into a game.
+
+### Our Three Layers
+
+| Layer | In Our System | Phase |
+|-------|--------------|-------|
+| **Formula** | Verified constraints, validated assumptions, known-good tool combinations | `/explore` → `/validate` |
+| **Engine** | The **Deck** — an immutable, pre-procured tool set assembled from selected skills | Procurement |
+| **Gameplay** | Agent execution — drawing only from the Deck to solve the user's task | Execution |
+
+### Procurement (Build the Engine)
 
 1. LLM reads all skill summaries (name, description, triggers, tools)
-2. LLM selects relevant skills **semantically**
+2. LLM selects relevant skills **semantically** — these are the formulas we need
 3. Collect all tools declared by selected skills → form a **Deck**
 4. Verify each tool exists in the Registry
 
-### Execution (Runtime)
+The Deck is the **engine**: a flat, immutable, verified set of capabilities. No more, no less.
+
+### Execution (Play the Game)
 
 5. Agent draws **only** from the Deck — no other tools are visible
-6. If the task cannot be completed with the Deck → **halt**
-7. Human rephrases or new skills are added
+6. The LLM orchestrates tool calls like a player orchestrates dwarves: using the engine, not rewriting it
+7. If the task cannot be completed with the Deck → **halt**
 
-**Why halt?** Because the first procurement was already as broad as possible. If the LLM could not solve the task with the chosen tools, retrying with the same deck is unlikely to succeed. The approach itself may be wrong.
+**Why halt?** Because the engine was already built from the broadest possible procurement. If the LLM cannot solve the task with this engine, the **formulas are insufficient** — not the execution. The user needs to `/explore` more, discover new constraints, or design new skills. Restarting with the same Deck is like replaying a broken save: the engine hasn't changed.
 
 ### The Math (可约分)
 
@@ -123,7 +143,7 @@ Let T(s) = tools declared by skill s
 Deck = ⋃_{s ∈ S} T(s)   (union, deduplicated)
 ```
 
-Even if skill A routes to skill B at runtime, B.tools is already in the Deck if B was in S. **The tool space of nested skills collapses to a flat, immutable set before execution.** This is "约分" — skill-to-skill nesting does not expand the runtime tool boundary.
+Even if skill A routes to skill B at runtime, B.tools is already in the Deck if B was in S. **The tool space of nested skills collapses to a flat, immutable set before execution.** This is "约分" — skill-to-skill nesting does not expand the runtime tool boundary. The engine doesn't grow mid-flight.
 
 ---
 

@@ -1,0 +1,122 @@
+{
+  "boxes": {
+    "博士工作": {
+      "emoji": "📚",
+      "balls": [
+        {"id": "BALL-PHD-001", "content": "博士论文第3章撰写", "difficulty": "hard"},
+        {"id": "BALL-PHD-002", "content": "博士论文第4章实验设计", "difficulty": "hard"},
+        {"id": "BALL-PHD-003", "content": "文献综述修改完善", "difficulty": "medium"},
+        {"id": "BALL-PHD-004", "content": "数据收集与整理", "difficulty": "medium"},
+        {"id": "BALL-PHD-005", "content": "与导师沟通汇报", "difficulty": "medium"},
+        {"id": "BALL-PHD-006", "content": "学术论文阅读", "difficulty": "medium"},
+        {"id": "BALL-PHD-007", "content": "学校行政庶务处理", "difficulty": "easy"},
+        {"id": "BALL-PHD-008", "content": "研究笔记整理", "difficulty": "easy"},
+        {"id": "BALL-PHD-009", "content": "博士论文第3章撰写", "difficulty": "hard"},
+        {"id": "BALL-PHD-010", "content": "博士论文第4章实验设计", "difficulty": "hard"},
+        {"id": "BALL-PHD-011", "content": "文献综述修改完善", "difficulty": "medium"},
+        {"id": "BALL-PHD-012", "content": "数据收集与整理", "difficulty": "medium"},
+        {"id": "BALL-PHD-013", "content": "与导师沟通汇报", "difficulty": "medium"},
+        {"id": "BALL-PHD-014", "content": "学术论文阅读", "difficulty": "medium"},
+        {"id": "BALL-PHD-015", "content": "学校行政庶务处理", "difficulty": "easy"},
+        {"id": "BALL-PHD-016", "content": "研究笔记整理", "difficulty": "easy"},
+        {"id": "BALL-PHD-017", "content": "博士论文第3章撰写", "difficulty": "hard"},
+        {"id": "BALL-PHD-018", "content": "文献综述修改完善", "difficulty": "medium"},
+        {"id": "BALL-PHD-019", "content": "数据收集与整理", "difficulty": "medium"},
+        {"id": "BALL-PHD-020", "content": "与导师沟通汇报", "difficulty": "medium"},
+        {"id": "BALL-PHD-021", "content": "学术论文阅读", "difficulty": "medium"}
+      ]
+    },
+    "AI创业工作": {
+      "emoji": "💼",
+      "balls": [
+        {"id": "BALL-AI-001", "content": "AI研究", "difficulty": "medium"},
+        {"id": "BALL-AI-002", "content": "AI Agent架构学习", "difficulty": "hard"},
+        {"id": "BALL-AI-003", "content": "LLM微调技术研究", "difficulty": "hard"},
+        {"id": "BALL-AI-003", "content": "Python编程练习", "difficulty": "medium"},
+        {"id": "BALL-AI-004", "content": "创业知识管理", "difficulty": "medium"},
+        {"id": "BALL-AI-005", "content": "与潜在客户交流", "difficulty": "medium"},
+        {"id": "BALL-AI-006", "content": "竞品分析研究", "difficulty": "medium"},
+        {"id": "BALL-AI-007", "content": "产品设计思考", "difficulty": "easy"},
+        {"id": "BALL-AI-008", "content": "创业资料整理", "difficulty": "easy"},
+        {"id": "BALL-AI-009", "content": "AI Agent架构学习", "difficulty": "hard"},
+        {"id": "BALL-AI-010", "content": "LLM微调技术研究", "difficulty": "hard"},
+        {"id": "BALL-AI-011", "content": "Python编程练习", "difficulty": "medium"},
+        {"id": "BALL-AI-012", "content": "创业知识管理", "difficulty": "medium"},
+        {"id": "BALL-AI-013", "content": "与潜在客户交流", "difficulty": "medium"},
+        {"id": "BALL-AI-014", "content": "竞品分析研究", "difficulty": "medium"},
+        {"id": "BALL-AI-015", "content": "产品设计思考", "difficulty": "easy"},
+        {"id": "BALL-AI-016", "content": "创业资料整理", "difficulty": "easy"},
+        {"id": "BALL-AI-017", "content": "AI Agent架构学习", "difficulty": "hard"},
+        {"id": "BALL-AI-018", "content": "Python编程练习", "difficulty": "medium"},
+        {"id": "BALL-AI-019", "content": "创业知识管理", "difficulty": "medium"},
+        {"id": "BALL-AI-020", "content": "与潜在客户交流", "difficulty": "medium"},
+        {"id": "BALL-AI-021", "content": "竞品分析研究", "difficulty": "medium"}
+      ]
+    },
+    "健康运动": {
+      "emoji": "🏃",
+      "balls": [
+        {"id": "BALL-HEALTH-001", "content": "健身房力量训练", "difficulty": "medium"},
+        {"id": "BALL-HEALTH-002", "content": "游泳1000米", "difficulty": "medium"},
+        {"id": "BALL-HEALTH-003", "content": "户外跑步5公里", "difficulty": "medium"},
+        {"id": "BALL-HEALTH-004", "content": "瑜伽拉伸", "difficulty": "easy"},
+        {"id": "BALL-HEALTH-005", "content": "散步通勤", "difficulty": "easy"},
+        {"id": "BALL-HEALTH-006", "content": "户外骑行", "difficulty": "easy"},
+        {"id": "BALL-HEALTH-007", "content": "健身房力量训练", "difficulty": "medium"},
+        {"id": "BALL-HEALTH-008", "content": "游泳1000米", "difficulty": "medium"},
+        {"id": "BALL-HEALTH-009", "content": "户外跑步5公里", "difficulty": "medium"},
+        {"id": "BALL-HEALTH-010", "content": "瑜伽拉伸", "difficulty": "easy"},
+        {"id": "BALL-HEALTH-011", "content": "散步通勤", "difficulty": "easy"},
+        {"id": "BALL-HEALTH-012", "content": "户外骑行", "difficulty": "easy"},
+        {"id": "BALL-HEALTH-013", "content": "健身房力量训练", "difficulty": "medium"},
+        {"id": "BALL-HEALTH-014", "content": "游泳1000米", "difficulty": "medium"},
+        {"id": "BALL-HEALTH-015", "content": "户外跑步5公里", "difficulty": "medium"}
+      ]
+    },
+    "治愈休息": {
+      "emoji": "😴",
+      "balls": [
+        {"id": "BALL-REST-001", "content": "和朋友聊天聚会", "difficulty": "easy"},
+        {"id": "BALL-REST-002", "content": "看电影/综艺放松", "difficulty": "easy"},
+        {"id": "BALL-REST-003", "content": "听音乐发呆", "difficulty": "easy"},
+        {"id": "BALL-REST-004", "content": "午睡小憩", "difficulty": "easy"},
+        {"id": "BALL-REST-005", "content": "阅读闲书", "difficulty": "easy"},
+        {"id": "BALL-REST-006", "content": "什么也不做放空", "difficulty": "easy"},
+        {"id": "BALL-REST-007", "content": "和朋友聊天聚会", "difficulty": "easy"},
+        {"id": "BALL-REST-008", "content": "看电影/综艺放松", "difficulty": "easy"},
+        {"id": "BALL-REST-009", "content": "听音乐发呆", "difficulty": "easy"},
+        {"id": "BALL-REST-010", "content": "午睡小憩", "difficulty": "easy"},
+        {"id": "BALL-REST-011", "content": "阅读闲书", "difficulty": "easy"},
+        {"id": "BALL-REST-012", "content": "什么也不做放空", "difficulty": "easy"},
+        {"id": "BALL-REST-013", "content": "和朋友聊天聚会", "difficulty": "easy"},
+        {"id": "BALL-REST-014", "content": "看电影/综艺放松", "difficulty": "easy"}
+      ]
+    },
+    "空间探索": {
+      "emoji": "🌌",
+      "balls": [
+        {"id": "BALL-EXPLORE-001", "content": "参观博物馆/美术馆", "difficulty": "medium"},
+        {"id": "BALL-EXPLORE-002", "content": "去新的咖啡店探店", "difficulty": "medium"},
+        {"id": "BALL-EXPLORE-003", "content": "学习一门新技能入门", "difficulty": "medium"},
+        {"id": "BALL-EXPLORE-004", "content": "城市地形考察漫步", "difficulty": "medium"},
+        {"id": "BALL-EXPLORE-005", "content": "阅读跨领域书籍", "difficulty": "easy"},
+        {"id": "BALL-EXPLORE-006", "content": "看纪录片拓展视野", "difficulty": "easy"},
+        {"id": "BALL-EXPLORE-007", "content": "参观博物馆/美术馆", "difficulty": "medium"},
+        {"id": "BALL-EXPLORE-008", "content": "去新的咖啡店探店", "difficulty": "medium"},
+        {"id": "BALL-EXPLORE-009", "content": "学习一门新技能入门", "difficulty": "medium"},
+        {"id": "BALL-EXPLORE-010", "content": "城市地形考察漫步", "difficulty": "medium"}
+      ]
+    },
+    "家务整理": {
+      "emoji": "🧹",
+      "balls": [
+        {"id": "BALL-HOUSE-001", "content": "房间整体清洁打扫", "difficulty": "medium"},
+        {"id": "BALL-HOUSE-002", "content": "衣物整理收纳", "difficulty": "medium"},
+        {"id": "BALL-HOUSE-003", "content": "厨房深度清洁", "difficulty": "medium"},
+        {"id": "BALL-HOUSE-004", "content": "卫生间清洁消毒", "difficulty": "easy"},
+        {"id": "BALL-HOUSE-005", "content": "桌面整理", "difficulty": "easy"},
+        {"id": "BALL-HOUSE-006", "content": "地板拖洗", "difficulty": "easy"}
+      ]
+    }
+  }
+}

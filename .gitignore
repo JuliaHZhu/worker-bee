@@ -26,3 +26,12 @@ Thumbs.db
 
 # Skill cache
 .skills_cache.json
+
+# TODO Ball Machine runtime data
+todo_dealer/daily_logs/
+todo_dealer/daily_draws/
+todo_dealer/blocks/
+todo_dealer/audit_logs/
+todo_dealer/cycle_stats.json
+todo_dealer/pool_state.json
+todo_dealer/test_heartbeat_log.json

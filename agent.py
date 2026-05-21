@@ -1,7 +1,7 @@
 """Minimal AI Agent — Anthropic-compatible with tool use."""
 import os
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from registry import registry
 
@@ -131,7 +131,7 @@ class AIAgent:
                 })
         return calls
 
-    def run(self, messages: List[Dict], tools: List[str] = None, deck=None) -> str:
+    def run(self, messages: List[Dict], tools: Optional[List[str]] = None, deck=None) -> str:
         """Run one turn of conversation with tool use loop.
 
         Args:

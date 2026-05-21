@@ -2,19 +2,21 @@
 
 A lightweight, minimal AI agent framework inspired by [Hermes Agent](https://github.com/nousresearch/hermes-agent). Built for developers who want the core agentic architecture without the production-grade complexity.
 
+---
+
 ## 1. What We Are Doing
 
 We are building an agent that **procures its tools before it acts**.
 
 Most agents hand a massive tool list to the LLM and hope it picks the right ones. That is unstable — the LLM gets confused, picks wrong, corrects, tries again. We replaced this with the **Deck** architecture:
 
-1. **Select** — LLM picks relevant skills from the library
-2. **Procure** — Collect all tools declared by those skills into a Deck
+1. **Select** — LLM picks relevant skills from the library  
+2. **Procure** — Collect all tools declared by those skills into a Deck  
 3. **Execute** — The agent draws **only** from the Deck. Nothing else exists.
 
 If the task cannot be completed with the Deck → **halt**. The first procurement was already as broad as possible. A second try with the same tools is unlikely to succeed. The approach itself may be wrong — time for a human.
 
-**Math (可约分):**
+**Math (Reduction):**
 ```
 Let S  = set of skills selected by LLM
 Let T(s) = tools declared by skill s
@@ -45,9 +47,7 @@ But even with precise skills, the LLM still sees too many tools during execution
 
 ### The Analogy
 
-> *"活用字典，粗筛粗，细筛细，先组卡组，再抽卡。"*
->
-> Like gathering tools before making something. You do not go back to the store mid-cooking. If the ingredients you bought are insufficient, the recipe itself may be wrong.
+> *Like gathering tools before making something. You do not go back to the store mid-cooking. If the ingredients you bought are insufficient, the recipe itself may be wrong.*
 
 ---
 
@@ -57,57 +57,73 @@ Hermes Lite now has a precise hand. Next, we are building a **design eye** — t
 
 ### The Pipeline
 
+This is how humans discover knowledge and invent things. We are making it executable:
+
 ```
-模糊想法
+vague idea
     │
     ▼
 ┌─────────────────┐
-│  /clarify       │  "我们到底在解决什么？"
-│  意图澄清        │  输出: 约束清单 + 成功标准
+│  /clarify       │  "What exactly are we solving?"
+│  Intent         │  Output: constraint list + success criteria
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│  /explore       │  "有哪些可行的路径？"
-│  方案探索        │  输出: 2-3 个候选方案 + 权衡分析
+│  /explore       │  "What paths are feasible?"
+│  Exploration    │  Output: 2-3 candidate approaches + trade-offs
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│  /decide        │  "选哪条路？为什么？"
-│  决策锚定        │  输出: 决策记录 + 风险评估
+│  /decide        │  "Which path? Why?"
+│  Decision       │  Output: decision record + risk assessment
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│  /validate      │  "做出来对不对？"
-│  实现验证        │  输出: 验证报告 + 偏差分析
+│  /validate      │  "Did we build the right thing?"
+│  Validation     │  Output: verification report + drift analysis
 └────────┬────────┘
          │
          ▼
-    回到 /clarify（循环）
+    back to /clarify (loop)
 ```
 
-### Why Game Design?
+### Why Research Methodology?
 
-As agents become mainstream, people will immediately face the same problem game studios face: **the communication gap between designer and implementer**.
+Newton, Faraday, Turing — they all followed this loop. Observe, form a fuzzy question, clarify it into a testable hypothesis, design an experiment, execute, validate, iterate. **We are automating the scientific method.**
 
-| Designer says | Implementer hears | The real problem |
-|---------------|-------------------|------------------|
-| "This skill should feel good" | ??? | "Good" was never translated to measurable specs |
-| "Enemies should feel oppressive" | Tune AI behavior tree | "Oppressive" was never mapped to pacing, sound, or scale |
-| "The gameplay needs depth" | Add more systems | "Depth" was never defined as cognitive load vs. strategy space |
-| "There's a bug here" | Fix it | The fix breaks the intended feel because the design intent was invisible |
+The agent does not "code a game feature." It **decomposes an abstract problem into experiments**, executes them, and adjusts course based on evidence.
 
-We will build skills that **translate subjective intent into objective constraints**, so the agent (and the human) can verify whether the implementation matches the vision.
+### Multi-Agent Parallelism
+
+If one agent cannot crack it, spawn more. Different LLMs have different biases and blind spots. Run the same problem through multiple agents, then cross-check:
+
+```
+Problem
+    │
+    ├── Agent A (Claude) → Path 1 → Result α
+    ├── Agent B (GPT-4)  → Path 2 → Result β
+    ├── Agent C (Kimi)   → Path 3 → Result γ
+    │
+    ▼
+Cross-check:
+    α = β = γ  → high confidence, likely correct
+    α = β ≠ γ  → inspect C's bias
+    α ≠ β ≠ γ  → problem not clarified enough, go back
+```
+
+This is exactly what the scientific community calls **peer review**.
 
 ### Upcoming Skills
 
 | Skill | Purpose |
 |-------|---------|
-| `game-feel-clarifier` | Turn "爽 / 压迫感 / 节奏感" into engineering metrics |
-| `implementation-impact-check` | Analyze side effects before fixing a bug |
-| `design-clarify` | General-purpose intent clarification for any domain |
+| `design-clarify` | Turn vague intent into measurable constraints |
+| `hypothesis-generator` | Produce testable hypotheses from observations |
+| `experiment-designer` | Design minimal experiments to validate hypotheses |
+| `multi-agent-executor` | Spawn parallel agents, compare results, resolve conflicts |
 
 ---
 
@@ -125,13 +141,13 @@ We will build skills that **translate subjective intent into objective constrain
 
 ---
 
-## Registry Redesign: Clarity is the Boundary
+## Registry: Clarity Is the Boundary
 
 Every registered function follows strict naming conventions:
 
 ```python
 registry.register(
-    name="fs_read_file",           # domain_action_object — no ambiguity
+    name="fs_read_file",
     description="Read a text file with pagination. Use when inspecting source code, configs, or logs.",
     parameters={...},
     handler=fs_read_file,
@@ -145,7 +161,7 @@ registry.register(
 - `net_web_search`, `net_web_extract`
 - `sys_terminal`, `agent_delegate_task`
 
-This eliminates LLM confusion caused by vague names. The function signature — `name + description + parameters` — is the complete interface contract.
+This eliminates LLM confusion caused by vague names.
 
 ### Skill + Registry + Deck = Deterministic Navigation
 
@@ -168,26 +184,6 @@ LLM operates within 2 tools — zero ambiguity
 
 ---
 
-## InfraToolSet (Platform Gating)
-
-Skill decides "what the LLM sees." InfraToolSet decides "what is physically available."
-
-```
-┌────────────────────────────────────────────┐
-│  Skill layer (AI reasoning)                │
-│  code-review → [fs_read_file, fs_search]   │
-├────────────────────────────────────────────┤
-│  InfraToolSet layer (env gating)           │
-│  linux → all tools pass                    │
-│  feishu → only send_message passes         │
-├────────────────────────────────────────────┤
-│  Registry layer (atomic tools)             │
-│  fs_read_file, send_message, ...           │
-└────────────────────────────────────────────┘
-```
-
----
-
 ## Quick Start
 
 Hermes Lite is **project-local** — everything lives in one directory.
@@ -206,11 +202,7 @@ hermes-lite setup
 # 4. Verify model
 hermes-lite -m "hello"
 
-# 5. (Optional) Verify channel
-export FEISHU_WEBHOOK_URL="https://open.feishu.cn/open-apis/bot/v2/hook/..."
-hermes-lite -c "hello"
-
-# 6. Start using
+# 5. Start using
 hermes-lite
 ```
 

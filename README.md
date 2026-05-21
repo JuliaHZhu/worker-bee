@@ -128,17 +128,18 @@ Platforms: `linux` (default), `feishu`, `discord`.
 
 ## Quick Start
 
+Hermes Lite is **project-local** — everything lives in one directory. No global config, no system-wide state.
+
 ```bash
-# 1. Clone
+# 1. Clone anywhere
 git clone https://github.com/JuliaHZhu/hermes-lite.git
 cd hermes-lite
 
-# 2. Install
+# 2. Install (editable, project-local)
 pip install -e .
 
-# 3. Configure
+# 3. Configure (creates ./config.json — gitignored)
 hermes-lite setup
-# → Select provider → Paste API key → Done
 
 # 4. Verify model
 hermes-lite -m "hello"
@@ -150,6 +151,8 @@ hermes-lite -c "hello"
 # 6. Start using
 hermes-lite
 ```
+
+Move the directory, copy it to another machine, or version-control your setup — `config.json` and `state.db` travel with the project.
 
 ## CLI
 
@@ -190,6 +193,7 @@ hermes-lite/
 - **Subagent delegation:** Spawn child agents for isolated subtasks
 - **Skill system:** Markdown + YAML frontmatter, trigger matching, context injection
 - **InfraToolSet:** Platform-aware tool gating (linux/feishu/discord)
+- **Project-local:** Zero global state — config, data, and sessions stay in the repo directory
 
 ## License
 

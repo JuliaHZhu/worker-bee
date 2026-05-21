@@ -1,5 +1,8 @@
 # Hermes Lite
 
+> 🤖 **This repository is automatically maintained by an AI agent.**  
+> Commits, documentation, and code changes are authored through human-AI collaboration.
+
 A minimal, standalone AI agent framework inspired by [Hermes Agent](https://github.com/nousresearch/hermes-agent). It preserves the core architecture — skill contracts, trigger matching, and immutable tool boundaries — in a single-repo, zero-dependency package.
 
 **Use this if you want a minimal Hermes to study, fork, or embed.**  

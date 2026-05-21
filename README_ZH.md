@@ -1,5 +1,8 @@
 # Hermes Lite
 
+> 🤖 **本仓库由 AI Agent 自动托管维护。**  
+> 提交记录、文档和代码变更均通过人机协作完成。
+
 受 [Hermes Agent](https://github.com/nousresearch/hermes-agent) 启发的最小化、独立 AI Agent 框架。它在单仓库、零额外依赖的包中，保留了核心架构——skill 合约、trigger 匹配、不可变工具边界。
 
 **如果你想要一个最小化的 Hermes 来学习、fork 或嵌入，用这个。**  

@@ -4,27 +4,33 @@ A lightweight, minimal AI agent framework inspired by [Hermes Agent](https://git
 
 ## Philosophy
 
-Hermes is a powerful, full-featured agent framework serving 15+ platforms with 35k+ lines of code. Hermes Lite extracts the **essential skeleton** — Registry → Tool → Skill → Agent → CLI — into ~1,500 lines of readable Python, then sharpens it with a few opinionated improvements.
+Hermes is a powerful, full-featured agent framework serving 15+ platforms with 35k+ lines of code. Hermes Lite extracts the **essential skeleton** — Registry → Tool → Skill → Agent → CLI — into ~1,700 lines of readable Python, then sharpens it with a few opinionated improvements.
 
 ## Key Differences from Hermes
 
 | Dimension | Hermes | Hermes Lite |
 |-----------|--------|-------------|
-| Lines of code | ~35,900 | ~1,500 |
+| Lines of code | ~35,900 | **~1,700** |
 | Platforms | 15+ | Linux CLI (Feishu/Discord webhook opt-in) |
 | Registry | Toolset-centric, static config | **Tag/category + dynamic loading** |
 | Skill trigger | Passive listing (LLM pulls) | **Active matching (system pushes)** |
 | Tool grouping | Macro toolsets (4–40 tools) | **Precise tooldeck per skill (1–5 tools)** |
 | Message format | Unified OpenAI internally | Dual protocol (Anthropic + OpenAI) |
 
-## Registry Redesign
+## Registry Redesign: Clarity is the Boundary
 
-The registry in Hermes Lite is rebuilt around **function-level metadata** rather than toolset-level grouping:
+The registry in Hermes Lite is rebuilt around a simple conviction:
+
+> **"Saying it clearly is itself a good boundary."**
+>
+> — If a name is ambiguous, the LLM will be confused. If a name is precise, the LLM needs no example.
+
+Every registered function follows strict naming conventions:
 
 ```python
 registry.register(
-    name="fs_read_file",           # namespace prefix = no ambiguity
-    description="Read a text file with pagination. Use when you need to inspect source code, configs, or logs.",
+    name="fs_read_file",           # domain_action_object — no ambiguity
+    description="Read a text file with pagination. Use when inspecting source code, configs, or logs.",
     parameters={...},
     handler=fs_read_file,
     tags=["filesystem", "read"],
@@ -37,7 +43,7 @@ registry.register(
 - `net_web_search`, `net_web_extract`
 - `sys_terminal`, `agent_delegate_task`
 
-This eliminates LLM confusion caused by vague names like `create_object` or `set_position`.
+This eliminates LLM confusion caused by vague names like `create_object` or `set_position`. The function signature — `name + description + parameters` — is the complete interface contract. No video demos, no sample projects needed.
 
 ### Thread Safety & Caching
 
@@ -106,18 +112,33 @@ Platforms: `linux` (default), `feishu`, `discord`.
 git clone https://github.com/JuliaHZhu/hermes-lite.git
 cd hermes-lite
 
-# 2. Set API key (supports Anthropic and OpenAI-compatible endpoints)
-export ARKCODE_API_KEY="your-key"
-# or
-export ANTHROPIC_API_KEY="your-key"
+# 2. Install
+pip install -e .
 
-# 3. Optional: Feishu/Discord webhook for send_message
+# 3. Configure
+hermes-lite setup
+# → Select provider → Paste API key → Done
+
+# 4. Verify model
+hermes-lite -m "hello"
+
+# 5. (Optional) Verify channel
 export FEISHU_WEBHOOK_URL="https://open.feishu.cn/open-apis/bot/v2/hook/..."
-# or
-export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
+hermes-lite -c "hello"
 
-# 4. Run
-python3 main.py
+# 6. Start using
+hermes-lite
+```
+
+## CLI
+
+```
+hermes-lite              Start interactive session
+hermes-lite setup        Configure API key and model
+hermes-lite -m "msg"     Quick model connectivity test
+hermes-lite -c "msg"     Quick channel ping (Feishu/Discord)
+hermes-lite -v           Show version
+hermes-lite -h           Show help
 ```
 
 ## Architecture
@@ -130,7 +151,8 @@ hermes-lite/
 ├── skills.py            # Skill loader with disk snapshot cache
 ├── memory.py            # SQLite persistence (sessions, messages, todos, goals)
 ├── infra_toolsets.py    # Platform detection and tool gating
-├── config.json          # Optional config override (gitignored)
+├── pyproject.toml       # pip install config
+├── config.json          # User config (gitignored)
 └── tools/
     ├── terminal.py      # sys_terminal
     ├── file.py          # fs_read_file, fs_write_file, fs_search_files

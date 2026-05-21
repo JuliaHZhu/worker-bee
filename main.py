@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Minimal Hermes — CLI entry point."""
+"""Hermes Lite — CLI entry point.
+
+Usage:
+    hermes-lite              Start interactive session
+    hermes-lite setup        Configure API key and model
+    hermes-lite -m "hello"   Quick model ping test
+    hermes-lite -c "hello"   Quick channel ping test (Feishu/Discord)
+    hermes-lite --version    Show version
+"""
+import argparse
 import json
 import os
 import sys
@@ -16,54 +25,140 @@ from skills import SkillManager
 from registry import registry
 from infra_toolsets import InfraToolSet
 
+VERSION = "0.1.0"
+
+
+def get_config_path():
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+
 
 def load_config():
-    config_path = os.path.join(os.path.dirname(__file__), "config.json")
-    if os.path.exists(config_path):
-        with open(config_path) as f:
+    """Load config from file or env. Returns dict or None."""
+    path = get_config_path()
+    if os.path.exists(path):
+        with open(path) as f:
             return json.load(f)
-    # Auto-config from environment
     key = os.environ.get("ARKCODE_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
     base = os.environ.get("ARKCODE_BASE_URL", "https://ark.cn-beijing.volces.com/api/coding")
     if key:
-        return {
-            "model": "kimi-k2.6",
-            "provider": "anthropic",
-            "api_key": key,
-            "base_url": base,
-            "max_iterations": 20,
-            "system_prompt": (
-                "You are a helpful coding assistant. You have access to tools:\n"
-                "- sys_terminal: run shell commands\n"
-                "- fs_read_file / fs_write_file / fs_search_files: file operations\n"
-                "- net_web_search / net_web_extract: web access\n"
-                "- agent_delegate_task: delegate subtasks to child agents\n"
-                "Think step by step. Prefer reading files before editing."
-            ),
-            "tools": [
-                "sys_terminal",
-                "fs_read_file", "fs_write_file", "fs_search_files",
-                "net_web_search", "net_web_extract",
-                "agent_delegate_task"
-            ]
-        }
-    print("❌ No API key found. Set ARKCODE_API_KEY or create config.json")
-    sys.exit(1)
+        return _make_config("anthropic", "kimi-k2.6", key, base)
+    return None
 
 
-def main():
+def _make_config(provider, model, api_key, base_url, max_iter=20):
+    return {
+        "model": model,
+        "provider": provider,
+        "api_key": api_key,
+        "base_url": base_url,
+        "max_iterations": max_iter,
+        "system_prompt": (
+            "You are a helpful coding assistant. You have access to tools:\n"
+            "- sys_terminal: run shell commands\n"
+            "- fs_read_file / fs_write_file / fs_search_files: file operations\n"
+            "- net_web_search / net_web_extract: web access\n"
+            "- agent_delegate_task: delegate subtasks to child agents\n"
+            "Think step by step. Prefer reading files before editing."
+        ),
+        "tools": [
+            "sys_terminal",
+            "fs_read_file", "fs_write_file", "fs_search_files",
+            "net_web_search", "net_web_extract",
+            "agent_delegate_task"
+        ]
+    }
+
+
+def setup():
+    """Interactive onboarding — just provider + api_key."""
+    print("=" * 45)
+    print("  Hermes Lite — Setup")
+    print("=" * 45)
+    print()
+
+    # Provider
+    print("Provider:")
+    print("  [1] Anthropic / Volcano (Anthropic protocol)")
+    print("  [2] OpenAI-compatible (OpenAI protocol)")
+    p = input("> ").strip()
+    if p == "2":
+        provider = "openai"
+        default_model = "gpt-4o"
+        default_base = "https://api.openai.com/v1"
+    else:
+        provider = "anthropic"
+        default_model = "kimi-k2.6"
+        default_base = "https://ark.cn-beijing.volces.com/api/coding"
+
+    # API Key
+    print()
+    key = input("API Key: ").strip()
+    if not key:
+        print("❌ API key required.")
+        sys.exit(1)
+
+    # Optional overrides
+    print()
+    model = input(f"Model [{default_model}]: ").strip() or default_model
+    base = input(f"Base URL [{default_base}]: ").strip() or default_base
+
+    config = _make_config(provider, model, key, base)
+    path = get_config_path()
+    with open(path, "w") as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+    print()
+    print(f"✅ Saved to {path}")
+    print(f"   Provider: {provider} | Model: {model}")
+
+
+def ping_model(message: str):
+    """Quick model connectivity test."""
     config = load_config()
+    if not config:
+        print("❌ No config. Run: hermes-lite setup")
+        sys.exit(1)
+    print(f"→ Pinging {config['model']} ({config['provider']})...")
+    try:
+        agent = AIAgent(config)
+        msgs = [{"role": "user", "content": message}]
+        resp = agent.run(msgs)
+        print("← Response:")
+        print(resp)
+    except Exception as e:
+        print(f"❌ Failed: {e}")
+        sys.exit(1)
+
+
+def ping_channel(message: str):
+    """Quick channel connectivity test (Feishu/Discord)."""
+    from tools.send_message import send_message
+    infra = InfraToolSet()
+    plat = infra.platform
+    if plat == "linux":
+        print("❌ No channel configured. Set FEISHU_WEBHOOK_URL or DISCORD_WEBHOOK_URL.")
+        sys.exit(1)
+    print(f"→ Sending to {plat}...")
+    result = send_message(message)
+    print("← Result:", result)
+
+
+def run_session():
+    """Main interactive session."""
+    config = load_config()
+    if not config:
+        print("❌ No config found.")
+        print("Run: hermes-lite setup")
+        sys.exit(1)
+
     agent = AIAgent(config)
     db = SessionDB()
     skill_mgr = SkillManager()
     infra = InfraToolSet()
 
-    # Load skills
     loaded_skills = skill_mgr.load_all()
     if loaded_skills:
         print(f"Loaded {len(loaded_skills)} skill(s): {', '.join(loaded_skills)}")
 
-    # Detect platform and print infra status
     plat = infra.platform
     print(f"Platform: {plat}")
     if plat != "linux":
@@ -92,7 +187,7 @@ def main():
         messages = []
 
     print(f"\n✨ Hermes Lite — Session: {session_id}")
-    print("Commands: /exit, /history, /tools, /clear, /todo, /goal, /skills, /cats")
+    print("Commands: /exit, /history, /tools, /clear, /todo, /goal, /skills, /cats, /infra")
     print("-" * 50)
 
     while True:
@@ -129,10 +224,10 @@ def main():
             print("Context cleared.")
             continue
         if user_input.lower().startswith("/todo"):
-            handle_todo(user_input, db, session_id)
+            _handle_todo(user_input, db, session_id)
             continue
         if user_input.lower().startswith("/goal"):
-            handle_goal(user_input, db, session_id)
+            _handle_goal(user_input, db, session_id)
             continue
         if user_input.lower() == "/skills":
             skills = skill_mgr.list_skills()
@@ -147,27 +242,26 @@ def main():
                 print("No skills loaded.")
             continue
 
-        # ── Skill matching + dynamic tool loading ──
+        # Skill matching + dynamic tool loading
         matched_skills = skill_mgr.match_skills(user_input)
-        active_tools = list(config.get("tools", []))  # base tools
+        active_tools = list(config.get("tools", []))
         skill_ctx = ""
 
         if matched_skills:
             print(f"  [Skills triggered: {', '.join(matched_skills)}]")
             skill_tools = skill_mgr.get_tools_for_skills(matched_skills)
-            # Merge: base tools + skill-specific tools
             for t in skill_tools:
                 if t not in active_tools:
                     active_tools.append(t)
             skill_ctx = skill_mgr.build_context_for_skills(matched_skills)
 
-        # ── InfraToolSet filter: env-level gating ──
+        # InfraToolSet filter
         active_tools = infra.filter_tools(active_tools)
         infra_tools = [t for t in active_tools if t not in config.get("tools", [])]
         if infra_tools:
             print(f"  [Infra gated: {', '.join(infra_tools)} available on {infra.platform}]")
 
-        # Inject active goal into system context
+        # Inject goal
         goal = db.get_active_goal(session_id)
         if goal:
             user_input = f"[Active Goal: {goal[1]}]\n{user_input}"
@@ -192,7 +286,7 @@ def main():
     print(f"\nSession {session_id} saved.")
 
 
-def handle_todo(cmd: str, db: SessionDB, session_id: str):
+def _handle_todo(cmd: str, db: SessionDB, session_id: str):
     parts = cmd.split(None, 2)
     if len(parts) == 1:
         todos = db.list_todos(session_id)
@@ -227,7 +321,7 @@ def handle_todo(cmd: str, db: SessionDB, session_id: str):
         print("Usage: /todo, /todo add <text>, /todo done <id>, /todo pending <id>, /todo delete <id>")
 
 
-def handle_goal(cmd: str, db: SessionDB, session_id: str):
+def _handle_goal(cmd: str, db: SessionDB, session_id: str):
     parts = cmd.split(None, 1)
     if len(parts) == 1:
         goal = db.get_active_goal(session_id)
@@ -245,6 +339,58 @@ def handle_goal(cmd: str, db: SessionDB, session_id: str):
     else:
         db.set_goal(session_id, parts[1])
         print(f"Goal set: {parts[1]}")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="hermes-lite",
+        description="Lightweight AI agent with tool access.",
+        add_help=False,
+    )
+    parser.add_argument("setup", nargs="?", help="Run setup wizard")
+    parser.add_argument("-m", "--model-ping", metavar="MSG", help="Quick model ping test")
+    parser.add_argument("-c", "--channel-ping", metavar="MSG", help="Quick channel ping test (Feishu/Discord)")
+    parser.add_argument("-v", "--version", action="store_true", help="Show version")
+    parser.add_argument("-h", "--help", action="store_true", help="Show help")
+    args = parser.parse_args()
+
+    if args.version:
+        print(f"hermes-lite {VERSION}")
+        return
+
+    if args.help:
+        print("""Hermes Lite — Lightweight AI Agent
+
+Usage:
+  hermes-lite              Start interactive session
+  hermes-lite setup        Configure API key and model
+  hermes-lite -m "hello"   Quick model connectivity test
+  hermes-lite -c "hello"   Quick channel connectivity test
+  hermes-lite -v           Show version
+
+Onboarding:
+  1. hermes-lite setup     → Enter API key
+  2. hermes-lite -m "hi"   → Verify model responds
+  3. export FEISHU_WEBHOOK_URL=...  → Optional: configure channel
+  4. hermes-lite -c "hi"   → Verify channel works
+  5. hermes-lite           → Start using
+""")
+        return
+
+    if args.model_ping:
+        ping_model(args.model_ping)
+        return
+
+    if args.channel_ping:
+        ping_channel(args.channel_ping)
+        return
+
+    if args.setup == "setup":
+        setup()
+        return
+
+    # Default: run interactive session
+    run_session()
 
 
 if __name__ == "__main__":

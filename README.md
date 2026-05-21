@@ -51,82 +51,6 @@ But even with precise skills, the LLM still sees too many tools during execution
 
 ---
 
-## 3. What Comes Next: The "Design Eye"
-
-Hermes Lite now has a precise hand. Next, we are building a **design eye** — the ability to turn vague intent into concrete, executable plans.
-
-### The Pipeline
-
-This is how humans discover knowledge and invent things. We are making it executable:
-
-```
-vague idea
-    │
-    ▼
-┌─────────────────┐
-│  /clarify       │  "What exactly are we solving?"
-│  Intent         │  Output: constraint list + success criteria
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  /explore       │  "What paths are feasible?"
-│  Exploration    │  Output: 2-3 candidate approaches + trade-offs
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  /decide        │  "Which path? Why?"
-│  Decision       │  Output: decision record + risk assessment
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  /validate      │  "Did we build the right thing?"
-│  Validation     │  Output: verification report + drift analysis
-└────────┬────────┘
-         │
-         ▼
-    back to /clarify (loop)
-```
-
-### Why Research Methodology?
-
-Newton, Faraday, Turing — they all followed this loop. Observe, form a fuzzy question, clarify it into a testable hypothesis, design an experiment, execute, validate, iterate. **We are automating the scientific method.**
-
-The agent does not "code a game feature." It **decomposes an abstract problem into experiments**, executes them, and adjusts course based on evidence.
-
-### Multi-Agent Parallelism
-
-If one agent cannot crack it, spawn more. Different LLMs have different biases and blind spots. Run the same problem through multiple agents, then cross-check:
-
-```
-Problem
-    │
-    ├── Agent A (Claude) → Path 1 → Result α
-    ├── Agent B (GPT-4)  → Path 2 → Result β
-    ├── Agent C (Kimi)   → Path 3 → Result γ
-    │
-    ▼
-Cross-check:
-    α = β = γ  → high confidence, likely correct
-    α = β ≠ γ  → inspect C's bias
-    α ≠ β ≠ γ  → problem not clarified enough, go back
-```
-
-This is exactly what the scientific community calls **peer review**.
-
-### Upcoming Skills
-
-| Skill | Purpose |
-|-------|---------|
-| `design-clarify` | Turn vague intent into measurable constraints |
-| `hypothesis-generator` | Produce testable hypotheses from observations |
-| `experiment-designer` | Design minimal experiments to validate hypotheses |
-| `multi-agent-executor` | Spawn parallel agents, compare results, resolve conflicts |
-
----
-
 ## Key Differences from Hermes
 
 | Dimension | Hermes | Hermes Lite |
@@ -137,7 +61,6 @@ This is exactly what the scientific community calls **peer review**.
 | Skill trigger | Passive listing (LLM pulls) | **Active matching (system pushes)** |
 | Tool boundary | Macro toolsets (4–40 tools) | **Immutable Deck per task (1–5 tools)** |
 | Message format | Unified OpenAI internally | Dual protocol (Anthropic + OpenAI) |
-| Design phase | N/A | **/clarify → /explore → /decide → /validate** |
 
 ---
 

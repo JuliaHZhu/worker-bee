@@ -24,22 +24,24 @@ def fs_write_file(path: str, content: str) -> str:
         return f"Error: {e}"
 
 
-def fs_search_files(pattern: str, path: str = ".") -> str:
-    """Search file contents with regex (Python files only by default)."""
+def fs_search_files(pattern: str, path: str = ".", file_glob: str = "*.py") -> str:
+    """Search file contents with regex. Defaults to Python files; override file_glob to search other types (e.g. '*.md', '*.json', '*')."""
     results = []
     for root, _, files in os.walk(path):
         for f in files:
-            if f.endswith(".py"):
-                fp = os.path.join(root, f)
-                try:
-                    content = Path(fp).read_text(encoding="utf-8", errors="replace")
-                    for i, line in enumerate(content.splitlines(), 1):
-                        if re.search(pattern, line):
-                            results.append(f"{fp}:{i}: {line.strip()}")
-                            if len(results) >= 30:
-                                return "\n".join(results) + "\n... (truncated)"
-                except Exception:
-                    pass
+            # Respect file_glob filter; '*' matches everything
+            if file_glob != "*" and not f.endswith(file_glob.lstrip("*")):
+                continue
+            fp = os.path.join(root, f)
+            try:
+                content = Path(fp).read_text(encoding="utf-8", errors="replace")
+                for i, line in enumerate(content.splitlines(), 1):
+                    if re.search(pattern, line):
+                        results.append(f"{fp}:{i}: {line.strip()}")
+                        if len(results) >= 30:
+                            return "\n".join(results) + "\n... (truncated)"
+            except Exception:
+                pass
     return "\n".join(results) or "No matches"
 
 
@@ -76,11 +78,12 @@ registry.register(
 
 registry.register(
     name="fs_search_files",
-    description="Search Python file contents with regex. Returns matching lines with file paths.",
+    description="Search file contents with regex. Defaults to Python files; set file_glob='*' to search all text files, or '*.md' for markdown only.",
     parameters={
         "properties": {
             "pattern": {"type": "string", "description": "Regex pattern to search"},
-            "path": {"type": "string", "description": "Directory to search in", "default": "."}
+            "path": {"type": "string", "description": "Directory to search in", "default": "."},
+            "file_glob": {"type": "string", "description": "File pattern filter, e.g. '*.py', '*.md', '*.json', '*'. Default: '*.py'", "default": "*.py"}
         },
         "required": ["pattern"]
     },

@@ -1,17 +1,26 @@
 import sqlite3
 import json
 import uuid
+import threading
 from datetime import datetime
 from pathlib import Path
 
 
 class SessionDB:
     def __init__(self, db_path="state.db"):
-        self.conn = sqlite3.connect(db_path, check_same_thread=False)
+        self.db_path = db_path
+        self._local = threading.local()
         self._init_schema()
 
+    def _get_conn(self):
+        """Return a connection bound to the current thread."""
+        if not hasattr(self._local, "conn") or self._local.conn is None:
+            self._local.conn = sqlite3.connect(self.db_path, check_same_thread=False)
+        return self._local.conn
+
     def _init_schema(self):
-        self.conn.executescript("""
+        conn = self._get_conn()
+        conn.executescript("""
             CREATE TABLE IF NOT EXISTS sessions (
                 id TEXT PRIMARY KEY,
                 created_at TEXT,
@@ -42,26 +51,29 @@ class SessionDB:
                 completed_at TEXT
             );
         """)
-        self.conn.commit()
+        conn.commit()
 
     def create_session(self, title="") -> str:
         sid = str(uuid.uuid4())[:8]
-        self.conn.execute(
+        conn = self._get_conn()
+        conn.execute(
             "INSERT INTO sessions VALUES (?, ?, ?)",
             (sid, datetime.now().isoformat(), title)
         )
-        self.conn.commit()
+        conn.commit()
         return sid
 
     def save_message(self, session_id: str, role: str, content: str, tool_calls=None):
-        self.conn.execute(
+        conn = self._get_conn()
+        conn.execute(
             "INSERT INTO messages (session_id, role, content, tool_calls, created_at) VALUES (?, ?, ?, ?, ?)",
             (session_id, role, content, json.dumps(tool_calls) if tool_calls else None, datetime.now().isoformat())
         )
-        self.conn.commit()
+        conn.commit()
 
     def get_messages(self, session_id: str):
-        rows = self.conn.execute(
+        conn = self._get_conn()
+        rows = conn.execute(
             "SELECT role, content, tool_calls FROM messages WHERE session_id = ? ORDER BY id",
             (session_id,)
         ).fetchall()
@@ -74,69 +86,78 @@ class SessionDB:
         return messages
 
     def list_sessions(self):
-        return self.conn.execute(
+        conn = self._get_conn()
+        return conn.execute(
             "SELECT id, created_at, title FROM sessions ORDER BY created_at DESC"
         ).fetchall()
 
     # ── Todos ──
     def add_todo(self, session_id: str, content: str) -> int:
-        cur = self.conn.execute(
+        conn = self._get_conn()
+        cur = conn.execute(
             "INSERT INTO todos (session_id, content, created_at, updated_at) VALUES (?, ?, ?, ?)",
             (session_id, content, datetime.now().isoformat(), datetime.now().isoformat())
         )
-        self.conn.commit()
+        conn.commit()
         return cur.lastrowid
 
     def list_todos(self, session_id: str, status: str = None):
+        conn = self._get_conn()
         sql = "SELECT id, content, status, created_at FROM todos WHERE session_id = ?"
         params = [session_id]
         if status:
             sql += " AND status = ?"
             params.append(status)
         sql += " ORDER BY created_at"
-        return self.conn.execute(sql, params).fetchall()
+        return conn.execute(sql, params).fetchall()
 
     def update_todo_status(self, todo_id: int, status: str):
-        self.conn.execute(
+        conn = self._get_conn()
+        conn.execute(
             "UPDATE todos SET status = ?, updated_at = ? WHERE id = ?",
             (status, datetime.now().isoformat(), todo_id)
         )
-        self.conn.commit()
+        conn.commit()
 
     def delete_todo(self, todo_id: int):
-        self.conn.execute("DELETE FROM todos WHERE id = ?", (todo_id,))
-        self.conn.commit()
+        conn = self._get_conn()
+        conn.execute("DELETE FROM todos WHERE id = ?", (todo_id,))
+        conn.commit()
 
     # ── Goals ──
     def set_goal(self, session_id: str, content: str) -> int:
+        conn = self._get_conn()
         # Mark previous goals as superseded
-        self.conn.execute(
+        conn.execute(
             "UPDATE goals SET status = 'superseded' WHERE session_id = ? AND status = 'active'",
             (session_id,)
         )
-        cur = self.conn.execute(
+        cur = conn.execute(
             "INSERT INTO goals (session_id, content, created_at) VALUES (?, ?, ?)",
             (session_id, content, datetime.now().isoformat())
         )
-        self.conn.commit()
+        conn.commit()
         return cur.lastrowid
 
     def get_active_goal(self, session_id: str):
-        row = self.conn.execute(
+        conn = self._get_conn()
+        row = conn.execute(
             "SELECT id, content, created_at FROM goals WHERE session_id = ? AND status = 'active' ORDER BY id DESC LIMIT 1",
             (session_id,)
         ).fetchone()
         return row
 
     def complete_goal(self, session_id: str):
-        self.conn.execute(
+        conn = self._get_conn()
+        conn.execute(
             "UPDATE goals SET status = 'completed', completed_at = ? WHERE session_id = ? AND status = 'active'",
             (datetime.now().isoformat(), session_id)
         )
-        self.conn.commit()
+        conn.commit()
 
     def list_goals(self, session_id: str):
-        return self.conn.execute(
+        conn = self._get_conn()
+        return conn.execute(
             "SELECT id, content, status, created_at, completed_at FROM goals WHERE session_id = ? ORDER BY id DESC",
             (session_id,)
         ).fetchall()

@@ -45,6 +45,27 @@ registry.register(
 
 This eliminates LLM confusion caused by vague names like `create_object` or `set_position`. The function signature — `name + description + parameters` — is the complete interface contract. No video demos, no sample projects needed.
 
+### Skill + Registry = Deterministic Navigation
+
+When Skill and Registry are both precise, the system stops "guessing" and starts "navigating":
+
+```
+User: "review my code"
+    ↓
+System matches Skill "code-review"
+    ↓
+Skill declares tooldeck: [fs_read_file, fs_search_files]
+    ↓
+Registry confirms fs_read_file = "Read local text file with pagination"
+    ↓
+LLM operates within 2 tools — zero ambiguity
+```
+
+**Traditional (unstable):** LLM sees 40 tools → guesses → may be wrong → corrects → unstable.
+**Hermes Lite (stable):** Skill navigates to a precise tool subset → Registry confirms exact semantics → deterministic behavior.
+
+> **"Saying it clearly is itself a good boundary."** — This applies to Registry names, Skill tooldecks, and trigger matching. Clarity at every layer compounds into runtime stability.
+
 ### Thread Safety & Caching
 
 - `RLock` + monotonic generation counter for concurrent access

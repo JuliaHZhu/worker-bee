@@ -91,10 +91,8 @@ def get_sessions(db_path, limit=10, exclude_ids=None):
     if not Path(db_path).exists():
         return []
     conn = sqlite3.connect(db_path)
-    sql = "SELECT id, created_at, title FROM sessions ORDER BY created_at DESC"
-    if limit:
-        sql += f" LIMIT {limit}"
-    rows = conn.execute(sql).fetchall()
+    sql = "SELECT id, created_at, title FROM sessions ORDER BY created_at DESC LIMIT ?"
+    rows = conn.execute(sql, (limit,)).fetchall()
     conn.close()
     if exclude_ids:
         rows = [r for r in rows if r[0] not in exclude_ids]

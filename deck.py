@@ -16,6 +16,17 @@ Skill-to-skill routing (composable skills) is separate:
   - Some skills are procedural (macro/scripts)
   - LLM decides procedural routing via semantic analysis
   - This happens inside execution, but still within the Deck boundary
+
+Math (可约分):
+  Let S  = set of skills selected by LLM
+  Let T(s) = tools declared by skill s
+
+  Deck = ⋃_{s ∈ S} T(s)   (union, deduplicated)
+
+  Even if skill A routes to skill B at runtime,
+  B.tools is already in the Deck if B was in S.
+  This is "约分" — the tool space of nested skills collapses
+  to a flat, immutable set before execution.
 """
 import json
 import re

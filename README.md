@@ -14,7 +14,7 @@ For the full design evolution, see [DESIGN.md](./DESIGN.md).
 
 | | Hermes | Hermes Lite |
 |---|---|---|
-| **Size** | ~35,900 lines | **~1,700 lines** |
+| **Size** | ~35,900 lines | **~2,500 lines** |
 | **Platforms** | 15+ (Discord, Telegram, Feishu, etc.) | **Linux CLI** (webhook-opt-in) |
 | **Skill trigger** | Passive listing — LLM pulls from a flat index | **Active matching** — system pushes skills via `trigger` field |
 | **Tool boundary** | Macro toolsets (4–40 tools per call) | **Immutable Deck** (1–5 tools per task) |

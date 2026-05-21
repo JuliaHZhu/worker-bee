@@ -24,6 +24,7 @@ from memory import SessionDB
 from skills import SkillManager
 from registry import registry
 from infra_toolsets import InfraToolSet
+from deck import DeckBuilder
 
 VERSION = "0.1.0"
 
@@ -242,42 +243,47 @@ def run_session():
                 print("No skills loaded.")
             continue
 
-        # Skill matching + dynamic tool loading
-        matched_skills = skill_mgr.match_skills(user_input)
-        active_tools = list(config.get("tools", []))
-        skill_ctx = ""
+        # --- Deck procurement: gather tools BEFORE execution ---
+        print("  [Procuring deck...]", flush=True)
+        deck_builder = DeckBuilder(skill_mgr, registry, agent.client, agent._protocol, agent.model)
+        deck = deck_builder.build(user_input)
 
-        if matched_skills:
-            print(f"  [Skills triggered: {', '.join(matched_skills)}]")
-            skill_tools = skill_mgr.get_tools_for_skills(matched_skills)
-            for t in skill_tools:
-                if t not in active_tools:
-                    active_tools.append(t)
-            skill_ctx = skill_mgr.build_context_for_skills(matched_skills)
+        # Merge base tools from config (always available on this platform)
+        base_tools = set(config.get("tools", []))
+        merged_tools = set(deck.tool_names) | base_tools
+        # Apply InfraToolSet gating
+        final_tools = infra.filter_tools(list(merged_tools))
+        from deck import Deck
+        deck = Deck(final_tools, registry)
 
-        # InfraToolSet filter
-        active_tools = infra.filter_tools(active_tools)
-        infra_tools = [t for t in active_tools if t not in config.get("tools", [])]
-        if infra_tools:
-            print(f"  [Infra gated: {', '.join(infra_tools)} available on {infra.platform}]")
+        if deck.missing:
+            print(f"  [Deck missing: {', '.join(deck.missing)}]")
+        print(f"  [Deck ready: {', '.join(deck.tool_names)}]")
 
         # Inject goal
         goal = db.get_active_goal(session_id)
         if goal:
             user_input = f"[Active Goal: {goal[1]}]\n{user_input}"
 
-        # Inject skill context
-        if skill_ctx:
-            user_input = f"{skill_ctx}\n\n{user_input}"
-
         messages.append({"role": "user", "content": user_input})
         db.save_message(session_id, "user", user_input)
 
         print("\nAgent: ", end="", flush=True)
         try:
-            response = agent.run(messages, tools=active_tools)
+            response = agent.run(messages, deck=deck)
         except Exception as e:
             response = f"Error: {e}"
+
+        # Halt if the agent hit the iteration limit — the deck was insufficient
+        if response == "(reached max iterations)":
+            print(response)
+            print("\n⚠️  The task could not be completed with the current tool deck.")
+            print("   This usually means the approach needs to change, or a tool is missing.")
+            print("   Please rephrase your request or check /tools and /skills.")
+            messages.append({"role": "assistant", "content": response})
+            db.save_message(session_id, "assistant", response)
+            continue
+
         print(response)
 
         messages.append({"role": "assistant", "content": response})

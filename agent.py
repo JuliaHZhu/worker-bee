@@ -131,15 +131,22 @@ class AIAgent:
                 })
         return calls
 
-    def run(self, messages: List[Dict], tools: List[str] = None) -> str:
+    def run(self, messages: List[Dict], tools: List[str] = None, deck=None) -> str:
         """Run one turn of conversation with tool use loop.
 
         Args:
             messages: Conversation history.
             tools: Optional list of tool names to enable for this run.
                    If None, uses self.enabled_tools from config.
+            deck: Optional Deck instance. If provided, tools are drawn ONLY
+                  from the Deck. Overrides the `tools` argument.
         """
-        active_tools = self._build_tools(tools)
+        if deck is not None:
+            active_tools = deck.get_schemas_for_protocol(self._protocol)
+            if not active_tools:
+                active_tools = None
+        else:
+            active_tools = self._build_tools(tools)
         api_messages = self._to_api_messages(messages)
 
         for i in range(self.max_iterations):

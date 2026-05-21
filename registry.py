@@ -122,6 +122,14 @@ class ToolRegistry:
 
         return results
 
+    def get_schema(self, name: str) -> Optional[dict]:
+        """Get a single tool schema by name. Thread-safe."""
+        with self._lock:
+            entry = self._tools.get(name)
+            if entry:
+                return dict(entry["schema"])
+            return None
+
     def call(self, name: str, args: dict) -> str:
         """Execute a tool handler. Thread-safe read."""
         with self._lock:

@@ -75,14 +75,16 @@ def _make_config(provider, model, api_key, base_url, max_iter=20):
             "- sys_terminal: run shell commands\n"
             "- fs_read_file / fs_write_file / fs_search_files: file operations\n"
             "- net_web_search / net_web_extract: web access\n"
-            "- agent_delegate_task: delegate subtasks to child agents\n"
+            "- agent_delegate_task: delegate a single subtask to a child agent\n"
+            "- agent_delegate_parallel: delegate multiple subtasks in parallel\n"
+            "- agent_cross_validate: run the same task through multiple models for comparison\n"
             "Think step by step. Prefer reading files before editing."
         ),
         "tools": [
             "sys_terminal",
             "fs_read_file", "fs_write_file", "fs_search_files",
             "net_web_search", "net_web_extract",
-            "agent_delegate_task"
+            "agent_delegate_task", "agent_delegate_parallel", "agent_cross_validate"
         ]
     }
 

@@ -21,6 +21,7 @@ import tools.web
 import tools.subagent
 import tools.cronjob
 import tools.todo_dealer
+import tools.browse
 
 from agent import AIAgent
 from memory import SessionDB

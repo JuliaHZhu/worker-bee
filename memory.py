@@ -23,7 +23,10 @@ class SessionDB:
             CREATE TABLE IF NOT EXISTS sessions (
                 id TEXT PRIMARY KEY,
                 created_at TEXT,
-                title TEXT
+                title TEXT,
+                purpose TEXT,
+                closed_at TEXT,
+                wiki_path TEXT
             );
             CREATE TABLE IF NOT EXISTS messages (
                 id INTEGER PRIMARY KEY,
@@ -31,6 +34,8 @@ class SessionDB:
                 role TEXT,
                 content TEXT,
                 tool_calls TEXT,
+                tags TEXT,
+                archived_at TEXT,
                 created_at TEXT
             );
             CREATE TABLE IF NOT EXISTS todos (
@@ -41,6 +46,8 @@ class SessionDB:
                 created_at TEXT,
                 updated_at TEXT
             );
+            -- DEPRECATED: tasks table kept for cron-scheduler compat.
+            -- New work should use session purpose + message tags.
             CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY,
                 session_id TEXT,
@@ -53,39 +60,156 @@ class SessionDB:
                 done_at TEXT
             );
         """)
+        # Schema migration: add columns if they don't exist (sqlite-friendly)
+        self._migrate_schema()
+        conn.commit()
+
+    def _migrate_schema(self):
+        """Add columns that may be missing from older DBs."""
+        conn = self._get_conn()
+        # Check and add columns to sessions
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(sessions)").fetchall()}
+        for col, dtype in [("purpose", "TEXT"), ("closed_at", "TEXT"), ("wiki_path", "TEXT")]:
+            if col not in cols:
+                conn.execute(f"ALTER TABLE sessions ADD COLUMN {col} {dtype}")
+        # Check and add columns to messages
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(messages)").fetchall()}
+        for col, dtype in [("tags", "TEXT"), ("archived_at", "TEXT")]:
+            if col not in cols:
+                conn.execute(f"ALTER TABLE messages ADD COLUMN {col} {dtype}")
         conn.commit()
 
     def create_session(self, title="") -> str:
         sid = str(uuid.uuid4())[:8]
         conn = self._get_conn()
         conn.execute(
-            "INSERT INTO sessions VALUES (?, ?, ?)",
+            "INSERT INTO sessions VALUES (?, ?, ?, NULL, NULL, NULL)",
             (sid, datetime.now().isoformat(), title)
         )
         conn.commit()
         return sid
 
-    def save_message(self, session_id: str, role: str, content: str, tool_calls=None):
+    def set_session_purpose(self, session_id: str, purpose: str):
         conn = self._get_conn()
         conn.execute(
-            "INSERT INTO messages (session_id, role, content, tool_calls, created_at) VALUES (?, ?, ?, ?, ?)",
-            (session_id, role, content, json.dumps(tool_calls) if tool_calls else None, datetime.now().isoformat())
+            "UPDATE sessions SET purpose = ? WHERE id = ?",
+            (purpose, session_id)
         )
         conn.commit()
 
-    def get_messages(self, session_id: str):
+    def close_session(self, session_id: str, wiki_path: str | None = None):
         conn = self._get_conn()
-        rows = conn.execute(
-            "SELECT role, content, tool_calls FROM messages WHERE session_id = ? ORDER BY id",
-            (session_id,)
+        now = datetime.now().isoformat()
+        conn.execute(
+            "UPDATE sessions SET closed_at = ?, wiki_path = ? WHERE id = ?",
+            (now, wiki_path, session_id)
+        )
+        conn.commit()
+
+    def list_open_sessions(self):
+        conn = self._get_conn()
+        return conn.execute(
+            "SELECT id, created_at, title, purpose FROM sessions WHERE closed_at IS NULL ORDER BY created_at DESC"
         ).fetchall()
+
+    def get_session_meta(self, session_id: str):
+        conn = self._get_conn()
+        row = conn.execute(
+            "SELECT id, created_at, title, purpose, closed_at, wiki_path FROM sessions WHERE id = ?",
+            (session_id,)
+        ).fetchone()
+        if row:
+            return {
+                "id": row[0], "created_at": row[1], "title": row[2],
+                "purpose": row[3], "closed_at": row[4], "wiki_path": row[5]
+            }
+        return None
+
+    def save_message(self, session_id: str, role: str, content: str, tool_calls=None, tags: list = None):
+        conn = self._get_conn()
+        tags_json = json.dumps(tags) if tags else None
+        conn.execute(
+            "INSERT INTO messages (session_id, role, content, tool_calls, tags, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (session_id, role, content, json.dumps(tool_calls) if tool_calls else None, tags_json, datetime.now().isoformat())
+        )
+        conn.commit()
+
+    def get_messages(self, session_id: str, include_archived: bool = False, tags: list = None):
+        conn = self._get_conn()
+        sql = "SELECT id, role, content, tool_calls, tags, archived_at, created_at FROM messages WHERE session_id = ?"
+        params = [session_id]
+        if not include_archived:
+            sql += " AND archived_at IS NULL"
+        if tags:
+            # Simple JSON substring match for tags (sqlite3 has no native JSON array contains)
+            for t in tags:
+                sql += " AND tags LIKE ?"
+                params.append(f'%"{t}"%')
+        sql += " ORDER BY id"
+        rows = conn.execute(sql, params).fetchall()
         messages = []
-        for role, content, tool_calls in rows:
-            msg = {"role": role, "content": content}
+        for msg_id, role, content, tool_calls, tags_json, archived_at, created_at in rows:
+            msg = {"id": msg_id, "role": role, "content": content, "created_at": created_at}
             if tool_calls:
                 msg["tool_calls"] = json.loads(tool_calls)
+            if tags_json:
+                msg["tags"] = json.loads(tags_json)
+            if archived_at:
+                msg["archived_at"] = archived_at
             messages.append(msg)
         return messages
+
+    def tag_message(self, msg_id: int, tag: str):
+        conn = self._get_conn()
+        row = conn.execute("SELECT tags FROM messages WHERE id = ?", (msg_id,)).fetchone()
+        if not row:
+            return False
+        tags = json.loads(row[0]) if row[0] else []
+        if tag not in tags:
+            tags.append(tag)
+            conn.execute("UPDATE messages SET tags = ? WHERE id = ?", (json.dumps(tags), msg_id))
+            conn.commit()
+        return True
+
+    def untag_message(self, msg_id: int, tag: str):
+        conn = self._get_conn()
+        row = conn.execute("SELECT tags FROM messages WHERE id = ?", (msg_id,)).fetchone()
+        if not row:
+            return False
+        tags = json.loads(row[0]) if row[0] else []
+        if tag in tags:
+            tags.remove(tag)
+            conn.execute("UPDATE messages SET tags = ? WHERE id = ?", (json.dumps(tags), msg_id))
+            conn.commit()
+        return True
+
+    def archive_messages_after(self, session_id: str, msg_id: int):
+        """Soft-archive all messages after msg_id in the session."""
+        conn = self._get_conn()
+        now = datetime.now().isoformat()
+        conn.execute(
+            "UPDATE messages SET archived_at = ? WHERE session_id = ? AND id > ?",
+            (now, session_id, msg_id)
+        )
+        conn.commit()
+
+    def archive_messages_from(self, session_id: str, msg_id: int):
+        """Soft-archive msg_id and all messages after it."""
+        conn = self._get_conn()
+        now = datetime.now().isoformat()
+        conn.execute(
+            "UPDATE messages SET archived_at = ? WHERE session_id = ? AND id >= ?",
+            (now, session_id, msg_id)
+        )
+        conn.commit()
+
+    def unarchive_all(self, session_id: str):
+        conn = self._get_conn()
+        conn.execute(
+            "UPDATE messages SET archived_at = NULL WHERE session_id = ?",
+            (session_id,)
+        )
+        conn.commit()
 
     def list_sessions(self):
         conn = self._get_conn()

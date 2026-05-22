@@ -1,4 +1,4 @@
-"""Tests for SessionDB — session creation, messages, todos, goals."""
+"""Tests for SessionDB — session creation, messages, todos, tags, archive, close."""
 import pytest
 import tempfile
 from pathlib import Path
@@ -45,6 +45,28 @@ class TestSessions:
         assert sessions[0][2] == "Second"
         assert sessions[1][2] == "First"
 
+    def test_session_meta_and_purpose(self, db):
+        sid = db.create_session(title="Test Meta")
+        db.set_session_purpose(sid, "Design state machine")
+        meta = db.get_session_meta(sid)
+        assert meta["purpose"] == "Design state machine"
+        assert meta["title"] == "Test Meta"
+
+    def test_close_session(self, db):
+        sid = db.create_session()
+        db.close_session(sid, wiki_path="/tmp/wiki/session-abc.md")
+        meta = db.get_session_meta(sid)
+        assert meta["closed_at"] is not None
+        assert meta["wiki_path"] == "/tmp/wiki/session-abc.md"
+
+    def test_list_open_sessions(self, db):
+        open_sid = db.create_session(title="Open")
+        closed_sid = db.create_session(title="Closed")
+        db.close_session(closed_sid)
+        open_sessions = db.list_open_sessions()
+        assert len(open_sessions) == 1
+        assert open_sessions[0][2] == "Open"
+
 
 class TestMessages:
     """Message save and retrieval."""
@@ -83,6 +105,91 @@ class TestMessages:
         assert len(db.get_messages(sid2)) == 1
         assert db.get_messages(sid1)[0]["content"] == "a"
         assert db.get_messages(sid2)[0]["content"] == "b"
+
+
+class TestTags:
+    """Tagging messages."""
+
+    def test_save_message_with_tags(self, db):
+        sid = db.create_session()
+        db.save_message(sid, "user", "hello", tags=["#design", "#question"])
+        msgs = db.get_messages(sid)
+        assert msgs[0]["tags"] == ["#design", "#question"]
+
+    def test_tag_and_untag_message(self, db):
+        sid = db.create_session()
+        db.save_message(sid, "user", "hello")
+        msg = db.get_messages(sid)[0]
+        mid = msg["id"]
+
+        db.tag_message(mid, "#coding")
+        db.tag_message(mid, "#bug")
+        msgs = db.get_messages(sid)
+        assert set(msgs[0]["tags"]) == {"#coding", "#bug"}
+
+        db.untag_message(mid, "#bug")
+        msgs = db.get_messages(sid)
+        assert msgs[0]["tags"] == ["#coding"]
+
+    def test_get_messages_filter_by_tags(self, db):
+        sid = db.create_session()
+        db.save_message(sid, "user", "design idea", tags=["#design"])
+        db.save_message(sid, "assistant", "implementation", tags=["#coding"])
+        db.save_message(sid, "user", "another design", tags=["#design"])
+
+        design_msgs = db.get_messages(sid, tags=["#design"])
+        assert len(design_msgs) == 2
+        assert all("#design" in m.get("tags", []) for m in design_msgs)
+
+
+class TestArchive:
+    """Soft-archive (rewind) messages."""
+
+    def test_archive_after(self, db):
+        sid = db.create_session()
+        db.save_message(sid, "user", "msg1")
+        db.save_message(sid, "assistant", "msg2")
+        db.save_message(sid, "user", "msg3")
+        db.save_message(sid, "assistant", "msg4")
+
+        msgs = db.get_messages(sid, include_archived=True)
+        mid = msgs[1]["id"]  # archive after msg2
+
+        db.archive_messages_after(sid, mid)
+        active = db.get_messages(sid, include_archived=False)
+        assert len(active) == 2
+        assert active[0]["content"] == "msg1"
+        assert active[1]["content"] == "msg2"
+
+        all_msgs = db.get_messages(sid, include_archived=True)
+        assert len(all_msgs) == 4
+        assert all_msgs[2].get("archived_at") is not None
+        assert all_msgs[3].get("archived_at") is not None
+
+    def test_archive_from(self, db):
+        sid = db.create_session()
+        db.save_message(sid, "user", "msg1")
+        db.save_message(sid, "assistant", "msg2")
+        db.save_message(sid, "user", "msg3")
+
+        msgs = db.get_messages(sid, include_archived=True)
+        mid = msgs[1]["id"]  # archive from msg2 onward
+
+        db.archive_messages_from(sid, mid)
+        active = db.get_messages(sid, include_archived=False)
+        assert len(active) == 1
+        assert active[0]["content"] == "msg1"
+
+    def test_unarchive_all(self, db):
+        sid = db.create_session()
+        db.save_message(sid, "user", "msg1")
+        db.save_message(sid, "assistant", "msg2")
+        mid = db.get_messages(sid)[0]["id"]
+        db.archive_messages_after(sid, mid)
+        assert len(db.get_messages(sid, include_archived=False)) == 1
+
+        db.unarchive_all(sid)
+        assert len(db.get_messages(sid, include_archived=False)) == 2
 
 
 class TestTodos:
@@ -129,7 +236,7 @@ class TestTodos:
 
 
 class TestTasks:
-    """Task management — create, list, status flow, assign."""
+    """Task management — DEPRECATED but kept for cron-scheduler compat."""
 
     def test_add_and_list_task(self, db):
         sid = db.create_session()

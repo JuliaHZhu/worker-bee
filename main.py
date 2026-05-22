@@ -178,6 +178,10 @@ def run_session():
     skill_mgr = SkillManager()
     infra = InfraToolSet()
 
+    # Session-aware system prompt so the agent knows its session ID for tagged-session tools
+    base_system_prompt = agent.system_prompt
+    agent.system_prompt = f"{base_system_prompt}\n\nCurrent session ID: {session_id}"
+
     loaded_skills = skill_mgr.load_all()
     if loaded_skills:
         print(f"Loaded {len(loaded_skills)} skill(s): {', '.join(loaded_skills)}")
@@ -222,8 +226,11 @@ def run_session():
         session_id = db.create_session()
         messages = []
 
+    # Session-aware system prompt so the agent knows its session ID for tagged-session tools
+    agent.system_prompt = f"{base_system_prompt}\n\nCurrent session ID: {session_id}"
+
     print(f"\n✨ Hermes Lite — Session: {session_id}")
-    print("Commands: /exit, /history, /tools, /clear, /todo, /task, /skills, /cats, /infra")
+    print("Commands: /exit, /history, /tools, /clear, /todo, /skills, /cats, /infra")
     print("-" * 50)
 
     while True:
@@ -241,7 +248,9 @@ def run_session():
             for m in messages[-10:]:
                 role = m["role"]
                 content = m.get("content", "")[:80].replace("\n", " ")
-                print(f"  [{role:10}] {content}...")
+                tags = m.get("tags", [])
+                tag_str = f"  tags:{','.join(tags)}" if tags else ""
+                print(f"  [{role:10}] {content}...{tag_str}")
             continue
         if user_input.lower() == "/tools":
             cats = registry.list_by_category()
@@ -263,7 +272,7 @@ def run_session():
             _handle_todo(user_input, db, session_id)
             continue
         if user_input.lower().startswith("/task"):
-            _handle_task(user_input, db, session_id)
+            print("⚠️  /task is deprecated. Use natural language with the tagged-session skill instead.")
             continue
         if user_input.lower() == "/skills":
             skills = skill_mgr.list_skills()
@@ -328,8 +337,11 @@ def run_session():
             # Temporarily augment system prompt with skill context
             agent.system_prompt = f"{agent.system_prompt}\n\n{skill_context}"
 
-        messages.append({"role": "user", "content": user_input})
-        db.save_message(session_id, "user", user_input)
+        # --- Tag extraction: leading #tags are stripped and stored separately ---
+        tags, clean_input = _extract_tags(user_input)
+
+        messages.append({"role": "user", "content": clean_input, "tags": tags})
+        db.save_message(session_id, "user", clean_input, tags=tags)
 
         print("\nAgent: ", end="", flush=True)
         try:
@@ -337,18 +349,9 @@ def run_session():
         except Exception as e:
             response = f"Error: {e}"
         finally:
-            # Restore original system prompt
+            # Restore original system prompt (keeping session ID suffix)
             if skill_context:
-                agent.system_prompt = config.get("system_prompt", (
-                    "You are a helpful coding assistant. You have access to tools:\n"
-                    "- sys_terminal: run shell commands\n"
-                    "- fs_read_file / fs_write_file / fs_search_files: file operations\n"
-                    "- net_web_search / net_web_extract: web access\n"
-                    "- agent_delegate_task: delegate a single subtask to a child agent\n"
-                    "- agent_delegate_parallel: delegate multiple subtasks in parallel\n"
-                    "- agent_cross_validate: run the same task through multiple models for comparison\n"
-                    "Think step by step. Prefer reading files before editing."
-                ))
+                agent.system_prompt = f"{base_system_prompt}\n\nCurrent session ID: {session_id}"
 
         # Halt if the agent hit the iteration limit — the deck was insufficient
         if response == "(reached max iterations)":
@@ -411,72 +414,24 @@ def _handle_todo(cmd: str, db: SessionDB, session_id: str):
         print("Usage: /todo, /todo add <text>, /todo done <id>, /todo pending <id>, /todo delete <id>")
 
 
-def _handle_task(cmd: str, db: SessionDB, session_id: str):
-    """Task management: add, list, start, done, cancel, assign."""
-    parts = cmd.split(None, 2)
-    usage = "Usage: /task [add <text>] [add #cron:job <text>] [list [status|#job]] [start <id>] [done <id>] [cancel <id>] [assign <id> #job]"
+def _extract_tags(text: str):
+    """Extract leading #tags from user input.
 
-    if len(parts) == 1:
-        tasks = db.list_tasks(session_id=session_id)
-        if not tasks:
-            print("No tasks.")
-            return
-        for tid, sid, content, status, assigned, pri, created in tasks:
-            tag = f"#{assigned}" if assigned else ""
-            mark = {"todo": "○", "in_progress": "◉", "done": "✓", "cancelled": "✗"}.get(status, "?")
-            print(f"  {mark} [{tid}] {tag} {content}")
-    elif parts[1] == "add":
-        content = parts[2] if len(parts) == 3 else ""
-        if not content:
-            print("Usage: /task add <text>")
-            return
-        assigned_to = None
-        if content.startswith("#"):
-            space_idx = content.find(" ")
-            if space_idx > 0:
-                assigned_to = content[1:space_idx]
-                content = content[space_idx + 1:]
-        tid = db.add_task(session_id, content, assigned_to=assigned_to)
-        label = f" (assigned to #{assigned_to})" if assigned_to else ""
-        print(f"Task [{tid}] created{label}: {content}")
-    elif parts[1] == "list":
-        status = None
-        assigned_to = None
-        if len(parts) == 3:
-            arg = parts[2]
-            if arg.startswith("#"):
-                assigned_to = arg[1:]
-            elif arg in ("todo", "in_progress", "done", "cancelled"):
-                status = arg
-        tasks = db.list_tasks(session_id=session_id, status=status, assigned_to=assigned_to)
-        if not tasks:
-            print("No matching tasks.")
-            return
-        for tid, sid, content, st, assigned, pri, created in tasks:
-            tag = f"#{assigned}" if assigned else ""
-            mark = {"todo": "○", "in_progress": "◉", "done": "✓", "cancelled": "✗"}.get(st, "?")
-            print(f"  {mark} [{tid}] {tag} {content}")
-    elif parts[1] in ("start", "done", "cancel"):
-        try:
-            tid = int(parts[2])
-        except (ValueError, IndexError):
-            print(f"Usage: /task {parts[1]} <id>")
-            return
-        status_map = {"start": "in_progress", "done": "done", "cancel": "cancelled"}
-        db.update_task_status(tid, status_map[parts[1]])
-        print(f"Task [{tid}] → {status_map[parts[1]]}")
-    elif parts[1] == "assign":
-        try:
-            tid_str, target = parts[2].split(None, 1)
-            tid = int(tid_str)
-            assigned_to = target[1:] if target.startswith("#") else target
-        except (ValueError, IndexError):
-            print("Usage: /task assign <id> #job")
-            return
-        db.assign_task(tid, assigned_to)
-        print(f"Task [{tid}] assigned to #{assigned_to}")
-    else:
-        print(usage)
+    Example:
+        "#design #question how does this work?" -> (["#design", "#question"], "how does this work?")
+        "no tags here" -> ([], "no tags here")
+    """
+    words = text.split()
+    tags = []
+    idx = 0
+    for i, w in enumerate(words):
+        if w.startswith("#") and len(w) > 1:
+            tags.append(w)
+            idx = i + 1
+        else:
+            break
+    clean = " ".join(words[idx:]) if idx > 0 else text
+    return tags, clean
 
 
 def main():

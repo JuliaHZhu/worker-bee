@@ -28,6 +28,21 @@ dependencies = [
     "openai>=1.30.0",
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "croniter>=1.4",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "integration: integration tests that require a live LLM API or external service",
+    "slow: tests that take more than 5 seconds",
+]
+
 [project.scripts]
 hermes-lite = "main:main"
 

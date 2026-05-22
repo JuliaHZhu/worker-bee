@@ -9,7 +9,6 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 from datetime import date, datetime
 from enum import Enum
-from pathlib import Path
 
 
 class Difficulty(Enum):

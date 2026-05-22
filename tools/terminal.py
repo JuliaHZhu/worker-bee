@@ -1,10 +1,10 @@
+from typing import Union
+
 import fnmatch
 import re
 import shlex
 import subprocess
 from registry import registry
-
-# ── Allowlist: common read-only / low-risk commands (no shell metacharacters allowed) ──
 ALLOWLIST = [
     "cat*", "head*", "tail*", "less*", "more*",
     "ls*", "ll*", "pwd", "id", "uname*", "whoami",
@@ -57,8 +57,6 @@ def _is_dangerous(command: str) -> bool:
             return True
     return False
 
-
-from typing import Union
 
 def _run_command(command: Union[str, list], timeout: int, shell: bool) -> str:
     """Execute command and return trimmed output."""

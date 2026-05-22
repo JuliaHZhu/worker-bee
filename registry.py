@@ -2,7 +2,7 @@
 import threading
 import time
 from collections import OrderedDict
-from typing import Dict, Callable, Any, List, Optional, Set, Tuple
+from typing import Dict, Callable, List, Optional
 
 
 class ToolRegistry:

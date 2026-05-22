@@ -163,7 +163,7 @@ def ball_pool_maintenance():
     pool_state = load_json(POOL_STATE)
     
     if pool_state:
-        print(f"   ✅ 球池状态正常")
+        print("   ✅ 球池状态正常")
     
     print("✅ 抽彩球池维护完成")
 
@@ -218,7 +218,7 @@ def main():
             cycle_review()
             status['last_run']['cycle_review'] = datetime.now().isoformat()
         else:
-            print(f"⏭️  跳过cycle_review（非执行时间或今日已执行）")
+            print("⏭️  跳过cycle_review（非执行时间或今日已执行）")
     
     if tasks.get('ball_pool_maintenance', {}).get('enabled', False):
         ball_pool_maintenance()

@@ -56,11 +56,11 @@ def test_heartbeat_mechanism():
     config = load_json(TEST_CONFIG)
     tasks = config.get('heartbeat', {}).get('tasks', {})
     
-    print(f"\n📋 测试任务配置：")
+    print("\n📋 测试任务配置：")
     for task_name, task_config in tasks.items():
         print(f"   • {task_name}: {task_config['description']} (间隔{task_config['test_interval']}秒)")
     
-    print(f"\n🚀 开始测试（将运行150秒，约2.5分钟）...")
+    print("\n🚀 开始测试（将运行150秒，约2.5分钟）...")
     print("="*70)
     
     # 记录任务上次运行时间
@@ -117,7 +117,7 @@ def analyze_test_results():
             task_events[task_name] = []
         task_events[task_name].append(event)
     
-    print(f"\n📊 测试结果分析：")
+    print("\n📊 测试结果分析：")
     print("-"*70)
     
     for task_name, events in task_events.items():
@@ -147,7 +147,7 @@ def analyze_test_results():
             else:
                 print(f"   ❌ 间隔异常（期望{expected_interval}秒）")
         
-        print(f"   触发时间:")
+        print("   触发时间:")
         for event in events[:5]:  # 只显示前5个
             print(f"      • {event['timestamp']}")
         if len(events) > 5:

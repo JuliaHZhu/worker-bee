@@ -2,7 +2,7 @@
 import os
 import json
 import concurrent.futures
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 from registry import registry
 
 

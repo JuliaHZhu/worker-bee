@@ -13,7 +13,7 @@
 只支持飞书(Feishu)和Discord，别的平台不管。
 """
 import os
-from typing import Dict, List, Optional, Callable, Set
+from typing import Dict, List, Optional
 
 
 class InfraToolSet:

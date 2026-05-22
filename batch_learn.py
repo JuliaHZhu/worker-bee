@@ -291,7 +291,7 @@ def update_index(wiki_path, obj_file, inf_file, session_id, date_str):
                 new_lines.append("### Inference Records")
                 new_lines.append(inf_entry)
                 inserted_obj = True
-                inserted_inf = True
+                inserted_inf = True  # noqa: F841
         if inserted_obj:
             content = "\n".join(new_lines)
     else:
@@ -313,7 +313,7 @@ def append_log(wiki_path, date_str, session_id):
     if log_path.exists():
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(f"\n## [{date_str}] learn-from-doing | Session {session_id}\n")
-            f.write(f"- Generated objective and inference records\n")
+            f.write("- Generated objective and inference records\n")
 
 
 def analyze_session(session_id, db_path, wiki_path, client, config):

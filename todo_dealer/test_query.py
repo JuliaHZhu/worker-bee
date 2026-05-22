@@ -37,7 +37,7 @@ def test_manager_query():
             for i, result in enumerate(results, 1):
                 print(f"   {i}. {result.date_display} {result.session_display}: {result.block.content} [{result.status_display}]")
         else:
-            print(f"   未找到记录")
+            print("   未找到记录")
     
     print()
 

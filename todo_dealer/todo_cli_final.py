@@ -9,7 +9,7 @@ import argparse
 import json
 from datetime import date, datetime
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Any
 
 # 添加当前路径到Python路径
 sys.path.insert(0, str(Path(__file__).parent))
@@ -579,7 +579,7 @@ def cmd_box_quota_set(box: str, number: str):
             return
     
     if global_args.dry_run:
-        print_output(f"设置配额 (预览)", {
+        print_output("设置配额 (预览)", {
             "盒子": box,
             "新配额": num,
             "状态": "预览模式，不执行实际操作"
@@ -695,7 +695,7 @@ def main():
     subparsers = parser.add_subparsers(title="命令组", dest="group")
     
     # help 命令（作为独立命令）
-    help_parser = subparsers.add_parser("help", help="显示帮助信息")
+    subparsers.add_parser("help", help="显示帮助信息")
     
     # system 组
     system_parser = subparsers.add_parser("system", help="系统类命令")

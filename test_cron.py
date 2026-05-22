@@ -6,13 +6,12 @@ import os
 import shutil
 import sys
 import tempfile
-import time
 
 # Patch HERMES_DIR to a temp dir so we don't touch real data
 from pathlib import Path
 TEST_DIR = Path(tempfile.mkdtemp(prefix="hermes-lite-test-"))
 
-import cron.jobs as jobs
+import cron.jobs as jobs  # noqa: E402
 jobs.HERMES_DIR = TEST_DIR
 jobs.CRON_DIR = TEST_DIR / "cron"
 jobs.JOBS_FILE = jobs.CRON_DIR / "jobs.json"

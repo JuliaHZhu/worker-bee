@@ -1,6 +1,4 @@
 """Tests for cron jobs — create, read, update, delete, scheduling, due detection."""
-import json
-import os
 import tempfile
 import pytest
 from pathlib import Path

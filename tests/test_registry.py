@@ -1,11 +1,8 @@
 """Tests for tool registry — thread safety, caching, generation counter."""
-import json
 import threading
 import time
 
-import pytest
 
-from registry import registry
 
 
 class TestToolRegistry:

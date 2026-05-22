@@ -1,7 +1,5 @@
 """Tests for file tools — workspace guard, sensitive file blocking, read/write/search."""
 import os
-import pytest
-from pathlib import Path
 
 import tools.file as file_mod
 

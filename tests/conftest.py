@@ -1,6 +1,5 @@
 """Shared test fixtures for hermes-lite."""
 import os
-import json
 import tempfile
 import pytest
 from pathlib import Path

@@ -15,13 +15,6 @@ import sys
 import threading
 
 # Import tools to trigger registration
-import tools.terminal
-import tools.file
-import tools.web
-import tools.subagent
-import tools.cronjob
-import tools.todo_dealer
-import tools.browse
 
 from agent import AIAgent
 from memory import SessionDB

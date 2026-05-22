@@ -28,7 +28,7 @@ class TestSessions:
         assert isinstance(sid, str)
 
     def test_create_session_with_title(self, db):
-        sid = db.create_session(title="My Test")
+        db.create_session(title="My Test")
         sessions = db.list_sessions()
         titles = {s[2] for s in sessions}
         assert "My Test" in titles

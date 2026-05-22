@@ -1,7 +1,4 @@
 """Tests for skill loading, YAML parsing, trigger matching, and caching."""
-import hashlib
-import pytest
-from pathlib import Path
 
 from skills import SkillManager, _parse_yamlish
 

@@ -5,18 +5,16 @@ TODO Ball Machine - 应用层（Use Case Layer）
 负责具体业务用例实现，是命令背后的真正执行者
 """
 
-from datetime import date, datetime, timedelta
-from typing import Dict, List, Optional, Any
+from datetime import date
 import random
 
 from todo_models import (
-    ColorBall, BoxConfig, Block, CycleConfig,
-    Difficulty, BlockType, BlockStatus, Session, DataValidator, BoxName,
-    BlockQueryResult
+    CycleConfig,
+    BlockType, Session, DataValidator
 )
 from todo_managers import QuotaManager, BallPoolManager, BlockManager, BASE_PATH
 from todo_infrastructure import (
-    audit_logger, cron_manager, heartbeat_manager, config_manager, _storage
+    audit_logger, config_manager, _storage
 )
 
 

@@ -4,7 +4,6 @@ import pytest
 from tools.web import (
     _is_blocked_host,
     _guard_url,
-    _ALLOWED_SCHEMES,
 )
 
 

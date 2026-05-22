@@ -1,5 +1,4 @@
 """Tests for terminal tool — allowlist, dangerous detection, security model."""
-import pytest
 
 from tools.terminal import (
     sys_terminal,

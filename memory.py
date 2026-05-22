@@ -3,7 +3,6 @@ import json
 import uuid
 import threading
 from datetime import datetime
-from pathlib import Path
 
 
 class SessionDB:

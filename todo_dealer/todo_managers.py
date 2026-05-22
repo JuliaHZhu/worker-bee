@@ -9,10 +9,10 @@ import os
 import random
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional
 
 from todo_models import (
-    ColorBall, BoxConfig, Block, CycleConfig,
+    ColorBall, Block, CycleConfig,
     Difficulty, BlockType, BlockStatus, Session, DataValidator,
     BlockQueryResult
 )

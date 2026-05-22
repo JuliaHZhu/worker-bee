@@ -97,7 +97,7 @@ class TestSchedulerNoAgent:
         os.environ["HERMES_WORKSPACE"] = str(tmp)
 
         try:
-            job = jobs.create_job(
+            jobs.create_job(
                 prompt="",
                 schedule="0m",
                 name="outside-test",
@@ -122,7 +122,7 @@ class TestSchedulerNoAgent:
         os.environ["HERMES_WORKSPACE"] = str(tmp)
 
         try:
-            job = jobs.create_job(
+            jobs.create_job(
                 prompt="",
                 schedule="0m",
                 name="missing-script",

@@ -7,7 +7,7 @@ Set ENTP_BASE_PATH env var to override the data directory.
 import json
 import os
 import sys
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
 
@@ -253,7 +253,6 @@ def _action_redraw(session: str) -> str:
     existing = _bm().find_block_by_session(blocks, sess)
     if existing:
         # Return ball to pool
-        from todo_use_cases import UseCaseFactory
         uf = _factory()
         if existing.ball_id:
             uf._ball_pool_manager.return_ball(existing.box, existing.ball_id)

@@ -13,16 +13,12 @@ import contextvars
 import json
 import logging
 import os
-import shutil
 import subprocess
 import sys
-import threading
-import time
 import urllib.request
 
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import List, Optional, Any
 
 try:
     import fcntl

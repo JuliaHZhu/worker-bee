@@ -4,9 +4,7 @@ TODO Ball Machine - 统一任务调度器
 整合：TODO系统 + 生活记录 + Heartbeat + Cron
 """
 import json
-import os
 import subprocess
-from datetime import datetime
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent

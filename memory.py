@@ -41,13 +41,16 @@ class SessionDB:
                 created_at TEXT,
                 updated_at TEXT
             );
-            CREATE TABLE IF NOT EXISTS goals (
+            CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY,
                 session_id TEXT,
                 content TEXT,
-                status TEXT DEFAULT 'active',
+                status TEXT DEFAULT 'todo',
+                assigned_to TEXT,
+                priority INTEGER DEFAULT 0,
                 created_at TEXT,
-                completed_at TEXT
+                updated_at TEXT,
+                done_at TEXT
             );
         """)
         conn.commit()
@@ -123,40 +126,59 @@ class SessionDB:
         conn.execute("DELETE FROM todos WHERE id = ?", (todo_id,))
         conn.commit()
 
-    # ── Goals ──
-    def set_goal(self, session_id: str, content: str) -> int:
+    # ── Tasks ──
+    def add_task(self, session_id: str, content: str, assigned_to: str = None, priority: int = 0) -> int:
         conn = self._get_conn()
-        # Mark previous goals as superseded
-        conn.execute(
-            "UPDATE goals SET status = 'superseded' WHERE session_id = ? AND status = 'active'",
-            (session_id,)
-        )
+        now = datetime.now().isoformat()
         cur = conn.execute(
-            "INSERT INTO goals (session_id, content, created_at) VALUES (?, ?, ?)",
-            (session_id, content, datetime.now().isoformat())
+            "INSERT INTO tasks (session_id, content, assigned_to, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (session_id, content, assigned_to, priority, now, now)
         )
         conn.commit()
         return cur.lastrowid
 
-    def get_active_goal(self, session_id: str):
+    def list_tasks(self, session_id: str = None, status: str = None, assigned_to: str = None):
         conn = self._get_conn()
-        row = conn.execute(
-            "SELECT id, content, created_at FROM goals WHERE session_id = ? AND status = 'active' ORDER BY id DESC LIMIT 1",
-            (session_id,)
-        ).fetchone()
-        return row
+        sql = "SELECT id, session_id, content, status, assigned_to, priority, created_at FROM tasks WHERE 1=1"
+        params = []
+        if session_id:
+            sql += " AND session_id = ?"
+            params.append(session_id)
+        if status:
+            sql += " AND status = ?"
+            params.append(status)
+        if assigned_to:
+            sql += " AND assigned_to = ?"
+            params.append(assigned_to)
+        sql += " ORDER BY priority DESC, created_at ASC"
+        return conn.execute(sql, params).fetchall()
 
-    def complete_goal(self, session_id: str):
+    def update_task_status(self, task_id: int, status: str):
+        conn = self._get_conn()
+        now = datetime.now().isoformat()
+        if status == "done":
+            conn.execute(
+                "UPDATE tasks SET status = ?, updated_at = ?, done_at = ? WHERE id = ?",
+                (status, now, now, task_id)
+            )
+        else:
+            conn.execute(
+                "UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?",
+                (status, now, task_id)
+            )
+        conn.commit()
+
+    def assign_task(self, task_id: int, assigned_to: str):
         conn = self._get_conn()
         conn.execute(
-            "UPDATE goals SET status = 'completed', completed_at = ? WHERE session_id = ? AND status = 'active'",
-            (datetime.now().isoformat(), session_id)
+            "UPDATE tasks SET assigned_to = ?, updated_at = ? WHERE id = ?",
+            (assigned_to, datetime.now().isoformat(), task_id)
         )
         conn.commit()
 
-    def list_goals(self, session_id: str):
+    def get_pending_tasks_for_job(self, assigned_to: str):
         conn = self._get_conn()
         return conn.execute(
-            "SELECT id, content, status, created_at, completed_at FROM goals WHERE session_id = ? ORDER BY id DESC",
-            (session_id,)
+            "SELECT id, content, priority FROM tasks WHERE assigned_to = ? AND status IN ('todo', 'in_progress') ORDER BY priority DESC, created_at ASC",
+            (assigned_to,)
         ).fetchall()

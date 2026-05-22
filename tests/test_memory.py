@@ -128,38 +128,71 @@ class TestTodos:
         assert len(db.list_todos(sid, status="done")) == 1
 
 
-class TestGoals:
-    """Goal management."""
+class TestTasks:
+    """Task management — create, list, status flow, assign."""
 
-    def test_set_and_get_goal(self, db):
+    def test_add_and_list_task(self, db):
         sid = db.create_session()
-        db.set_goal(sid, "Build a test suite")
-        goal = db.get_active_goal(sid)
-        assert goal is not None
-        assert goal[1] == "Build a test suite"
+        tid = db.add_task(sid, "Migrate auth module")
+        tasks = db.list_tasks(session_id=sid)
+        assert len(tasks) == 1
+        assert tasks[0][2] == "Migrate auth module"
+        assert tasks[0][3] == "todo"
 
-    def test_set_goal_supersedes_previous(self, db):
+    def test_list_by_status(self, db):
         sid = db.create_session()
-        db.set_goal(sid, "First goal")
-        db.set_goal(sid, "Second goal")
+        db.add_task(sid, "Task A")
+        tid = db.add_task(sid, "Task B")
+        db.update_task_status(tid, "done")
+        todos = db.list_tasks(session_id=sid, status="todo")
+        dones = db.list_tasks(session_id=sid, status="done")
+        assert len(todos) == 1
+        assert len(dones) == 1
 
-        active = db.get_active_goal(sid)
-        assert active[1] == "Second goal"
-
-        all_goals = db.list_goals(sid)
-        assert len(all_goals) == 2
-
-    def test_complete_goal(self, db):
+    def test_status_flow(self, db):
         sid = db.create_session()
-        db.set_goal(sid, "Complete me")
-        db.complete_goal(sid)
+        tid = db.add_task(sid, "Flow test")
+        db.update_task_status(tid, "in_progress")
+        tasks = db.list_tasks(session_id=sid, status="in_progress")
+        assert tasks[0][2] == "Flow test"
+        db.update_task_status(tid, "done")
+        tasks = db.list_tasks(session_id=sid, status="done")
+        assert len(tasks) == 1
 
-        active = db.get_active_goal(sid)
-        assert active is None
-
-        goals = db.list_goals(sid)
-        assert goals[0][2] == "completed"
-
-    def test_no_active_goal(self, db):
+    def test_cancel_task(self, db):
         sid = db.create_session()
-        assert db.get_active_goal(sid) is None
+        tid = db.add_task(sid, "Cancel me")
+        db.update_task_status(tid, "cancelled")
+        tasks = db.list_tasks(session_id=sid, status="cancelled")
+        assert len(tasks) == 1
+
+    def test_assign_and_filter(self, db):
+        sid = db.create_session()
+        db.add_task(sid, "Morning report", assigned_to="morning-brief")
+        db.add_task(sid, "Evening cleanup", assigned_to="evening-brief")
+        db.add_task(sid, "Unassigned task")
+        morning = db.list_tasks(assigned_to="morning-brief")
+        assert len(morning) == 1
+        assert morning[0][2] == "Morning report"
+
+    def test_get_pending_tasks_for_job(self, db):
+        sid = db.create_session()
+        db.add_task(sid, "Do X", assigned_to="job-1")
+        tid = db.add_task(sid, "Do Y", assigned_to="job-1")
+        db.update_task_status(tid, "done")
+        db.add_task(sid, "Do Z", assigned_to="job-1")
+        pending = db.get_pending_tasks_for_job("job-1")
+        assert len(pending) == 2  # Do X (todo) + Do Z (todo); Do Y is done
+
+    def test_assign_task(self, db):
+        sid = db.create_session()
+        tid = db.add_task(sid, "Reassign me")
+        db.assign_task(tid, "job-2")
+        tasks = db.list_tasks(assigned_to="job-2")
+        assert len(tasks) == 1
+        assert tasks[0][2] == "Reassign me"
+
+    def test_empty_task_list(self, db):
+        sid = db.create_session()
+        tasks = db.list_tasks(session_id=sid)
+        assert tasks == []

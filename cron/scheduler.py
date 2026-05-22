@@ -403,7 +403,24 @@ def run_job(job: dict, default_config: dict, skill_manager=None) -> None:
             success = True
         else:
             # Agent mode
+            # Inject pending tasks assigned to this job
+            task_context = ""
+            try:
+                from memory import SessionDB
+                db = SessionDB()
+                pending = db.get_pending_tasks_for_job(job_id)
+                if pending:
+                    lines = ["[Pending tasks assigned to you]", ""]
+                    for tid, content, pri in pending:
+                        star = "⭐" if pri > 0 else ""
+                        lines.append(f"  #{tid}{star}: {content}")
+                    task_context = "\n".join(lines) + "\n\n"
+            except Exception:
+                pass  # Task DB may not exist yet; non-critical
+
             full_prompt = build_job_prompt(job, skill_manager, context_from_outputs)
+            if task_context:
+                full_prompt = task_context + full_prompt
             if not full_prompt.strip():
                 output = "Job has no prompt. Nothing to do."
                 success = True

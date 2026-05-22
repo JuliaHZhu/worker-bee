@@ -110,17 +110,6 @@ def get_session_messages(db_path, session_id):
     return rows
 
 
-def get_active_goal(db_path, session_id):
-    """Fetch active goal for a session."""
-    conn = sqlite3.connect(db_path)
-    row = conn.execute(
-        "SELECT content FROM goals WHERE session_id = ? AND status = 'active' ORDER BY id DESC LIMIT 1",
-        (session_id,),
-    ).fetchone()
-    conn.close()
-    return row[0] if row else None
-
-
 def already_analyzed(wiki_path, session_id):
     """Check if objective record already exists for this session."""
     obj_dir = wiki_path / "learn-from-doing" / "objective"
@@ -330,7 +319,7 @@ def analyze_session(session_id, db_path, wiki_path, client, config):
     ).fetchone()
     conn.close()
     created_at, title = meta if meta else ("", "")
-    goal = get_active_goal(db_path, session_id)
+    goal = None  # goal system removed; tasks replace it
 
     print(f"  → Analyzing session {session_id} ({len(messages)} messages)...")
 

@@ -223,7 +223,7 @@ def run_session():
         messages = []
 
     print(f"\n✨ Hermes Lite — Session: {session_id}")
-    print("Commands: /exit, /history, /tools, /clear, /todo, /goal, /skills, /cats, /infra")
+    print("Commands: /exit, /history, /tools, /clear, /todo, /task, /skills, /cats, /infra")
     print("-" * 50)
 
     while True:
@@ -262,8 +262,8 @@ def run_session():
         if user_input.lower().startswith("/todo"):
             _handle_todo(user_input, db, session_id)
             continue
-        if user_input.lower().startswith("/goal"):
-            _handle_goal(user_input, db, session_id)
+        if user_input.lower().startswith("/task"):
+            _handle_task(user_input, db, session_id)
             continue
         if user_input.lower() == "/skills":
             skills = skill_mgr.list_skills()
@@ -327,11 +327,6 @@ def run_session():
                 skill_context += "\n".join(lines)
             # Temporarily augment system prompt with skill context
             agent.system_prompt = f"{agent.system_prompt}\n\n{skill_context}"
-
-        # Inject goal
-        goal = db.get_active_goal(session_id)
-        if goal:
-            user_input = f"[Active Goal: {goal[1]}]\n{user_input}"
 
         messages.append({"role": "user", "content": user_input})
         db.save_message(session_id, "user", user_input)
@@ -416,24 +411,72 @@ def _handle_todo(cmd: str, db: SessionDB, session_id: str):
         print("Usage: /todo, /todo add <text>, /todo done <id>, /todo pending <id>, /todo delete <id>")
 
 
-def _handle_goal(cmd: str, db: SessionDB, session_id: str):
-    parts = cmd.split(None, 1)
+def _handle_task(cmd: str, db: SessionDB, session_id: str):
+    """Task management: add, list, start, done, cancel, assign."""
+    parts = cmd.split(None, 2)
+    usage = "Usage: /task [add <text>] [add #cron:job <text>] [list [status|#job]] [start <id>] [done <id>] [cancel <id>] [assign <id> #job]"
+
     if len(parts) == 1:
-        goal = db.get_active_goal(session_id)
-        if goal:
-            print(f"Active goal: {goal[1]}")
-        else:
-            print("No active goal.")
-    elif parts[1] == "clear":
-        db.complete_goal(session_id)
-        print("Goal cleared.")
+        tasks = db.list_tasks(session_id=session_id)
+        if not tasks:
+            print("No tasks.")
+            return
+        for tid, sid, content, status, assigned, pri, created in tasks:
+            tag = f"#{assigned}" if assigned else ""
+            mark = {"todo": "○", "in_progress": "◉", "done": "✓", "cancelled": "✗"}.get(status, "?")
+            print(f"  {mark} [{tid}] {tag} {content}")
+    elif parts[1] == "add":
+        content = parts[2] if len(parts) == 3 else ""
+        if not content:
+            print("Usage: /task add <text>")
+            return
+        assigned_to = None
+        if content.startswith("#"):
+            space_idx = content.find(" ")
+            if space_idx > 0:
+                assigned_to = content[1:space_idx]
+                content = content[space_idx + 1:]
+        tid = db.add_task(session_id, content, assigned_to=assigned_to)
+        label = f" (assigned to #{assigned_to})" if assigned_to else ""
+        print(f"Task [{tid}] created{label}: {content}")
     elif parts[1] == "list":
-        goals = db.list_goals(session_id)
-        for gid, content, status, created, completed in goals:
-            print(f"  [{status:12}] {content}")
+        status = None
+        assigned_to = None
+        if len(parts) == 3:
+            arg = parts[2]
+            if arg.startswith("#"):
+                assigned_to = arg[1:]
+            elif arg in ("todo", "in_progress", "done", "cancelled"):
+                status = arg
+        tasks = db.list_tasks(session_id=session_id, status=status, assigned_to=assigned_to)
+        if not tasks:
+            print("No matching tasks.")
+            return
+        for tid, sid, content, st, assigned, pri, created in tasks:
+            tag = f"#{assigned}" if assigned else ""
+            mark = {"todo": "○", "in_progress": "◉", "done": "✓", "cancelled": "✗"}.get(st, "?")
+            print(f"  {mark} [{tid}] {tag} {content}")
+    elif parts[1] in ("start", "done", "cancel"):
+        try:
+            tid = int(parts[2])
+        except (ValueError, IndexError):
+            print(f"Usage: /task {parts[1]} <id>")
+            return
+        status_map = {"start": "in_progress", "done": "done", "cancel": "cancelled"}
+        db.update_task_status(tid, status_map[parts[1]])
+        print(f"Task [{tid}] → {status_map[parts[1]]}")
+    elif parts[1] == "assign":
+        try:
+            tid_str, target = parts[2].split(None, 1)
+            tid = int(tid_str)
+            assigned_to = target[1:] if target.startswith("#") else target
+        except (ValueError, IndexError):
+            print("Usage: /task assign <id> #job")
+            return
+        db.assign_task(tid, assigned_to)
+        print(f"Task [{tid}] assigned to #{assigned_to}")
     else:
-        db.set_goal(session_id, parts[1])
-        print(f"Goal set: {parts[1]}")
+        print(usage)
 
 
 def main():

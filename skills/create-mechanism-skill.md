@@ -8,10 +8,13 @@ tools:
   - fs_search_files
   - sys_terminal
 category: skill-authoring
+phase: implement
 ---
 
 # Create Mechanism Skill
 
+> Phase: **implement** — you have decided to build. Now follow the pattern.
+>
 > 机制型 skill = 自定义 Python 后端 + 状态持久化 + 配置驱动
 
 ## 前置判断

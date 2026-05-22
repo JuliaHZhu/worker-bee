@@ -1,15 +1,18 @@
 ---
 name: skill-creator-is-you
 description: Use when the user wants to create a skill but has not started writing yet. Guides design decisions before any code or markdown is produced.
-trigger: create skill, design skill, 写skill, 设计skill, 要不要做skill, skill idea, 想做个skill, 该做skill吗
+trigger: 想写个skill, 要不要做skill, skill构思, skill规划, skill设计, 从零设计skill, skill idea
 tools:
   - fs_read_file
   - fs_search_files
 category: skill-authoring
+phase: design
 ---
 
 # Skill Creator Is You
 
+> Phase: **design** — before writing anything.
+>
 > You are the designer. I am the mirror.
 
 Before writing a single line, walk through these four gates.

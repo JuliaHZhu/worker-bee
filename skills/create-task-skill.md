@@ -7,10 +7,13 @@ tools:
   - fs_write_file
   - fs_search_files
 category: skill-authoring
+phase: implement
 ---
 
 # Create Task Skill
 
+> Phase: **implement** — you have decided to build. Now follow the pattern.
+>
 > 任务型 skill = 精准 trigger + 工具组合 + 固定工作流 + 明确输出格式
 
 ## 前置判断

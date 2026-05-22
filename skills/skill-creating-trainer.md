@@ -1,16 +1,19 @@
 ---
 name: skill-creating-trainer
 description: Use when the user has drafted a skill markdown and wants review, validation, or feedback on structure and content.
-trigger: check skill, review skill, skill格式, skill写得对吗, 帮我看看skill, skill review, validate skill
+trigger: audit skill, check my skill, skill audit, skill格式检查, skill写得对吗, 帮我看看skill, validate skill
 tools:
   - fs_read_file
   - fs_search_files
 category: skill-authoring
+phase: review
 ---
 
 # Skill Creating Trainer
 
-Review the skill markdown the user provides. Use this checklist.
+> Phase: **review** — the draft exists. Now judge it.
+>
+> Review the skill markdown the user provides. Use this checklist.
 
 ## Frontmatter (Hard Rules)
 

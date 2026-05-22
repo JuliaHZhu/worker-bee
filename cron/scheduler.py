@@ -44,6 +44,20 @@ logger = logging.getLogger(__name__)
 
 SILENT_MARKER = "[SILENT]"
 
+# ── Workspace guard for cron scripts ─────────────────────────────────────────────────────
+
+_CRON_WORKSPACE = os.environ.get("HERMES_WORKSPACE", os.getcwd())
+
+
+def _is_inside_workspace(path: str) -> bool:
+    try:
+        target = Path(path).resolve()
+        root = Path(_CRON_WORKSPACE).resolve()
+        return target == root or root in target.parents
+    except Exception:
+        return False
+
+
 # ---------------------------------------------------------------------------
 # Delivery — simplified: Feishu / Discord webhook only
 # ---------------------------------------------------------------------------
@@ -270,6 +284,13 @@ def run_job_script(script_path: str, job: dict, output_path: str) -> str:
     resolved_script = Path(script_path).expanduser()
     if not resolved_script.is_absolute():
         resolved_script = Path.cwd() / resolved_script
+
+    # Workspace guard
+    if not _is_inside_workspace(str(resolved_script)):
+        return (
+            f"Error: script outside workspace disallowed. "
+            f"Script: {resolved_script} | Workspace: {_CRON_WORKSPACE}"
+        )
 
     if not resolved_script.exists():
         return f"Script not found: {resolved_script}"

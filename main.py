@@ -126,6 +126,8 @@ def setup():
     path = get_config_path()
     with open(path, "w") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
+    import stat
+    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)  # 0o600
     print()
     print(f"✅ Saved to {path}")
     print(f"   Provider: {provider} | Model: {model}")

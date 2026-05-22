@@ -1,5 +1,6 @@
 import fnmatch
 import re
+import shlex
 import subprocess
 from registry import registry
 
@@ -57,6 +58,18 @@ def _is_dangerous(command: str) -> bool:
     return False
 
 
+from typing import Union
+
+def _run_command(command: Union[str, list], timeout: int, shell: bool) -> str:
+    """Execute command and return trimmed output."""
+    result = subprocess.run(
+        command, shell=shell, capture_output=True,
+        text=True, timeout=timeout
+    )
+    output = result.stdout + result.stderr
+    return (output[:5000] + "\n... (truncated)" if len(output) > 5000 else output) or "(no output)"
+
+
 def sys_terminal(command: str, timeout: int = 30, require_confirmation: bool = True) -> str:
     """Execute a shell command in the workspace.
 
@@ -69,8 +82,13 @@ def sys_terminal(command: str, timeout: int = 30, require_confirmation: bool = T
     the allowlist and falls into category 2 or 3.
     """
     if _matches_allowlist(command):
-        # Fast path: no confirmation needed
-        pass
+        # Fast path: no confirmation needed, use shell=False for safety
+        try:
+            args = shlex.split(command)
+            return _run_command(args, timeout, shell=False)
+        except Exception:
+            # Fallback to shell=True if shlex.split fails
+            return _run_command(command, timeout, shell=True)
     elif _is_dangerous(command):
         if not require_confirmation:
             return f"Blocked dangerous command (require_confirmation=False): {command}"
@@ -84,12 +102,8 @@ def sys_terminal(command: str, timeout: int = 30, require_confirmation: bool = T
         if confirm.lower() != "y":
             return "Cancelled by user."
 
-    result = subprocess.run(
-        command, shell=True, capture_output=True,
-        text=True, timeout=timeout
-    )
-    output = result.stdout + result.stderr
-    return (output[:5000] + "\n... (truncated)" if len(output) > 5000 else output) or "(no output)"
+    # Dangerous / unrecognized commands still use shell=True for compatibility
+    return _run_command(command, timeout, shell=True)
 
 
 registry.register(

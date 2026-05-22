@@ -97,10 +97,10 @@ def build_deck(
     # 冗余：从 BASELINE_POOL 按顺序填，填满 redundancy 个卡槽
     filled = 0
     for t in BASELINE_POOL:
+        if filled >= redundancy:
+            break
         if t not in tools and registry.has_tool(t):
             tools.append(t)
             filled += 1
-            if filled >= redundancy:
-                break
 
     return Deck(tools, registry)

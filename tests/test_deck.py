@@ -150,7 +150,6 @@ class TestBuildDeck:
         d = build_deck(['fs_read_file'], fresh_registry, redundancy=3)
         assert d.tools.count('fs_read_file') == 1
 
-    @pytest.mark.xfail(reason="redundancy=0 edge case — build_deck regression in 2c53846")
     def test_build_redundancy_zero(self, fresh_registry):
         _register_tools(fresh_registry)
         from deck import build_deck

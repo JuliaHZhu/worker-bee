@@ -6,6 +6,7 @@ tools:
   - fs_read_file
   - fs_write_file
   - fs_search_files
+  - skill_audition
 category: skill-authoring
 phase: implement
 ---

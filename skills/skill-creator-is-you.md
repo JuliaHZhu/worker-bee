@@ -5,6 +5,7 @@ trigger: skill构思, 从零设计skill, skill idea, 想写个skill, 要不要�
 tools:
   - fs_read_file
   - fs_search_files
+  - skill_audition
 category: skill-authoring
 phase: design
 ---

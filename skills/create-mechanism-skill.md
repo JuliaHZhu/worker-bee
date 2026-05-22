@@ -7,6 +7,7 @@ tools:
   - fs_write_file
   - fs_search_files
   - sys_terminal
+  - skill_audition
 category: skill-authoring
 phase: implement
 ---

@@ -40,7 +40,7 @@ class Deck:
         return name in self.tools
 
     def schemas(self) -> List[dict]:
-        """返回 Deck 内所有工具的 schema。"""
+        """返回 Deck 内所有工具的 schema（原始格式）。"""
         out = []
         for t in self.tools:
             if self._registry.has_tool(t):
@@ -48,6 +48,27 @@ class Deck:
                 if s:
                     out.append(s)
         return out
+
+    def get_schemas_for_protocol(self, protocol: str) -> List[dict]:
+        """返回 Deck 内所有工具的 schema，按协议转换。
+        
+        Anthropic 格式（默认）：直接返回 registry schema。
+        OpenAI 格式：转换为 function-calling 格式。
+        """
+        raw = self.schemas()
+        if protocol == "openai":
+            converted = []
+            for s in raw:
+                converted.append({
+                    "type": "function",
+                    "function": {
+                        "name": s["name"],
+                        "description": s["description"],
+                        "parameters": s.get("input_schema", {"type": "object"}),
+                    },
+                })
+            return converted
+        return raw
 
     def size(self) -> int:
         return len(self.tools)

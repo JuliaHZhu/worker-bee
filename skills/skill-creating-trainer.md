@@ -5,6 +5,7 @@ trigger: audit skill, check my skill, skill audit, skill格式检查, skill写�
 tools:
   - fs_read_file
   - fs_search_files
+  - skill_test
 category: skill-authoring
 phase: review
 ---
@@ -14,6 +15,7 @@ phase: review
 > Phase: **review** — the draft exists. Now judge it.
 >
 > Review the skill markdown the user provides. Use this checklist.
+> Prefer running `skill_test(target="<skill-name>", verbose=True)` for objective validation.
 
 ## Frontmatter (Hard Rules)
 

@@ -6,6 +6,7 @@ tools:
   - fs_read_file
   - fs_write_file
   - fs_search_files
+  - skill_test
 category: skill-authoring
 phase: implement
 ---
@@ -167,6 +168,20 @@ When the user asks to research something online:
 ## Output
 - Summarized findings with citations
 ```
+
+### Step 6: 运行 skill_test 验证
+
+```bash
+skill_test(target="<skill_name>", verbose=True)
+```
+
+验证清单：
+- frontmatter 格式正确
+- trigger 不与现有 skill 冲突
+- tools 都在 registry 中存在
+- match simulation 通过
+
+Score ≥ 8/10 才可部署。
 
 ## 常见陷阱
 

@@ -5,6 +5,7 @@ trigger: 想写个skill, 要不要做skill, skill构思, skill规划, skill设�
 tools:
   - fs_read_file
   - fs_search_files
+  - skill_test
 category: skill-authoring
 phase: design
 ---
@@ -66,3 +67,7 @@ A one-page design brief:
 - Trigger list
 - Five-element summary
 - First draft of the skill markdown skeleton
+
+## Next Step
+
+After drafting, run `skill_test(target="<skill-name>")` to validate before writing any code.

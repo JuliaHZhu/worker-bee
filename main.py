@@ -15,6 +15,13 @@ import sys
 import threading
 
 # Import tools to trigger registration
+import importlib
+import pkgutil
+
+_tools_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
+for _, _mod_name, _ in pkgutil.iter_modules([_tools_dir]):
+    if not _mod_name.startswith("_"):
+        importlib.import_module(f"tools.{_mod_name}")
 
 from agent import AIAgent
 from memory import SessionDB
@@ -296,6 +303,31 @@ def run_session():
 
         print(f"  [Deck ready: {deck.size()} tools]")
 
+        # --- Dynamic context injection for skill-authoring skills ---
+        skill_context = skill_mgr.build_context_for_skills(matched_skills)
+        if skill_context:
+            # Check if any matched skill is an authoring skill
+            has_authoring = any(
+                (skill_mgr.get_skill(sn) or {}).get("category") == "skill-authoring"
+                for sn in matched_skills
+            )
+            if has_authoring:
+                # Inject project metadata: existing skills and tools
+                lines = ["\n## Active Project Context (auto-injected)"]
+                lines.append("### Existing Skills")
+                for name, meta in skill_mgr.list_skills().items():
+                    triggers = meta.get("triggers", [])
+                    trig_str = f"  [{', '.join(triggers)}]" if triggers else ""
+                    lines.append(f"- {name}{trig_str}")
+                lines.append("\n### Existing Tools")
+                for name in sorted(registry.list_tools()):
+                    info = registry.get_tool_info(name)
+                    desc = info.get("description", "")[:50] if info else ""
+                    lines.append(f"- {name}: {desc}")
+                skill_context += "\n".join(lines)
+            # Temporarily augment system prompt with skill context
+            agent.system_prompt = f"{agent.system_prompt}\n\n{skill_context}"
+
         # Inject goal
         goal = db.get_active_goal(session_id)
         if goal:
@@ -309,6 +341,19 @@ def run_session():
             response = agent.run(messages, deck=deck)
         except Exception as e:
             response = f"Error: {e}"
+        finally:
+            # Restore original system prompt
+            if skill_context:
+                agent.system_prompt = config.get("system_prompt", (
+                    "You are a helpful coding assistant. You have access to tools:\n"
+                    "- sys_terminal: run shell commands\n"
+                    "- fs_read_file / fs_write_file / fs_search_files: file operations\n"
+                    "- net_web_search / net_web_extract: web access\n"
+                    "- agent_delegate_task: delegate a single subtask to a child agent\n"
+                    "- agent_delegate_parallel: delegate multiple subtasks in parallel\n"
+                    "- agent_cross_validate: run the same task through multiple models for comparison\n"
+                    "Think step by step. Prefer reading files before editing."
+                ))
 
         # Halt if the agent hit the iteration limit — the deck was insufficient
         if response == "(reached max iterations)":

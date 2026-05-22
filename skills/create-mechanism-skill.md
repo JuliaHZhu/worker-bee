@@ -7,6 +7,7 @@ tools:
   - fs_write_file
   - fs_search_files
   - sys_terminal
+  - skill_test
 category: skill-authoring
 phase: implement
 ---
@@ -159,6 +160,20 @@ body 必须包含：
 - ~100 行 markdown（含 frontmatter）
 - 单文件 JSON 状态
 - JSON 配置驱动
+
+### Step 6: 运行 skill_test 验证
+
+```bash
+skill_test(target="<skill_name>", verbose=True)
+```
+
+验证清单：
+- frontmatter 格式正确
+- trigger 不与现有 skill 冲突
+- tools 都在 registry 中存在
+- match simulation 通过
+
+Score ≥ 8/10 才可部署。
 
 ## 常见陷阱
 

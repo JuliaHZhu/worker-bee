@@ -1,7 +1,7 @@
 
 #!/usr/bin/env python3
 """
-TODO Ball Machine - 基础设施层
+Todo Ball Machine - 基础设施层
 负责与外部系统交互：文件存储、Cron调度、日志管理、配置管理
 """
 

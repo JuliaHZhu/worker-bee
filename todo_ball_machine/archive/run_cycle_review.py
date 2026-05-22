@@ -139,7 +139,7 @@ def cycle_review():
 
 if __name__ == '__main__':
     print("="*60)
-    print("📊 TODO Ball Machine - 30天周期盘点 (手动执行)")
+    print("📊 Todo Ball Machine - 30天周期盘点 (手动执行)")
     print(f"🕐 {datetime.now().isoformat()}")
     print("="*60)
     cycle_review()

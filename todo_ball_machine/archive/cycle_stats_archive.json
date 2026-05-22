@@ -1,0 +1,2751 @@
+{
+  "2026年04月周期": [
+    {
+      "timestamp": "2026-04-09T17:39:32.491390",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 13,
+      "completion_rate": 16.05,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 3,
+          "rate": 20.0,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 1,
+          "rate": 33.33333333333333,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 30.0
+    },
+    {
+      "timestamp": "2026-04-10T00:30:01.414007",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 13,
+      "completion_rate": 16.05,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 3,
+          "rate": 20.0,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 1,
+          "rate": 33.33333333333333,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T01:17:40.673051",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 13,
+      "completion_rate": 16.05,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 3,
+          "rate": 20.0,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 1,
+          "rate": 33.33333333333333,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T02:18:57.826069",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 14,
+      "completion_rate": 17.28,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 3,
+          "rate": 20.0,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T02:50:03.449915",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 14,
+      "completion_rate": 17.28,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 3,
+          "rate": 20.0,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T05:55:19.091911",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 14,
+      "completion_rate": 17.28,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 3,
+          "rate": 20.0,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T10:32:49.308939",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 14,
+      "completion_rate": 17.28,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 3,
+          "rate": 20.0,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T11:04:04.539409",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 14,
+      "completion_rate": 17.28,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 3,
+          "rate": 20.0,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T12:35:57.099415",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 15,
+      "completion_rate": 18.52,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 4,
+          "rate": 26.666666666666668,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T16:19:54.387548",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 15,
+      "completion_rate": 18.52,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 4,
+          "rate": 26.666666666666668,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T21:11:20.364303",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 15,
+      "completion_rate": 18.52,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 4,
+          "rate": 26.666666666666668,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T21:27:17.569456",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 15,
+      "completion_rate": 18.52,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 4,
+          "rate": 26.666666666666668,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T22:18:25.569727",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 15,
+      "completion_rate": 18.52,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 4,
+          "rate": 26.666666666666668,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-10T22:28:41.138366",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 15,
+      "completion_rate": 18.52,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 0,
+          "rate": 0.0,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 4,
+          "rate": 26.666666666666668,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 33.3
+    },
+    {
+      "timestamp": "2026-04-11T04:36:53.327580",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 18,
+      "completion_rate": 22.22,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 1,
+          "rate": 4.761904761904762,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 36.7
+    },
+    {
+      "timestamp": "2026-04-11T07:09:47.849120",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 18,
+      "completion_rate": 22.22,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 1,
+          "rate": 4.761904761904762,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 36.7
+    },
+    {
+      "timestamp": "2026-04-11T08:12:19.785829",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 18,
+      "completion_rate": 22.22,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 1,
+          "rate": 4.761904761904762,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 36.7
+    },
+    {
+      "timestamp": "2026-04-11T08:31:16.897003",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 18,
+      "completion_rate": 22.22,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 1,
+          "rate": 4.761904761904762,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 36.7
+    },
+    {
+      "timestamp": "2026-04-11T08:44:12.402400",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 18,
+      "completion_rate": 22.22,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 1,
+          "rate": 4.761904761904762,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 3,
+          "rate": 21.428571428571427,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 2,
+          "rate": 28.57142857142857,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 36.7
+    },
+    {
+      "timestamp": "2026-04-12T00:30:02.049713",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 20,
+      "completion_rate": 24.69,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 1,
+          "rate": 4.761904761904762,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 4,
+          "rate": 28.57142857142857,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 3,
+          "rate": 42.857142857142854,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 40.0
+    },
+    {
+      "timestamp": "2026-04-12T08:30:14.753813",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 20,
+      "completion_rate": 24.69,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 1,
+          "rate": 4.761904761904762,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 4,
+          "rate": 28.57142857142857,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 3,
+          "rate": 42.857142857142854,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 40.0
+    },
+    {
+      "timestamp": "2026-04-12T15:10:30.926464",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 22,
+      "completion_rate": 27.16,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 1,
+          "rate": 4.761904761904762,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 7,
+          "rate": 33.33333333333333,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 4,
+          "rate": 28.57142857142857,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 3,
+          "rate": 42.857142857142854,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 40.0
+    },
+    {
+      "timestamp": "2026-04-13T00:30:01.702793",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 24,
+      "completion_rate": 29.63,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 2,
+          "rate": 9.523809523809524,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 7,
+          "rate": 33.33333333333333,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 4,
+          "rate": 28.57142857142857,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 43.3
+    },
+    {
+      "timestamp": "2026-04-13T08:30:18.274100",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 24,
+      "completion_rate": 29.63,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 2,
+          "rate": 9.523809523809524,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 7,
+          "rate": 33.33333333333333,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 4,
+          "rate": 28.57142857142857,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 43.3
+    },
+    {
+      "timestamp": "2026-04-14T00:30:01.850429",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 24,
+      "completion_rate": 29.63,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 2,
+          "rate": 9.523809523809524,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 7,
+          "rate": 33.33333333333333,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 4,
+          "rate": 28.57142857142857,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 46.7
+    },
+    {
+      "timestamp": "2026-04-14T08:30:09.941820",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 27,
+      "completion_rate": 33.33,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 3,
+          "rate": 14.285714285714285,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 8,
+          "rate": 38.095238095238095,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 5,
+          "rate": 35.714285714285715,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 46.7
+    },
+    {
+      "timestamp": "2026-04-14T15:46:35.960180",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 27,
+      "completion_rate": 33.33,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 3,
+          "rate": 14.285714285714285,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 8,
+          "rate": 38.095238095238095,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 5,
+          "rate": 33.33333333333333,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 5,
+          "rate": 35.714285714285715,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 46.7
+    },
+    {
+      "timestamp": "2026-04-15T00:30:01.071360",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 30,
+      "completion_rate": 37.04,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 4,
+          "rate": 19.047619047619047,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 6,
+          "rate": 40.0,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 5,
+          "rate": 35.714285714285715,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 50.0
+    },
+    {
+      "timestamp": "2026-04-16T00:30:01.417613",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 53.3
+    },
+    {
+      "timestamp": "2026-04-16T01:28:18.526394",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.81,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.86,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.67,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.86,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.67,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 50.0
+    },
+    {
+      "timestamp": "2026-04-17T00:30:01.862040",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 56.7
+    },
+    {
+      "timestamp": "2026-04-17T12:54:59.545386",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 56.7
+    },
+    {
+      "timestamp": "2026-04-18T00:02:26.830215",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 60.0
+    },
+    {
+      "timestamp": "2026-04-19T00:30:01.945954",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 63.3
+    },
+    {
+      "timestamp": "2026-04-20T00:30:01.359721",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 66.7
+    },
+    {
+      "timestamp": "2026-04-21T00:30:01.889223",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 70.0
+    },
+    {
+      "timestamp": "2026-04-22T00:30:01.181254",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 73.3
+    },
+    {
+      "timestamp": "2026-04-23T00:30:01.515474",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 76.7
+    },
+    {
+      "timestamp": "2026-04-24T00:30:01.178386",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 80.0
+    },
+    {
+      "timestamp": "2026-04-25T00:30:01.636187",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 83.3
+    },
+    {
+      "timestamp": "2026-04-26T00:30:01.204163",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 86.7
+    },
+    {
+      "timestamp": "2026-04-27T00:30:01.741601",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 90.0
+    },
+    {
+      "timestamp": "2026-04-28T00:30:01.447141",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 93.3
+    },
+    {
+      "timestamp": "2026-04-29T00:30:01.099817",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 96.7
+    },
+    {
+      "timestamp": "2026-04-30T00:30:01.734885",
+      "version": "v2.0",
+      "cycle": "2026年04月周期",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-30",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 100
+    }
+  ],
+  "total_blocks_completed": 33,
+  "box_completed": {
+    "A": 2,
+    "B": 3,
+    "C": 2,
+    "D": 3,
+    "E": 1,
+    "其他": 22
+  },
+  "completed_dates_count": 15,
+  "total_blocks_target": 81,
+  "period_blocks_total": 45,
+  "completion_rate_period": 73.33,
+  "2026年05月周期": [
+    {
+      "timestamp": "2026-05-01T00:30:01.310210",
+      "version": "v2.0",
+      "cycle": "2026年05月周期",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-31",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 3.2
+    },
+    {
+      "timestamp": "2026-05-02T00:30:01.878055",
+      "version": "v2.0",
+      "cycle": "2026年05月周期",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-31",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 6.5
+    },
+    {
+      "timestamp": "2026-05-03T00:30:01.764834",
+      "version": "v2.0",
+      "cycle": "2026年05月周期",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-31",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 9.7
+    },
+    {
+      "timestamp": "2026-05-04T00:30:01.983260",
+      "version": "v2.0",
+      "cycle": "2026年05月周期",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-31",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 12.9
+    },
+    {
+      "timestamp": "2026-05-05T00:30:01.348153",
+      "version": "v2.0",
+      "cycle": "2026年05月周期",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-31",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 16.1
+    },
+    {
+      "timestamp": "2026-05-06T00:30:01.614688",
+      "version": "v2.0",
+      "cycle": "2026年05月周期",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-31",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 19.4
+    },
+    {
+      "timestamp": "2026-05-07T00:30:01.794577",
+      "version": "v2.0",
+      "cycle": "2026年05月周期",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-31",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 22.6
+    },
+    {
+      "timestamp": "2026-05-08T00:30:01.974055",
+      "version": "v2.0",
+      "cycle": "2026年05月周期",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-31",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 25.8
+    },
+    {
+      "timestamp": "2026-05-09T00:30:01.256726",
+      "version": "v2.0",
+      "cycle": "2026年05月周期",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-31",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 29.0
+    },
+    {
+      "timestamp": "2026-05-10T00:30:01.624460",
+      "version": "v2.0",
+      "cycle": "2026年05月周期",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-31",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 32.3
+    },
+    {
+      "timestamp": "2026-05-11T00:30:01.821602",
+      "version": "v2.0",
+      "cycle": "2026年05月周期",
+      "start_date": "2026-05-01",
+      "end_date": "2026-05-31",
+      "total_blocks": 81,
+      "completed_count": 33,
+      "completion_rate": 40.74,
+      "box_stats": {
+        "博士工作": {
+          "quota": 21,
+          "used": 5,
+          "rate": 23.809523809523807,
+          "emoji": "📚"
+        },
+        "AI创业工作": {
+          "quota": 21,
+          "used": 9,
+          "rate": 42.857142857142854,
+          "emoji": "💼"
+        },
+        "健康运动": {
+          "quota": 15,
+          "used": 7,
+          "rate": 46.666666666666664,
+          "emoji": "🏃"
+        },
+        "治愈休息": {
+          "quota": 14,
+          "used": 6,
+          "rate": 42.857142857142854,
+          "emoji": "😴"
+        },
+        "空间探索": {
+          "quota": 7,
+          "used": 4,
+          "rate": 57.14285714285714,
+          "emoji": "🌌"
+        },
+        "家务整理": {
+          "quota": 3,
+          "used": 2,
+          "rate": 66.66666666666666,
+          "emoji": "🧹"
+        }
+      },
+      "cycle_progress": 35.5
+    }
+  ]
+}

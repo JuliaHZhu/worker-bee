@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TODO Ball Machine - 统一任务调度器
+Todo Ball Machine - 统一任务调度器
 整合：TODO系统 + 生活记录 + Heartbeat + Cron
 """
 import json
@@ -19,7 +19,7 @@ def load_json(path):
 def show_dashboard():
     """显示统一仪表盘"""
     print("="*70)
-    print("📊【TODO Ball Machine - 统一仪表盘】")
+    print("📊【Todo Ball Machine - 统一仪表盘】")
     print("="*70)
     
     # 显示TODO系统状态
@@ -57,17 +57,17 @@ def show_dashboard():
     
     print("\n" + "="*70)
     print("💡 快捷命令:")
-    print("   todo_dealer status          - 显示TODO系统状态")
-    print("   todo_dealer quick           - 快速抽取今日所有场次")
+    print("   todo_ball_machine status          - 显示TODO系统状态")
+    print("   todo_ball_machine quick           - 快速抽取今日所有场次")
     print("   python heartbeat_runner.py  - 手动执行Heartbeat任务")
     print("   python cron_manager.py show  - 查看Cron提醒配置")
     print("="*70)
 
 def sync_to_life_record():
-    """同步TODO Ball Machine数据到生活记录"""
-    print("🔄 同步TODO Ball Machine数据到生活记录...")
+    """同步Todo Ball Machine数据到生活记录"""
+    print("🔄 同步Todo Ball Machine数据到生活记录...")
     # TODO: 实现同步逻辑
-    # 1. 读取TODO Ball Machine Blocks数据
+    # 1. 读取Todo Ball Machine Blocks数据
     # 2. 同步到生活记录的records目录
     # 3. 更新统计数据
     print("✅ 同步完成")

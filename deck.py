@@ -1,200 +1,85 @@
-"""Deck — Tool procurement before execution.
+"""Deck — 运行时工具边界。
 
-Philosophy:
-  Like gathering tools before making something.
-  1. LLM selects relevant skills from the skill library
-  2. Each skill declares its tools
-  3. All tools are collected into a Deck
-  4. During execution, the agent draws ONLY from this Deck
-  5. If a tool in the Deck cannot complete the task → halt, ask human
+核心设计：堆栈思维。
+  装填（Procure）= 把相关工具压进来
+  抽取（Draw）  = LLM 只能从这个栈里拿
+  约束（Halt）  = 栈里没有就停
 
-  No ad-hoc tool shopping mid-execution. If the initial procurement
-  was insufficient, the approach itself may be wrong.
-
-Skill-to-skill routing (composable skills) is separate:
-  - Some skills are atomic (like a remote button)
-  - Some skills are procedural (macro/scripts)
-  - LLM decides procedural routing via semantic analysis
-  - This happens inside execution, but still within the Deck boundary
-
-Math (可约分):
-  Let S  = set of skills selected by LLM
-  Let T(s) = tools declared by skill s
-
-  Deck = ⋃_{s ∈ S} T(s)   (union, deduplicated)
-
-  Even if skill A routes to skill B at runtime,
-  B.tools is already in the Deck if B was in S.
-  This is "约分" — the tool space of nested skills collapses
-  to a flat, immutable set before execution.
+冗余：固定 +3 卡槽，从基础工具池按顺序填。
 """
-import json
-import re
-from typing import Dict, List, Optional, Set
+from typing import List
+
+
+# 基础工具池：按优先级排序，用于填充冗余卡槽
+BASELINE_POOL = [
+    "fs_read_file",
+    "fs_search_files",
+    "sys_terminal",
+    "send_message",
+    "cronjob",
+]
 
 
 class Deck:
-    """An immutable curated set of tools for one task.
+    """不可变工具集——就是一个有序列表。
 
-    Once built, execution draws ONLY from these tools.
+    一旦构建，执行时 LLM 只能从这个列表里选工具。
     """
 
-    def __init__(self, tool_names: List[str], registry):
+    def __init__(self, tools: List[str], registry):
         self._registry = registry
-        self._tool_names: List[str] = []
-        self._missing: List[str] = []
-        self._schemas: List[dict] = []
-        self._name_to_schema: Dict[str, dict] = {}
+        # 去重保留顺序
+        seen = set()
+        self.tools = []
+        for t in tools:
+            if t not in seen:
+                seen.add(t)
+                self.tools.append(t)
 
-        for name in tool_names:
-            schema = registry.get_schema(name)
-            if schema:
-                self._tool_names.append(name)
-                self._schemas.append(schema)
-                self._name_to_schema[name] = schema
-            else:
-                self._missing.append(name)
+    def has(self, name: str) -> bool:
+        return name in self.tools
 
-    @property
-    def tool_names(self) -> List[str]:
-        return list(self._tool_names)
-
-    @property
     def schemas(self) -> List[dict]:
-        return list(self._schemas)
+        """返回 Deck 内所有工具的 schema。"""
+        out = []
+        for t in self.tools:
+            if self._registry.has_tool(t):
+                s = self._registry.get_schema(t)
+                if s:
+                    out.append(s)
+        return out
 
-    @property
-    def missing(self) -> List[str]:
-        """Tools declared by skills but not found in registry."""
-        return list(self._missing)
-
-    def has_tool(self, name: str) -> bool:
-        return name in self._name_to_schema
-
-    def get_schema(self, name: str) -> Optional[dict]:
-        return self._name_to_schema.get(name)
-
-    def get_schemas_for_protocol(self, protocol: str) -> List[dict]:
-        """Return schemas converted for Anthropic or OpenAI."""
-        if protocol == "openai":
-            converted = []
-            for s in self._schemas:
-                converted.append({
-                    "type": "function",
-                    "function": {
-                        "name": s["name"],
-                        "description": s["description"],
-                        "parameters": s.get("input_schema", {"type": "object"})
-                    }
-                })
-            return converted
-        return self._schemas
+    def size(self) -> int:
+        return len(self.tools)
 
     def __repr__(self) -> str:
-        return f"Deck({self._tool_names}, missing={self._missing})"
+        return f"Deck({self.tools})"
 
 
-class DeckBuilder:
-    """LLM-driven skill selection → tool procurement."""
+def build_deck(
+    skill_tools: List[str],
+    registry,
+    redundancy: int = 3,
+) -> Deck:
+    """采购一个 Deck。
 
-    def __init__(self, skill_manager, registry, client, protocol="anthropic", model=None):
-        self.skill_manager = skill_manager
-        self.registry = registry
-        self.client = client
-        self.protocol = protocol
-        self.model = model
+    Args:
+        skill_tools: 匹配 skills 声明的工具
+        registry: 工具注册表
+        redundancy: 冗余卡槽数（默认 3）
 
-    def build(self, user_input: str) -> Deck:
-        """Procure a Deck for this user input.
+    Returns:
+        Deck(skill_tools + 填充的基础工具)
+    """
+    tools = list(skill_tools)
 
-        Steps:
-          1. Enumerate all available skills
-          2. Ask LLM: which skills are relevant?
-          3. Collect tools from selected skills
-          4. Verify each tool exists in registry
-          5. Return Deck (immutable)
-        """
-        all_skills = self.skill_manager.list_skills()
-        if not all_skills:
-            # No skills → fallback to all registered tools
-            all_tools = list(self.registry.list_tools().keys())
-            return Deck(all_tools, self.registry)
+    # 冗余：从 BASELINE_POOL 按顺序填，填满 redundancy 个卡槽
+    filled = 0
+    for t in BASELINE_POOL:
+        if t not in tools and registry.has_tool(t):
+            tools.append(t)
+            filled += 1
+            if filled >= redundancy:
+                break
 
-        # 1. Let LLM pick relevant skills
-        selected = self._select_skills(user_input, all_skills)
-
-        # 2. Gather tools
-        tool_names: Set[str] = set()
-        for skill_name in selected:
-            skill = self.skill_manager.get_skill(skill_name)
-            if skill:
-                for t in skill.get("tools", []):
-                    tool_names.add(t)
-
-        # 3. Also include any tools the user might have in config
-        # (e.g. always-available tools like terminal on linux)
-        # This is handled outside DeckBuilder by the caller merging.
-
-        return Deck(list(tool_names), self.registry)
-
-    def _select_skills(self, user_input: str, skills: Dict[str, dict]) -> List[str]:
-        """Ask LLM to choose relevant skills from the library.
-
-        We send a compact summary (name, description, triggers, tools)
-        and let the LLM do semantic matching.
-        """
-        summaries = []
-        for name, meta in skills.items():
-            summaries.append({
-                "name": name,
-                "description": meta.get("description", ""),
-                "triggers": meta.get("triggers", []),
-                "tools": meta.get("tools", [])
-            })
-
-        prompt = (
-            f"User request: {user_input}\n\n"
-            f"Available skills:\n"
-            f"{json.dumps(summaries, ensure_ascii=False, indent=2)}\n\n"
-            "Select the skills relevant to this request. "
-            "Return ONLY a JSON array of skill names, e.g.: [\"skill1\", \"skill2\"]. "
-            "Return [] if none are relevant."
-        )
-
-        try:
-            raw = self._quick_llm_call(prompt)
-            # Try to extract JSON array from response
-            match = re.search(r'\[.*?\]', raw, re.DOTALL)
-            if match:
-                selected = json.loads(match.group(0))
-                if isinstance(selected, list):
-                    # Validate names exist
-                    return [s for s in selected if s in skills]
-        except Exception:
-            pass
-
-        # Fallback: use keyword-based trigger matching
-        return self.skill_manager.match_skills(user_input)
-
-    def _quick_llm_call(self, prompt: str) -> str:
-        """Lightweight LLM call without tools."""
-        if self.protocol == "openai":
-            resp = self.client.chat.completions.create(
-                model=self.model or "gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=256,
-                temperature=0.1,
-            )
-            return resp.choices[0].message.content or "[]"
-        else:
-            resp = self.client.messages.create(
-                model=self.model or "claude-sonnet-4",
-                max_tokens=256,
-                temperature=0.1,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            texts = []
-            for block in resp.content:
-                if hasattr(block, "text"):
-                    texts.append(block.text)
-            return "\n".join(texts) or "[]"
+    return Deck(tools, registry)

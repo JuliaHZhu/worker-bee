@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TODO Ball Machine - CLI最终版 v1.0
+Todo Ball Machine - CLI最终版 v1.0
 按照todo_cli_design.md规范实现的完整命令行接口
 """
 
@@ -146,7 +146,7 @@ def validate_date(date_str: str) -> date:
         print_error(
             f"无效的日期格式: {date_str}",
             EXIT_CODES['PARAM_ERROR'],
-            "todo_dealer session show 2026-04-08"
+            "todo_ball_machine session show 2026-04-08"
         )
 
 
@@ -246,46 +246,46 @@ def calculate_real_quota() -> dict:
 def cmd_help():
     """显示帮助信息"""
     help_text = """
-TODO Ball Machine CLI v1.0 - 命令树
+Todo Ball Machine CLI v1.0 - 命令树
 
 基础命令:
-  todo_dealer help                    显示此帮助信息
-  todo_dealer --version               显示版本号
+  todo_ball_machine help                    显示此帮助信息
+  todo_ball_machine --version               显示版本号
 
 系统类命令:
-  todo_dealer system status           查看系统简要状态
-  todo_dealer system dashboard        查看完整仪表盘
-  todo_dealer system config           查看系统配置
+  todo_ball_machine system status           查看系统简要状态
+  todo_ball_machine system dashboard        查看完整仪表盘
+  todo_ball_machine system config           查看系统配置
 
  场次类命令:
-   todo_dealer session today           查看今天的场次状态（含加班场）
-   todo_dealer session show <date>     查看指定日期的场次状态
-   todo_dealer session quick           快速处理今日所有未完成场次（三场）
-   todo_dealer session draw <am|pm|evening|overtime>    抽取指定场次
-   todo_dealer session redraw <am|pm|evening|overtime>  重抽指定场次
-   todo_dealer session edit <am|pm|evening|overtime>    修改指定场次
+   todo_ball_machine session today           查看今天的场次状态（含加班场）
+   todo_ball_machine session show <date>     查看指定日期的场次状态
+   todo_ball_machine session quick           快速处理今日所有未完成场次（三场）
+   todo_ball_machine session draw <am|pm|evening|overtime>    抽取指定场次
+   todo_ball_machine session redraw <am|pm|evening|overtime>  重抽指定场次
+   todo_ball_machine session edit <am|pm|evening|overtime>    修改指定场次
 
 盒子类命令:
-  todo_dealer box list                列出所有盒子及剩余数量
-  todo_dealer box show <box>          查看某个盒子的详情
-  todo_dealer box quota show          显示所有盒子的配额情况
-  todo_dealer box quota set <box> <number>  设置指定盒子的配额
+  todo_ball_machine box list                列出所有盒子及剩余数量
+  todo_ball_machine box show <box>          查看某个盒子的详情
+  todo_ball_machine box quota show          显示所有盒子的配额情况
+  todo_ball_machine box quota set <box> <number>  设置指定盒子的配额
 
 周期类命令:
-  todo_dealer cycle status            查看当前周期状态
-  todo_dealer cycle show              查看当前周期详细信息
-  todo_dealer cycle renew [start_date]  开启新周期
+  todo_ball_machine cycle status            查看当前周期状态
+  todo_ball_machine cycle show              查看当前周期详细信息
+  todo_ball_machine cycle renew [start_date]  开启新周期
 
 Block管理类命令:
-  todo_dealer block list              列出所有block
-  todo_dealer block show <id>         查看指定block的详情
-  todo_dealer block resolve <id>      标记某个block已处理
-  todo_dealer block ghost add         添加Ghost Block
-  todo_dealer block undefined add     添加Undefined Block
+  todo_ball_machine block list              列出所有block
+  todo_ball_machine block show <id>         查看指定block的详情
+  todo_ball_machine block resolve <id>      标记某个block已处理
+  todo_ball_machine block ghost add         添加Ghost Block
+  todo_ball_machine block undefined add     添加Undefined Block
 
 历史与日志类命令:
-  todo_dealer history [days]          查看最近N天历史（默认7天）
-  todo_dealer log [date]              查看某一天的永久记录（默认当天）
+  todo_ball_machine history [days]          查看最近N天历史（默认7天）
+  todo_ball_machine log [date]              查看某一天的永久记录（默认当天）
 
 全局参数:
   --json                       以JSON格式输出结果
@@ -296,17 +296,17 @@ Block管理类命令:
   --force                      强制执行有风险的操作
 
 常用示例:
-  todo_dealer system dashboard
-  todo_dealer session draw am
-  todo_dealer box list
-  todo_dealer history 30
+  todo_ball_machine system dashboard
+  todo_ball_machine session draw am
+  todo_ball_machine box list
+  todo_ball_machine history 30
 """
     print(help_text)
 
 
 def cmd_version():
     """显示版本号"""
-    print_output("TODO Ball Machine CLI 版本", "v1.1 (2026-04-09) - 加班场功能")
+    print_output("Todo Ball Machine CLI 版本", "v1.1 (2026-04-09) - 加班场功能")
 
 
 def cmd_system_status():
@@ -482,7 +482,7 @@ def cmd_session_quick():
     
     print_output("快速抽球", {
         "结果": "功能实现中...",
-        "提示": "请使用现有 todo_dealer quick 命令"
+        "提示": "请使用现有 todo_ball_machine quick 命令"
     })
 
 
@@ -497,7 +497,7 @@ def cmd_session_draw(session: str):
     
     print_output(f"抽取{session}场", {
         "结果": "功能实现中...",
-        "提示": "请使用现有 todo_dealer draw {session} 命令"
+        "提示": "请使用现有 todo_ball_machine draw {session} 命令"
     })
 
 
@@ -588,7 +588,7 @@ def cmd_box_quota_set(box: str, number: str):
     
     print_output(f"设置盒子{box}配额", {
         "结果": "功能实现中...",
-        "提示": "请使用现有 todo_dealer quota set 命令"
+        "提示": "请使用现有 todo_ball_machine quota set 命令"
     })
 
 
@@ -677,7 +677,7 @@ def cmd_log(date_str: Optional[str] = None):
 def main():
     """主入口"""
     parser = argparse.ArgumentParser(
-        description="TODO Ball Machine - CLI v1.0",
+        description="Todo Ball Machine - CLI v1.0",
         add_help=False
     )
     

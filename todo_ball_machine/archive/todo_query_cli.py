@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TODO Ball Machine查询功能CLI - 新增的查询命令
+Todo Ball Machine查询功能CLI - 新增的查询命令
 """
 
 import sys
@@ -59,7 +59,7 @@ def print_boxes_list(result):
 def main():
     """主入口"""
     parser = argparse.ArgumentParser(
-        description="TODO Ball Machine查询功能 - 按盒子查询历史记录"
+        description="Todo Ball Machine查询功能 - 按盒子查询历史记录"
     )
     
     subparsers = parser.add_subparsers(title="命令", dest="command")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TODO Ball Machine - 管理器层
+Todo Ball Machine - 管理器层
 包含配额管理、球池管理、Block管理等核心业务逻辑
 """
 

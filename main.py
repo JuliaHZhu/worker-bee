@@ -21,7 +21,7 @@ from memory import SessionDB
 from skills import SkillManager
 from registry import registry
 from infra_toolsets import InfraToolSet
-from deck import DeckBuilder
+from deck import build_deck, Deck
 
 VERSION = "0.1.0"
 
@@ -273,20 +273,28 @@ def run_session():
 
         # --- Deck procurement: gather tools BEFORE execution ---
         print("  [Procuring deck...]", flush=True)
-        deck_builder = DeckBuilder(skill_mgr, registry, agent.client, agent._protocol, agent.model)
-        deck = deck_builder.build(user_input)
 
-        # Merge base tools from config (always available on this platform)
+        # 1. Match skills by triggers
+        matched_skills = skill_mgr.match_skills(user_input)
+        if not matched_skills:
+            # Fallback: let LLM semantically select (or use all if no skills)
+            matched_skills = list(skill_mgr.list_skills().keys())
+
+        # 2. Collect tools from matched skills
+        skill_tools = skill_mgr.get_tools_for_skills(matched_skills)
+
+        # 3. Build deck with redundancy slots (+3 baseline)
+        from deck import build_deck
+        deck = build_deck(skill_tools, registry, redundancy=3)
+
+        # 4. Merge platform base tools from config
         base_tools = set(config.get("tools", []))
-        merged_tools = set(deck.tool_names) | base_tools
-        # Apply InfraToolSet gating
+        merged_tools = set(deck.tools) | base_tools
         final_tools = infra.filter_tools(list(merged_tools))
         from deck import Deck
         deck = Deck(final_tools, registry)
 
-        if deck.missing:
-            print(f"  [Deck missing: {', '.join(deck.missing)}]")
-        print(f"  [Deck ready: {', '.join(deck.tool_names)}]")
+        print(f"  [Deck ready: {deck.size()} tools]")
 
         # Inject goal
         goal = db.get_active_goal(session_id)

@@ -62,7 +62,7 @@ def analyze_week():
 def generate_report(stats):
     """生成报告"""
     report = []
-    report.append("📊 TODO Ball Machine - 周度运行报告")
+    report.append("📊 Todo Ball Machine - 周度运行报告")
     report.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     report.append(f"📅 统计周期：{stats['start_date'].strftime('%Y-%m-%d')} 至 {stats['end_date'].strftime('%Y-%m-%d')}")
     report.append("")

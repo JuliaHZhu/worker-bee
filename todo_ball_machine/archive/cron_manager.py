@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TODO Ball Machine - Cron提醒管理器
+Todo Ball Machine - Cron提醒管理器
 """
 import json
 from pathlib import Path

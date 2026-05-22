@@ -1,7 +1,7 @@
 
 #!/usr/bin/env python3
 """
-TODO Ball Machine - Heartbeat任务运行器 v2.0 (完全独立版)
+Todo Ball Machine - Heartbeat任务运行器 v2.0 (完全独立版)
 - 无硬编码路径依赖
 - 完全独立于life_record
 """
@@ -95,8 +95,8 @@ def get_cycle_info():
 
 
 def daily_todo_check():
-    """每日TODO Ball Machine状态检查"""
-    print("🔍 执行每日TODO Ball Machine状态检查...")
+    """每日Todo Ball Machine状态检查"""
+    print("🔍 执行每日Todo Ball Machine状态检查...")
     
     today = date.today().isoformat()
     today_draw_file = DAILY_DRAWS_DIR / f"draw_{today}.json"
@@ -116,7 +116,7 @@ def daily_todo_check():
                         completed_today += 1
         print(f"   🎯 今日已完成Blocks: {completed_today}个")
     
-    print("✅ 每日TODO Ball Machine状态检查完成")
+    print("✅ 每日Todo Ball Machine状态检查完成")
 
 
 def cycle_review():
@@ -192,7 +192,7 @@ def is_time_to_run(task_config, last_run_str):
 def main():
     """主函数 - 执行所有Heartbeat任务"""
     print("="*60)
-    print("🚀 TODO Ball Machine - Heartbeat任务运行器 v2.0")
+    print("🚀 Todo Ball Machine - Heartbeat任务运行器 v2.0")
     print("   完全独立版 | 无硬编码依赖")
     print(f"🕐 {datetime.now().isoformat()}")
     print("="*60)

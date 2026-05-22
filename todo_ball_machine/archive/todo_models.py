@@ -1,7 +1,7 @@
 
 #!/usr/bin/env python3
 """
-TODO Ball Machine - 数据模型层
+Todo Ball Machine - 数据模型层
 定义所有核心数据类和验证器
 """
 
@@ -82,8 +82,8 @@ class BlockStatus(Enum):
 
 class Session(Enum):
     """场次枚举"""
-    AM = "am"
-    PM = "pm"
+    MORNING = "morning"
+    AFTERNOON = "afternoon"
     EVENING = "evening"
     OVERTIME = "overtime"
     
@@ -102,8 +102,8 @@ class Session(Enum):
     def display_name(self) -> str:
         """获取显示名称"""
         names = {
-            self.AM: "上午场",
-            self.PM: "下午场",
+            self.MORNING: "上午场",
+            self.AFTERNOON: "下午场",
             self.EVENING: "晚间场",
             self.OVERTIME: "加班场"
         }
@@ -112,7 +112,7 @@ class Session(Enum):
     @classmethod
     def get_standard_sessions(cls) -> List['Session']:
         """获取标准场次（不含加班场）"""
-        return [cls.AM, cls.PM, cls.EVENING]
+        return [cls.MORNING, cls.AFTERNOON, cls.EVENING]
     
     @classmethod
     def get_all_sessions(cls) -> List['Session']:
@@ -178,12 +178,12 @@ class ActionType(Enum):
 
 class BoxName(Enum):
     """盒子名称枚举 - 标准盒子名称"""
-    PHD_WORK = "博士工作"
-    AI_ENTREPRENEURSHIP = "AI创业工作"
-    HEALTH_EXERCISE = "健康运动"
-    REST_HEALING = "治愈休息"
-    SPACE_EXPLORATION = "空间探索"
-    HOUSEWORK = "家务整理"
+    STUDY = "学习"
+    WORK = "工作"
+    EXERCISE = "运动"
+    HEALING = "治愈"
+    SOCIAL = "社交"
+    CHORES = "家务"
     
     @classmethod
     def from_string(cls, value: any) -> 'BoxName':
@@ -193,17 +193,32 @@ class BoxName(Enum):
         
         # 兼容性别名映射
         aliases = {
-            "运动健身": "健康运动",
-            "健身运动": "健康运动",
-            "锻炼": "健康运动",
-            "运动": "健康运动",
-            "AI工作": "AI创业工作",
-            "创业": "AI创业工作",
-            "博士": "博士工作",
-            "学习": "博士工作",
-            "休息": "治愈休息",
-            "探索": "空间探索",
-            "家务": "家务整理"
+            "博士": "学习",
+            "论文": "学习",
+            "学业": "学习",
+            "读书": "学习",
+            "AI": "工作",
+            "创业": "工作",
+            "项目": "工作",
+            "职场": "工作",
+            "健身": "运动",
+            "锻炼": "运动",
+            "锻炼": "运动",
+            "跑步": "运动",
+            "游泳": "运动",
+            "休息": "治愈",
+            "放松": "治愈",
+            "疗愈": "治愈",
+            "养生": "治愈",
+            "聚会": "社交",
+            "朋友": "社交",
+            "家人": "社交",
+            "人脉": "社交",
+            "社交活动": "社交",
+            "清洁": "家务",
+            "整理": "家务",
+            "收纳": "家务",
+            "打扫": "家务"
         }
         
         value_str = str(value)

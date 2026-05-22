@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "description": "TODO Ball Machine - 测试调度配置",
+  "description": "Todo Ball Machine - 测试调度配置",
   
   "heartbeat": {
     "enabled": true,

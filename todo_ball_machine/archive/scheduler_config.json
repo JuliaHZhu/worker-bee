@@ -1,14 +1,13 @@
 {
   "version": "1.0",
-  "description": "TODO Ball Machine - 调度配置",
-  
+  "description": "Todo Ball Machine - 调度配置",
   "heartbeat": {
     "enabled": true,
     "check_interval_min": 30,
     "tasks": {
       "daily_todo_check": {
         "enabled": false,
-        "description": "每日TODO Ball Machine状态检查",
+        "description": "每日Todo Ball Machine状态检查",
         "frequency": "every_30_min"
       },
       "cycle_review": {
@@ -23,7 +22,6 @@
       }
     }
   },
-  
   "cron": {
     "enabled": true,
     "reminders": [
@@ -40,7 +38,7 @@
         "name": "上午场抽球提醒",
         "cron_expr": "15 9 * * *",
         "timezone": "Asia/Kuala_Lumpur",
-        "message": "🎲 提醒：抽取今日上午场色球！使用 `todo_dealer draw am` 或 `todo_dealer quick`",
+        "message": "🎲 提醒：抽取今日上午场色球！使用 `todo_ball_machine draw am` 或 `todo_ball_machine quick`",
         "enabled": true
       },
       {
@@ -48,7 +46,7 @@
         "name": "下午场抽球提醒",
         "cron_expr": "45 13 * * *",
         "timezone": "Asia/Kuala_Lumpur",
-        "message": "🎲 提醒：抽取今日下午场色球！使用 `todo_dealer draw pm` 或 `todo_dealer quick`",
+        "message": "🎲 提醒：抽取今日下午场色球！使用 `todo_ball_machine draw pm` 或 `todo_ball_machine quick`",
         "enabled": true
       },
       {
@@ -56,7 +54,7 @@
         "name": "晚间场抽球提醒",
         "cron_expr": "45 18 * * *",
         "timezone": "Asia/Kuala_Lumpur",
-        "message": "🎲 提醒：抽取今日晚间场色球！使用 `todo_dealer draw evening` 或 `todo_dealer quick`",
+        "message": "🎲 提醒：抽取今日晚间场色球！使用 `todo_ball_machine draw evening` 或 `todo_ball_machine quick`",
         "enabled": true
       },
       {
@@ -77,7 +75,6 @@
       }
     ]
   },
-  
   "menstrual_cycle": {
     "enabled": true,
     "cycle_length": 30,
@@ -91,7 +88,6 @@
       "difficulty_modifier": 0.8
     }
   },
-  
   "integration": {
     "life_record_sync": false,
     "auto_log_to_life_record": false

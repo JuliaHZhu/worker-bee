@@ -1,6 +1,6 @@
 # Changelog
 
-Hermes Lite 开发历史。从最初 300 行的 nanobot 到现在的 ~2,700 行 agent 框架。
+Hermes Lite 开发历史。从 [Hermes Agent](https://github.com/NousResearch/hermes-agent) 剥离的最小核起步，逐步长出自己的架构。
 
 ---
 
@@ -106,4 +106,4 @@ Deck 从线性工具集重写为堆栈模型，Todo Ball Machine 重构为 v2。
 
 ### 🏁 初始提交 (`414ce5a`)
 
-~300 行 nanobot — 最小可运行 agent，Anthropic 协议，CLI 交互。
+从 hermes-agent 剥离的最小核 — Agent 循环 + 工具注册 + CLI，~300 行。此后所有功能都是在这个核上长的，不回改 hermes-agent。

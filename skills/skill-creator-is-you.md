@@ -1,11 +1,10 @@
 ---
 name: skill-creator-is-you
 description: Use when the user wants to create a skill but has not started writing yet. Guides design decisions before any code or markdown is produced.
-trigger: 想写个skill, 要不要做skill, skill构思, skill规划, skill设计, 从零设计skill, skill idea
+trigger: skill构思, 从零设计skill, skill idea, 想写个skill, 要不要做skill, skill规划, skill设计
 tools:
   - fs_read_file
   - fs_search_files
-  - skill_test
 category: skill-authoring
 phase: design
 ---
@@ -15,8 +14,6 @@ phase: design
 > Phase: **design** — before writing anything.
 >
 > You are the designer. I am the mirror.
-
-Before writing a single line, walk through these four gates.
 
 ## Gate 1: Do you actually need a skill?
 
@@ -53,8 +50,6 @@ If any answer is longer than one sentence, it is too big. Split it.
 
 ## Gate 4: Trigger Sanity Check
 
-Test your trigger against these false positives:
-
 - Would "help" or "web" accidentally fire this skill? → Too broad.
 - Would a normal chat about cooking trigger it? → Too broad.
 - Does it contain at least one action verb? (search, review, check, draw) → Good.
@@ -67,7 +62,3 @@ A one-page design brief:
 - Trigger list
 - Five-element summary
 - First draft of the skill markdown skeleton
-
-## Next Step
-
-After drafting, run `skill_test(target="<skill-name>")` to validate before writing any code.

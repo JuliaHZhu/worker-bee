@@ -23,6 +23,10 @@ from typing import Dict, List, Optional, Tuple
 SKILLS_DIR = Path(__file__).parent.parent / "skills"
 
 # ── Frontmatter parser (delegates to skills.py for consistency) ─────
+# Guard for CLI entry: tools/ is not on sys.path when run directly
+_sys_path_guard = str(Path(__file__).parent.parent)
+if _sys_path_guard not in sys.path:
+    sys.path.insert(0, _sys_path_guard)
 from skills import _parse_yamlish
 
 def _parse_frontmatter(content: str) -> Tuple[Optional[dict], str]:

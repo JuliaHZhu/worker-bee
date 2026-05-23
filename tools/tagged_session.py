@@ -1,277 +1,372 @@
-"""Tagged Session tools — operate on session messages via the SessionDB.
+"""Tagged Session — one chef, one counter.
 
-These tools let the agent tag, archive (rewind), list, and close sessions
-programmatically. The session_id is passed explicitly so the agent can
-operate on any session it knows about.
+Stack semantics:
+  save   → procure a live session from DB, write to markdown note
+  tag    → label it
+  find   → draw by tag intersection
+  archive→ halt (move to archive pool)
+  resume → draw back into context
+  list   → inspect the active pool
+
+Storage: ~/wiki-hermes-lite/sessions/*.md
+Archive: ~/wiki-hermes-lite/sessions/archive/*.md
 """
 import json
 import os
+import re
+import shutil
 from pathlib import Path
+from typing import Optional
 
 from registry import registry
-from memory import SessionDB
 
 
-def _get_wiki_path() -> Path:
-    default = Path.home() / "wiki-hermes-lite"
-    return Path(os.environ.get("WIKI_PATH", str(default)))
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+def _base_dir() -> Path:
+    default = Path.home() / "wiki-hermes-lite" / "sessions"
+    return Path(os.environ.get("SESSIONS_PATH", str(default)))
 
 
-def session_tag_message(session_id: str, message_id: int, tag: str) -> str:
-    """Tag a single message with a semantic label (e.g. #design, #coding)."""
-    db = SessionDB()
-    ok = db.tag_message(message_id, tag)
-    if not ok:
-        return f"Error: message {message_id} not found"
-    return f"Tagged message {message_id} with {tag}"
+def _ensure_dirs():
+    _base_dir().mkdir(parents=True, exist_ok=True)
+    (_base_dir() / "archive").mkdir(parents=True, exist_ok=True)
 
 
-def session_untag_message(session_id: str, message_id: int, tag: str) -> str:
-    """Remove a tag from a message."""
-    db = SessionDB()
-    ok = db.untag_message(message_id, tag)
-    if not ok:
-        return f"Error: message {message_id} not found"
-    return f"Removed {tag} from message {message_id}"
+def _note_path(session_id: str, archived: bool = False) -> Path:
+    base = _base_dir() / "archive" if archived else _base_dir()
+    return base / f"{session_id}.md"
 
 
-def session_list_messages(session_id: str, include_archived: bool = False) -> str:
-    """List messages in a session, with IDs and tags. Use this to show the user a numbered list so they can pick messages to tag."""
-    db = SessionDB()
-    msgs = db.get_messages(session_id, include_archived=include_archived)
-    if not msgs:
-        return "No messages in this session."
+# ---------------------------------------------------------------------------
+# Markdown helpers
+# ---------------------------------------------------------------------------
+def _read_frontmatter(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    text = path.read_text(encoding="utf-8")
+    m = re.match(r"^---\s*\n(.*?)\n---\s*\n", text, re.DOTALL)
+    if not m:
+        return {}
+    meta = {}
+    lines = m.group(1).splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if ":" not in line:
+            i += 1
+            continue
+        k, v = line.split(":", 1)
+        k, v = k.strip(), v.strip()
+        if v:
+            if v.startswith("[") and v.endswith("]"):
+                try:
+                    v = json.loads(v.replace("'", '"'))
+                except (json.JSONDecodeError, ValueError):
+                    v = [x.strip().strip('"').strip("'") for x in v[1:-1].split(",") if x.strip()]
+            elif v == "true":
+                v = True
+            elif v == "false":
+                v = False
+            meta[k] = v
+            i += 1
+        else:
+            # Possible YAML list: read subsequent lines starting with "- "
+            i += 1
+            items = []
+            while i < len(lines):
+                next_line = lines[i].rstrip()
+                if not next_line:
+                    i += 1
+                    continue
+                if next_line.strip().startswith("-"):
+                    items.append(next_line.strip()[1:].strip())
+                    i += 1
+                else:
+                    break
+            meta[k] = items if items else ""
+    return meta
+
+
+def _write_frontmatter(path: Path, meta: dict, body: str):
+    lines = ["---"]
+    for k, v in meta.items():
+        if isinstance(v, list):
+            lines.append(f"{k}:")
+            for item in v:
+                lines.append(f"  - {item}")
+        elif isinstance(v, bool):
+            lines.append(f"{k}: {str(v).lower()}")
+        else:
+            lines.append(f"{k}: {v}")
+    lines.append("---")
+    body = body.lstrip("\n")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n\n" + body, encoding="utf-8")
+
+
+def _build_body(messages: list) -> str:
     lines = []
-    for m in msgs:
-        mid = m["id"]
-        role = m["role"]
-        content = m["content"][:60].replace("\n", " ")
-        tags = m.get("tags", [])
-        tag_str = f"  tags: {', '.join(tags)}" if tags else ""
-        archived = "  [ARCHIVED]" if m.get("archived_at") else ""
-        lines.append(f"  [{mid}] {role:10} | {content}...{tag_str}{archived}")
+    for m in messages:
+        role = m.get("role", "unknown")
+        ts = m.get("created_at", "")
+        content = m.get("content", "")
+        msg_tags = m.get("tags", [])
+        tag_str = f" | tags: {', '.join(msg_tags)}" if msg_tags else ""
+        lines.append(f"## {role} | {ts}{tag_str}")
+        lines.append(content)
+        lines.append("")
     return "\n".join(lines)
 
 
-def session_archive_after(session_id: str, message_id: int) -> str:
-    """Soft-archive all messages AFTER the given message ID (rewind). The message itself stays active."""
-    db = SessionDB()
-    db.archive_messages_after(session_id, message_id)
-    return f"Archived all messages after {message_id}"
+def _all_notes(archived: bool = False) -> list:
+    base = _base_dir() / "archive" if archived else _base_dir()
+    if not base.exists():
+        return []
+    return sorted(base.glob("*.md"))
 
 
-def session_archive_from(session_id: str, message_id: int) -> str:
-    """Soft-archive the given message and all messages AFTER it."""
-    db = SessionDB()
-    db.archive_messages_from(session_id, message_id)
-    return f"Archived messages from {message_id} onward"
+# ---------------------------------------------------------------------------
+# Actions
+# ---------------------------------------------------------------------------
+def _action_save(session_id: str, content: Optional[str]) -> str:
+    if not session_id:
+        return "❌ 需要 session"
 
-
-def session_unarchive_all(session_id: str) -> str:
-    """Restore all archived messages in the session."""
-    db = SessionDB()
-    db.unarchive_all(session_id)
-    return "Unarchived all messages"
-
-
-def session_set_purpose(session_id: str, purpose: str) -> str:
-    """Set the purpose / intent of the current session."""
-    db = SessionDB()
-    db.set_session_purpose(session_id, purpose)
-    return f"Session purpose set to: {purpose}"
-
-
-def session_get_meta(session_id: str) -> str:
-    """Get session metadata: purpose, closed_at, wiki_path."""
+    from memory import SessionDB
     db = SessionDB()
     meta = db.get_session_meta(session_id)
     if not meta:
-        return f"Session {session_id} not found"
-    return json.dumps(meta, ensure_ascii=False, indent=2)
+        return f"❌ Session {session_id} 不存在"
+
+    msgs = db.get_messages(session_id, include_archived=True)
+    title = content or meta.get("title") or meta.get("purpose") or f"Session {session_id}"
+    purpose = meta.get("purpose") or ""
+    created = meta.get("created_at") or ""
+
+    all_tags = set()
+    for m in msgs:
+        for t in m.get("tags", []):
+            all_tags.add(t)
+
+    frontmatter = {
+        "session_id": session_id,
+        "title": title,
+        "purpose": purpose,
+        "tags": sorted(all_tags),
+        "created": created,
+        "archived": False,
+        "source": "hermes-lite",
+    }
+    body = _build_body(msgs)
+
+    _ensure_dirs()
+    path = _note_path(session_id)
+    _write_frontmatter(path, frontmatter, body)
+    return f"✅ 已保存到 {path} (共 {len(msgs)} 条消息)"
 
 
-def session_close(session_id: str, extract_to_wiki: bool = False) -> str:
-    """Close a session. Optionally write the full transcript to wiki/raw/sessions/."""
-    db = SessionDB()
-    meta = db.get_session_meta(session_id)
-    if not meta:
-        return f"Session {session_id} not found"
+def _action_tag(session_id: str, content: Optional[str]) -> str:
+    if not session_id:
+        return "❌ 需要 session"
+    if not content:
+        return "❌ 需要 content (格式: +tag1,-tag2 或 #tag1,#tag2)"
 
-    wiki_path = None
-    if extract_to_wiki:
-        wiki_root = _get_wiki_path()
-        wiki_sessions = wiki_root / "raw" / "sessions"
-        wiki_sessions.mkdir(parents=True, exist_ok=True)
+    path = _note_path(session_id)
+    if not path.exists():
+        path = _note_path(session_id, archived=True)
+    if not path.exists():
+        return f"❌ Session note {session_id} 不存在"
 
-        msgs = db.get_messages(session_id, include_archived=True)
-        lines = [
-            "---",
-            f"source_type: hermes-lite-session",
-            f"session_id: {session_id}",
-            f"purpose: {meta.get('purpose') or ''}",
-            f"created: {meta.get('created_at') or ''}",
-            f"closed: {meta.get('closed_at') or ''}",
-            f"tags: []",
-            f"total_messages: {len(msgs)}",
-            "---",
-            "",
-            f"# Session {session_id}",
-            "",
-        ]
-        for m in msgs:
-            role = m["role"]
-            content = m["content"]
-            tags = m.get("tags", [])
-            tag_str = f"  tags: {', '.join(tags)}" if tags else ""
-            archived = "  [ARCHIVED]" if m.get("archived_at") else ""
-            lines.append(f"## [{m['id']}] {role} | {m.get('created_at', '')}{tag_str}{archived}")
-            lines.append(content)
-            lines.append("")
+    meta = _read_frontmatter(path)
+    tags = set(meta.get("tags", []))
 
-        out_file = wiki_sessions / f"session-{session_id}.md"
-        out_file.write_text("\n".join(lines), encoding="utf-8")
-        wiki_path = str(out_file)
+    for part in content.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if part.startswith("+"):
+            tags.add(part[1:])
+        elif part.startswith("-"):
+            tags.discard(part[1:])
+        elif part.startswith("#"):
+            tags.add(part)
+        else:
+            tags.add(part)
 
-    db.close_session(session_id, wiki_path=wiki_path)
-    result = f"Session {session_id} closed"
-    if wiki_path:
-        result += f". Extracted to {wiki_path}"
-    return result
+    meta["tags"] = sorted(tags)
+    body_text = path.read_text(encoding="utf-8")
+    m = re.match(r"^---\s*\n.*?\n---\s*\n", body_text, re.DOTALL)
+    body = body_text[m.end():] if m else body_text
+    _write_frontmatter(path, meta, body)
+    return f"✅ 标签已更新: {', '.join(sorted(tags))}"
 
 
-# ── Register with registry ──────────────────────────────────────────
+def _action_find(content: Optional[str]) -> str:
+    if not content:
+        return "❌ 需要 content (逗号分隔的标签)"
+
+    query_tags = [t.strip() for t in content.split(",") if t.strip()]
+    if not query_tags:
+        return "❌ 至少需要一个标签"
+
+    _ensure_dirs()
+    results = []
+    for path in _all_notes():
+        meta = _read_frontmatter(path)
+        note_tags = set(meta.get("tags", []))
+        if all(t in note_tags for t in query_tags):
+            results.append({
+                "session_id": meta.get("session_id", path.stem),
+                "title": meta.get("title", path.stem),
+                "tags": sorted(note_tags),
+                "created": meta.get("created", ""),
+            })
+
+    if not results:
+        return f"📭 没有找到带标签 {query_tags} 的 session"
+
+    lines = [f"═══ 找到 {len(results)} 个 session ═══", ""]
+    for r in results:
+        lines.append(f"  • {r['session_id']}: {r['title']}")
+        lines.append(f"    tags: {', '.join(r['tags'])}  ({r['created'][:10]})")
+    return "\n".join(lines)
+
+
+def _action_archive(session_id: str) -> str:
+    if not session_id:
+        return "❌ 需要 session"
+
+    src = _note_path(session_id)
+    if not src.exists():
+        return f"❌ Session note {session_id} 不存在"
+
+    _ensure_dirs()
+    dst = _note_path(session_id, archived=True)
+    shutil.move(str(src), str(dst))
+
+    meta = _read_frontmatter(dst)
+    meta["archived"] = True
+    body_text = dst.read_text(encoding="utf-8")
+    m = re.match(r"^---\s*\n.*?\n---\s*\n", body_text, re.DOTALL)
+    body = body_text[m.end():] if m else body_text
+    _write_frontmatter(dst, meta, body)
+
+    return f"✅ 已归档 {session_id}"
+
+
+def _action_resume(session_id: str) -> str:
+    if not session_id:
+        return "❌ 需要 session"
+
+    path = _note_path(session_id)
+    if not path.exists():
+        path = _note_path(session_id, archived=True)
+    if not path.exists():
+        return f"❌ Session note {session_id} 不存在"
+
+    text = path.read_text(encoding="utf-8")
+    m = re.match(r"^---\s*\n.*?\n---\s*\n", text, re.DOTALL)
+    body = text[m.end():] if m else text
+    preview = body.strip()[:3000]
+    if len(body.strip()) > 3000:
+        preview += "\n\n... (已截断)"
+    return f"═══ Session {session_id} 内容 ═══\n\n{preview}"
+
+
+def _action_list() -> str:
+    _ensure_dirs()
+    notes = _all_notes()
+    if not notes:
+        return "📭 暂无已保存的 session"
+
+    lines = [f"═══ 已保存的 sessions ({len(notes)}) ═══", ""]
+    for path in notes:
+        meta = _read_frontmatter(path)
+        sid = meta.get("session_id", path.stem)
+        title = meta.get("title", "无标题")
+        tags = meta.get("tags", [])
+        tag_str = f"  [{', '.join(tags)}]" if tags else ""
+        created = meta.get("created", "")[:10]
+        lines.append(f"  • {sid}: {title}{tag_str}  ({created})")
+    return "\n".join(lines)
+
+
+def _action_help() -> str:
+    return (
+        "═══ Tagged Session 帮助 ═══\n\n"
+        "用法: tagged_session(action='...', [session=..., content=...])\n\n"
+        "  save    — 保存当前 session 为 markdown note (session=ID, content=标题)\n"
+        "  tag     — 修改标签 (session=ID, content=+tag1,-tag2 或 #tag1,#tag2)\n"
+        "  find    — 按标签搜索 (content=逗号分隔的标签)\n"
+        "  archive — 归档 note (session=ID)\n"
+        "  resume  — 读取 note 内容 (session=ID)\n"
+        "  list    — 列出所有活跃 notes\n"
+        "  help    — 显示本帮助"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Public handler
+# ---------------------------------------------------------------------------
+def tagged_session(
+    action: str,
+    session: Optional[str] = None,
+    content: Optional[str] = None,
+) -> str:
+    """Tagged Session — save, tag, find, archive, and resume sessions as markdown notes.
+
+    Args:
+        action: 操作类型
+        session: Session ID
+        content: 标题 / 标签 / 搜索查询
+    """
+    action = action.lower().strip()
+    dispatch = {
+        "save": lambda: _action_save(session or "", content),
+        "new": lambda: _action_save(session or "", content),
+        "tag": lambda: _action_tag(session or "", content),
+        "find": lambda: _action_find(content),
+        "archive": lambda: _action_archive(session or ""),
+        "resume": lambda: _action_resume(session or ""),
+        "list": lambda: _action_list(),
+        "help": lambda: _action_help(),
+    }
+    handler = dispatch.get(action)
+    if not handler:
+        return f"❌ 未知 action: {action}\n可用: {', '.join(dispatch.keys())}"
+    try:
+        return handler()
+    except Exception as e:
+        return f"❌ 执行失败: {e}"
+
 
 registry.register(
-    name="session_tag_message",
-    description="Tag a single message with a semantic label like #design or #coding. Use after listing messages so the user can pick by ID.",
+    name="tagged_session",
+    description=(
+        "Tagged Session — 把对话 session 保存为可搜索的 markdown 笔记，支持标签、归档、回溯。\n"
+        "Actions: save, tag, find, archive, resume, list, help"
+    ),
     parameters={
         "properties": {
-            "session_id": {"type": "string", "description": "Session ID"},
-            "message_id": {"type": "integer", "description": "Message database ID"},
-            "tag": {"type": "string", "description": "Tag to add, e.g. #design"}
+            "action": {
+                "type": "string",
+                "description": "操作类型",
+                "enum": ["save", "tag", "find", "archive", "resume", "list", "help"]
+            },
+            "session": {
+                "type": "string",
+                "description": "Session ID"
+            },
+            "content": {
+                "type": "string",
+                "description": "标题 / 标签 / 搜索查询"
+            }
         },
-        "required": ["session_id", "message_id", "tag"]
+        "required": ["action"]
     },
-    handler=session_tag_message,
-    tags=["session", "tag"],
-    category="tagged_session"
-)
-
-registry.register(
-    name="session_untag_message",
-    description="Remove a tag from a message.",
-    parameters={
-        "properties": {
-            "session_id": {"type": "string", "description": "Session ID"},
-            "message_id": {"type": "integer", "description": "Message database ID"},
-            "tag": {"type": "string", "description": "Tag to remove"}
-        },
-        "required": ["session_id", "message_id", "tag"]
-    },
-    handler=session_untag_message,
-    tags=["session", "tag"],
-    category="tagged_session"
-)
-
-registry.register(
-    name="session_list_messages",
-    description="List messages in a session with their IDs and tags. Use this FIRST when the user wants to tag or review past messages.",
-    parameters={
-        "properties": {
-            "session_id": {"type": "string", "description": "Session ID"},
-            "include_archived": {"type": "boolean", "description": "Whether to include archived (rewound) messages", "default": False}
-        },
-        "required": ["session_id"]
-    },
-    handler=session_list_messages,
-    tags=["session", "list"],
-    category="tagged_session"
-)
-
-registry.register(
-    name="session_archive_after",
-    description="Soft-archive all messages AFTER the given message ID. The message itself stays active. Equivalent to 'rewind to here'.",
-    parameters={
-        "properties": {
-            "session_id": {"type": "string", "description": "Session ID"},
-            "message_id": {"type": "integer", "description": "Message ID to rewind after"}
-        },
-        "required": ["session_id", "message_id"]
-    },
-    handler=session_archive_after,
-    tags=["session", "archive", "rewind"],
-    category="tagged_session"
-)
-
-registry.register(
-    name="session_archive_from",
-    description="Soft-archive the given message and all messages after it.",
-    parameters={
-        "properties": {
-            "session_id": {"type": "string", "description": "Session ID"},
-            "message_id": {"type": "integer", "description": "Message ID to start archiving from"}
-        },
-        "required": ["session_id", "message_id"]
-    },
-    handler=session_archive_from,
-    tags=["session", "archive", "rewind"],
-    category="tagged_session"
-)
-
-registry.register(
-    name="session_unarchive_all",
-    description="Restore all archived messages in the session.",
-    parameters={
-        "properties": {
-            "session_id": {"type": "string", "description": "Session ID"}
-        },
-        "required": ["session_id"]
-    },
-    handler=session_unarchive_all,
-    tags=["session", "archive", "rewind"],
-    category="tagged_session"
-)
-
-registry.register(
-    name="session_set_purpose",
-    description="Set the purpose / intent of a session. This replaces the old /task add concept.",
-    parameters={
-        "properties": {
-            "session_id": {"type": "string", "description": "Session ID"},
-            "purpose": {"type": "string", "description": "Short description of what this session is for"}
-        },
-        "required": ["session_id", "purpose"]
-    },
-    handler=session_set_purpose,
-    tags=["session", "meta"],
-    category="tagged_session"
-)
-
-registry.register(
-    name="session_get_meta",
-    description="Get session metadata (purpose, closed_at, wiki_path).",
-    parameters={
-        "properties": {
-            "session_id": {"type": "string", "description": "Session ID"}
-        },
-        "required": ["session_id"]
-    },
-    handler=session_get_meta,
-    tags=["session", "meta"],
-    category="tagged_session"
-)
-
-registry.register(
-    name="session_close",
-    description="Close a session. Optionally extract the full transcript to the wiki raw/sessions/ folder.",
-    parameters={
-        "properties": {
-            "session_id": {"type": "string", "description": "Session ID"},
-            "extract_to_wiki": {"type": "boolean", "description": "Whether to write transcript to wiki/raw/sessions/", "default": False}
-        },
-        "required": ["session_id"]
-    },
-    handler=session_close,
-    tags=["session", "close", "wiki"],
+    handler=tagged_session,
+    tags=["session", "tag", "archive", "wiki"],
     category="tagged_session"
 )

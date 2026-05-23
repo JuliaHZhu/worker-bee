@@ -1,114 +1,111 @@
 ---
 name: tagged-session
-description: Use when the user wants to tag, rewind (archive), close, or organize session messages. Replaces the old /task workflow.
-trigger: tag, tagged session, tag this, rewind, archive, close session, 打标签, 归档, 回滚, 关闭会话, purpose, set purpose, 设置意图
+description: Use when the user wants to save, tag, find, archive, or resume a session as a markdown note. Replaces the old /task workflow.
+trigger: tag, tagged session, save session, find session, archive session, resume session, 打标签, 保存会话, 搜索会话, 归档, 恢复会话
 tools:
-  - session_list_messages
-  - session_tag_message
-  - session_untag_message
-  - session_archive_after
-  - session_archive_from
-  - session_unarchive_all
-  - session_set_purpose
-  - session_get_meta
-  - session_close
+  - tagged_session
 category: tagged_session
 phase: implement
 ---
 
 # Tagged Session Skill
 
-> Phase: **implement** — the user is actively shaping the session, not just chatting.
+> Phase: **implement** — the user is organizing or retrieving session knowledge.
 >
-> Tagged session = semantic labels on messages + soft rewind (archive) + close → wiki extraction.
+> Tagged session = save live session → markdown note → tag → find → archive → resume.
 > This replaces the old `/task` table. Tasks are now expressed as **session purpose + message tags**.
 
 ## When This Skill Activates
 
-- User says "tag this", "给这句话打个标签", "mark as design"
-- User says "rewind", "go back", "回滚到之前", "archive the last few"
-- User says "close this session", "结束这次讨论", "extract to wiki"
-- User says "what's the purpose of this session", "set purpose"
-- User mentions tagging, organizing, or archiving conversation history
+- User says "save this session", "保存这次对话", "extract to wiki"
+- User says "tag this as #design", "给这个打标签"
+- User says "find my #design sessions", "找出带某标签的会话"
+- User says "archive this", "归档", "close and archive"
+- User says "resume session abc123", "回顾上次讨论", "load previous session"
+- User mentions organizing, searching, or retrieving past conversation notes
 
 ## Workflow
 
-### 1. Tag messages
+### 1. Save a session
 
-**Always start by listing messages** so the user can pick by ID.
+When the user wants to preserve the current (or a past) session:
 
-1. Call `session_list_messages` with `session_id=<Current session ID>`
-2. Show the numbered list to the user
-3. Wait for user reply in format: `1 #design` or `1,3 #coding` or `1 #design, 3 #question`
-4. Parse the reply:
-   - Split by comma to get individual `id #tag` pairs
-   - For each pair, call `session_tag_message(session_id, message_id, tag)`
-5. Confirm: "Tagged message 1 with #design, message 3 with #coding"
+1. Call `tagged_session(action='save', session=<session_id>, content=<optional title>)`
+2. The tool reads all messages from SQLite, builds a markdown note with YAML frontmatter, and writes to `~/wiki-hermes-lite/sessions/{session_id}.md`
+3. Report: "已保存到 ... (共 N 条消息)"
 
-**User shortcut:** If the user prefixes their input with `#tag` (e.g. `#design how should the state machine work?`), the tag is automatically extracted at the CLI level. You don't need to do anything in that case.
+If `content` is omitted, the tool uses the session's existing title or purpose.
 
-### 2. Rewind (archive)
+### 2. Tag a saved note
 
-When the user wants to discard or backtrack part of the conversation:
+When the user wants to add or remove labels on an existing note:
 
-1. Call `session_list_messages` to show IDs
-2. Ask user: "Rewind after which message? Reply with the ID."
-3. User replies with a number (e.g. `5`)
-4. Call `session_archive_after(session_id, message_id)`
-5. Confirm: "Archived all messages after [5]. The conversation continues from there."
+1. Call `tagged_session(action='tag', session=<session_id>, content=<tag expression>)`
+2. Tag expression formats:
+   - `+#design` — add #design
+   - `-#draft` — remove #draft
+   - `#design,#coding` — add multiple
+   - `+#design,-#draft,#review` — mixed
+3. Report the updated tag list
 
-**Important:** Archived messages are hidden from LLM context but preserved in the database. They appear in `/history --all` and are included when the session is extracted to wiki.
+### 3. Find sessions by tag
 
-### 3. Set purpose
+When the user wants to search past notes:
 
-When the user wants to declare what this session is for:
+1. Call `tagged_session(action='find', content=<comma-separated tags>)`
+2. The tool searches the active pool (`~/wiki-hermes-lite/sessions/*.md`, excluding `archive/`)
+3. Returns a list of matching sessions with title and tags
 
-1. Call `session_set_purpose(session_id, purpose)`
-2. Confirm: "Session purpose set to: ..."
+Tag matching uses **intersection** — a note must have ALL requested tags to match.
 
-This replaces the old `/task add` concept. Instead of creating a separate task row, you simply label the session.
+### 4. Archive a note
 
-### 4. Close session
+When the user wants to move a note out of the active pool:
 
-When the user says the discussion is done:
+1. Call `tagged_session(action='archive', session=<session_id>)`
+2. The tool moves the file to `archive/` and sets `archived: true` in frontmatter
+3. Archived notes are excluded from `find` and `list` but can still be `resume`d
 
-1. Call `session_get_meta(session_id)` to check current state
-2. Ask: "Close this session? Also extract transcript to wiki? [y/n/wiki]"
-3. Based on reply:
-   - `y` or `yes` → `session_close(session_id, extract_to_wiki=False)`
-   - `wiki` → `session_close(session_id, extract_to_wiki=True)`
-   - `n` or `no` → do nothing
-4. If extracted, report the wiki file path
+### 5. Resume a note
+
+When the user wants to bring a past session back into context:
+
+1. Call `tagged_session(action='resume', session=<session_id>)`
+2. The tool reads the markdown body and returns the content (truncated to ~3000 chars)
+3. Present the content to the user or use it to seed the current discussion
+
+### 6. List active notes
+
+When the user wants an overview:
+
+1. Call `tagged_session(action='list')`
+2. Returns all non-archived notes with session_id, title, tags, and creation date
 
 ## Input Parsing Rules
 
-### Tag reply format
+### Tag expression
 ```
-<id> <#tag>                 # single
-<id1> <#tag1>, <id2> <#tag2>   # multiple
++#tag          # add
+-#tag          # remove
+#tag           # add (shorthand)
++#tag1,-#tag2  # mixed batch
 ```
 
-Examples:
-- `1 #design`
-- `2 #coding, 5 #question`
-- `1 #design, 2 #design, 4 #bug`
-
-If the user replies without an ID (just `#design`), assume they mean the **most recent user message**.
-
-### Rewind reply format
+### Find query
 ```
-<id>          # archive everything AFTER this message
-from <id>     # archive this message and everything after
+#design                 # single tag
+#design,#architecture   # intersection
 ```
 
 ## Anti-Patterns
 
-- **Don't guess message IDs.** Always list first.
-- **Don't tag without user confirmation** unless they explicitly said "tag the last message as #design".
-- **Don't close without asking** if wiki extraction is desired.
-- **Don't mix archive and tag in one step.** Archive changes context; tag does not. Separate them.
+- **Don't save without a session ID.** The tool needs to know which session to export.
+- **Don't guess tags.** If the user says "tag this", ask which tags or confirm your assumption.
+- **Don't archive without confirming.** Ask "Archive this session note?" before calling.
+- **Don't mix live DB tagging with note tagging.** Message-level tags (via `#prefix` in chat) live in SQLite and are collected at `save` time. Note-level tags (via `tagged_session action=tag`) live in the markdown frontmatter.
 
 ## Composability
 
-- Pairs well with **create-task-skill** when tagging is part of a larger workflow (e.g. "research this topic, tag the key findings #research").
-- After `session_close(extract_to_wiki=True)`, the **llm-wiki** ingest flow can pick up `raw/sessions/session-xxx.md` and create concept pages.
+- After `save`, the **llm-wiki** ingest flow can pick up `sessions/xxx.md` and create concept pages.
+- Pairs well with **wiki** skill when the user wants to turn a session into structured knowledge.
+- Pairs well with **learn-from-doing** when reviewing archived sessions for insights.

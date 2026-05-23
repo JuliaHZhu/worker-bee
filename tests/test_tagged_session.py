@@ -1,5 +1,4 @@
 """Tests for tagged_session tool — markdown I/O, actions, and registry integration."""
-import tempfile
 from pathlib import Path
 
 import pytest

@@ -2,7 +2,6 @@
 
 Uses monkeypatch to mock API calls so we don't need a real LLM.
 """
-import json
 import pytest
 from agent import AIAgent
 from deck import Deck
@@ -27,7 +26,6 @@ class TestAgentProtocolConversion:
 
     def test_deck_anthropic_protocol(self, agent, monkeypatch, fresh_registry):
         """Agent with Anthropic protocol calls Deck.get_schemas_for_protocol('anthropic')."""
-        import tools.file
         deck = Deck(['fs_read_file'], fresh_registry)
 
         # Mock the anthropic client
@@ -51,7 +49,6 @@ class TestAgentProtocolConversion:
 
     def test_deck_openai_protocol(self, monkeypatch, fresh_registry):
         """Agent with OpenAI protocol calls Deck.get_schemas_for_protocol('openai')."""
-        import tools.file
         agent_oai = AIAgent({
             "model": "gpt-4o",
             "provider": "openai",
@@ -84,7 +81,6 @@ class TestAgentProtocolConversion:
 
     def test_deck_with_tool_use(self, agent, monkeypatch, fresh_registry):
         """Agent with Deck handles tool_use loop correctly."""
-        import tools.file
         deck = Deck(['fs_read_file'], fresh_registry)
 
         call_count = 0
@@ -149,7 +145,6 @@ class TestAgentMaxIterations:
 
     def test_max_iterations_halt(self, agent, monkeypatch, fresh_registry):
         """Agent returns halt message when max iterations reached."""
-        import tools.file
         deck = Deck(['fs_read_file'], fresh_registry)
 
         class ToolUse:

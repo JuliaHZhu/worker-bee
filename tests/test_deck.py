@@ -1,5 +1,4 @@
 """Tests for Deck — tool boundary, protocol conversion, build_deck."""
-import pytest
 
 
 def _register_tools(reg):

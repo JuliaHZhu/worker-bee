@@ -1,8 +1,6 @@
 """#3 — A broken tool file must not prevent other tools from loading."""
-import ast
 import inspect
 
-import pytest
 
 
 class TestToolsFaultIsolation:

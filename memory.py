@@ -13,7 +13,7 @@ class SessionDB:
         self._local = threading.local()
         try:
             self._init_schema()
-        except (sqlite3.DatabaseError, OSError) as e:
+        except (sqlite3.DatabaseError, OSError):
             # Likely corrupted database file — archive and start fresh
             corrupted = f"{db_path}.corrupted.{int(time.time())}"
             try:

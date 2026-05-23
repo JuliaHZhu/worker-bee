@@ -14,7 +14,6 @@ Validates:
     - Match simulation (--verbose)
 """
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -27,7 +26,7 @@ SKILLS_DIR = Path(__file__).parent.parent / "skills"
 _sys_path_guard = str(Path(__file__).parent.parent)
 if _sys_path_guard not in sys.path:
     sys.path.insert(0, _sys_path_guard)
-from skills import _parse_yamlish
+from skills import _parse_yamlish  # noqa: E402
 
 def _parse_frontmatter(content: str) -> Tuple[Optional[dict], str]:
     m = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)

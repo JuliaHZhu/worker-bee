@@ -19,9 +19,8 @@ import os
 import re
 import sys
 import tempfile
-import textwrap
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 # Hermes registry integration
 try:
@@ -245,7 +244,7 @@ def generate_script(source_text: str, tone: str, lang: str, model: str, cfg: dic
 
     # Validate structure
     if "dialogue" not in script or not isinstance(script["dialogue"], list):
-        raise RuntimeError(f"Invalid script structure: missing 'dialogue' array")
+        raise RuntimeError("Invalid script structure: missing 'dialogue' array")
 
     return script
 
@@ -342,7 +341,7 @@ def main():
     provider = cfg.get("provider", "moonshot")
     api_key = cfg.get("openai_api_key") or cfg.get("moonshot_api_key")
     if not api_key:
-        print(f"Error: No API key configured (checked OPENAI_API_KEY, MOONSHOT_API_KEY).", file=sys.stderr)
+        print("Error: No API key configured (checked OPENAI_API_KEY, MOONSHOT_API_KEY).", file=sys.stderr)
         print(f"Set it in env or edit {CONFIG_PATH}", file=sys.stderr)
         sys.exit(1)
 
@@ -377,7 +376,7 @@ def main():
 
     # Report
     print("\n" + "=" * 50)
-    print(f"✅ Podcast script generated!")
+    print("✅ Podcast script generated!")
     print(f"   Title:  {title}")
     print(f"   Turns:  {len(dialogue)}")
     print(f"   Script: {script_path}")
@@ -423,7 +422,7 @@ def podcast_agent(
     provider = cfg.get("provider", "moonshot")
     api_key = cfg.get("openai_api_key") or cfg.get("moonshot_api_key")
     if not api_key:
-        return f"Error: No API key configured. Set OPENAI_API_KEY or MOONSHOT_API_KEY."
+        return "Error: No API key configured. Set OPENAI_API_KEY or MOONSHOT_API_KEY."
 
     use_model = model or cfg.get("model", DEFAULT_MODEL)
     if provider == "moonshot" and use_model.startswith("gpt-"):

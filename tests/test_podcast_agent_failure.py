@@ -1,9 +1,8 @@
 """#1 — podcast_agent CLI handles API failures gracefully (non-zero exit + readable msg)."""
-import json
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 

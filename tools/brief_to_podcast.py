@@ -29,15 +29,20 @@ def _podcast_tool() -> Path:
 
 # ── Fetch brief text from Todo Ball Machine ─────────────────────────
 def _run_todo(action: str, content: str = "") -> str:
-    """通过 python -c 调用 todo_ball_machine（避免 import 路径问题）。"""
+    """通过 python -c 调用 todo_ball_machine（避免 import 路径问题）。
+    使用 JSON 序列化传参，避免字符串拼接导致的代码注入。"""
     project_root = _todo_tool().parent.parent
+    import json as _json
+    payload = {"action": action}
+    if content:
+        payload["content"] = content
+    code_payload = _json.dumps(payload, ensure_ascii=False)
     code = (
         "from tools.todo_ball_machine import todo_ball_machine; "
-        f"print(todo_ball_machine(action='{action}'"
+        "import json as _json; "
+        f"args = _json.loads({repr(code_payload)}); "
+        "print(todo_ball_machine(**args))"
     )
-    if content:
-        code += f", content='{content}'"
-    code += "))"
     result = subprocess.run(
         [sys.executable, "-c", code],
         capture_output=True,

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-podcast_agent.py — MVP for NotebookLM-style podcast generation
+podcast_agent.py — NotebookLM-style podcast script generator
 
-Flow: source → parse → chunk → script (LLM) → synthesize (TTS) → merge → MP3
+Flow: source → parse → chunk → script (LLM) → JSON output
+TTS synthesis functions are defined but NOT wired into main flow.
 Designed for Hermes integration: can be called as a tool or standalone script.
 
 Usage:
@@ -165,8 +166,8 @@ def parse_file(path: Path) -> str:
 
 
 def chunk_text(text: str, max_tokens: int = 12000) -> List[str]:
-    """Simple character-based chunking. ~4 chars per token for CJK, ~4 for EN."""
-    max_chars = max_tokens * 3  # conservative
+    """Character-based chunking. CJK ~1.5-2 chars/token (Gemini/Moonshot tokenizer)."""
+    max_chars = int(max_tokens * 1.5)  # conservative for CJK
     if len(text) <= max_chars:
         return [text]
     chunks = []

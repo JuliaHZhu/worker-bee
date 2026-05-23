@@ -22,48 +22,14 @@ from typing import Dict, List, Optional, Tuple
 
 SKILLS_DIR = Path(__file__).parent.parent / "skills"
 
-# ── Frontmatter parser (same as skills.py) ──────────────────────────
+# ── Frontmatter parser (delegates to skills.py for consistency) ─────
+from skills import _parse_yamlish
 
 def _parse_frontmatter(content: str) -> Tuple[Optional[dict], str]:
     m = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
     if not m:
         return None, content
-    meta = {}
-    lines = m.group(1).splitlines()
-    i = 0
-    while i < len(lines):
-        line = lines[i].rstrip()
-        if not line or line.startswith("-"):
-            i += 1
-            continue
-        if ":" not in line:
-            i += 1
-            continue
-        key, rest = line.split(":", 1)
-        key = key.strip()
-        val = rest.strip()
-        if val:
-            meta[key] = val
-            i += 1
-            continue
-        j = i + 1
-        items = []
-        while j < len(lines):
-            nl = lines[j].strip()
-            if not nl:
-                j += 1
-                continue
-            if nl.startswith("-"):
-                items.append(nl[1:].strip())
-                j += 1
-                continue
-            break
-        if items:
-            meta[key] = items
-            i = j
-        else:
-            meta[key] = ""
-            i += 1
+    meta = _parse_yamlish(m.group(1))
     return meta, content[m.end():].strip()
 
 

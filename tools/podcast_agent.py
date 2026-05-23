@@ -360,7 +360,11 @@ def main():
 
     # 2. Generate script
     print(f"[2/2] Generating script (provider={provider}, model={model}, tone={args.tone}, lang={args.lang}) ...")
-    script = generate_script(raw_text, args.tone, args.lang, model, cfg)
+    try:
+        script = generate_script(raw_text, args.tone, args.lang, model, cfg)
+    except Exception as e:
+        print(f"Error: Podcast generation failed: {e}", file=sys.stderr)
+        sys.exit(1)
     title = script.get("title", "Untitled Podcast")
     dialogue = script["dialogue"]
     print(f"      Title: {title}")
@@ -428,7 +432,10 @@ def podcast_agent(
         use_model = "gpt-4o"
 
     raw_text = parse_file(source_path)
-    script = generate_script(raw_text, tone, lang, use_model, cfg)
+    try:
+        script = generate_script(raw_text, tone, lang, use_model, cfg)
+    except Exception as e:
+        return f"Error: Podcast generation failed: {e}"
 
     # Save script
     script_path = source_path.with_suffix(".podcast.json")

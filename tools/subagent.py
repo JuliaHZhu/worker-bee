@@ -125,7 +125,7 @@ def agent_delegate_parallel(
         try:
             result = _run_single_agent(config, messages)
         except Exception as e:
-            result = f"Error: {e}"
+            result = f"DELEGATE_ERROR: {e}"
         return idx, result
 
     results: Dict[int, str] = {}

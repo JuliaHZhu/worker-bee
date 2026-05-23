@@ -21,7 +21,10 @@ import pkgutil
 _tools_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
 for _, _mod_name, _ in pkgutil.iter_modules([_tools_dir]):
     if not _mod_name.startswith("_"):
-        importlib.import_module(f"tools.{_mod_name}")
+        try:
+            importlib.import_module(f"tools.{_mod_name}")
+        except Exception as e:
+            print(f"  [Tool load error] {_mod_name}: {e}", file=sys.stderr)
 
 from agent import AIAgent
 from memory import SessionDB

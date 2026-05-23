@@ -48,9 +48,31 @@ class Engine:
     # Persistence
     # ------------------------------------------------------------------
     def _load(self) -> dict:
-        if self.state_path.exists():
+        if not self.state_path.exists():
+            return self._init()
+        try:
             return json.loads(self.state_path.read_text(encoding="utf-8"))
-        return self._init()
+        except (json.JSONDecodeError, OSError):
+            # Archive corrupted state with timestamp so user can inspect it
+            import time
+            corrupted = self.state_path.parent / f"{self.state_path.stem}.json.corrupted.{int(time.time())}"
+            try:
+                self.state_path.rename(corrupted)
+            except OSError:
+                pass
+            # Try backup recovery
+            backup = self.state_path.with_suffix(".json.bak")
+            if backup.exists():
+                try:
+                    data = json.loads(backup.read_text(encoding="utf-8"))
+                    self.state_path.write_text(
+                        json.dumps(data, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
+                    return data
+                except (json.JSONDecodeError, OSError):
+                    pass
+            return self._init()
 
     def _init(self) -> dict:
         cfg = json.loads(self.config_path.read_text(encoding="utf-8"))
@@ -75,10 +97,24 @@ class Engine:
         return state
 
     def _save(self):
-        self.state_path.write_text(
-            json.dumps(self.state, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        data = json.dumps(self.state, ensure_ascii=False, indent=2)
+        tmp = self.state_path.with_suffix(".json.tmp")
+        try:
+            tmp.write_text(data, encoding="utf-8")
+            # Rotate backup before replacing current state
+            if self.state_path.exists():
+                try:
+                    bak = self.state_path.with_suffix(".json.bak")
+                    bak.write_text(self.state_path.read_text(encoding="utf-8"), encoding="utf-8")
+                except OSError:
+                    pass
+            tmp.rename(self.state_path)
+        except OSError:
+            # Fallback: direct write if atomic rename fails
+            try:
+                self.state_path.write_text(data, encoding="utf-8")
+            except OSError:
+                pass
 
     # ------------------------------------------------------------------
     # Helpers

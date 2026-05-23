@@ -2,6 +2,8 @@ import sqlite3
 import json
 import uuid
 import threading
+import os
+import time
 from datetime import datetime
 
 
@@ -9,7 +11,18 @@ class SessionDB:
     def __init__(self, db_path="state.db"):
         self.db_path = db_path
         self._local = threading.local()
-        self._init_schema()
+        try:
+            self._init_schema()
+        except (sqlite3.DatabaseError, OSError) as e:
+            # Likely corrupted database file — archive and start fresh
+            corrupted = f"{db_path}.corrupted.{int(time.time())}"
+            try:
+                os.rename(db_path, corrupted)
+            except OSError:
+                pass
+            # Reset thread-local so _get_conn creates a new connection
+            self._local = threading.local()
+            self._init_schema()
 
     def _get_conn(self):
         """Return a connection bound to the current thread."""

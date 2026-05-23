@@ -52,3 +52,33 @@ class TestSubAgentTools:
         config = _make_agent_config(provider="openai", api_key="sk-test")
         assert config["provider"] == "openai"
         assert config["api_key"] == "sk-test"
+
+
+class TestSubAgentErrorSemantics:
+    """#6 — Parallel delegation uses DELEGATE_ERROR prefix so parent can distinguish failure."""
+
+    def test_delegate_parallel_uses_delegate_error_prefix(self, monkeypatch):
+        """When a sub-agent fails, result must start with DELEGATE_ERROR:."""
+        from tools.subagent import agent_delegate_parallel
+        from unittest.mock import patch
+
+        def _boom(*args, **kwargs):
+            raise RuntimeError("API down")
+
+        with patch("tools.subagent._run_single_agent", side_effect=_boom):
+            result = agent_delegate_parallel([
+                {"goal": "do something"}
+            ], max_workers=1)
+            import json
+            data = json.loads(result)
+            assert data["0"].startswith("DELEGATE_ERROR:")
+            assert "API down" in data["0"]
+
+    def test_delegate_task_does_not_swallow_exception(self):
+        """Single delegate lets exceptions propagate (caller / registry handles it)."""
+        from tools.subagent import agent_delegate_task
+        from unittest.mock import patch
+
+        with patch("tools.subagent._run_single_agent", side_effect=RuntimeError("boom")):
+            with pytest.raises(RuntimeError, match="boom"):
+                agent_delegate_task("test goal")

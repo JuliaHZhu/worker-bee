@@ -149,6 +149,15 @@ def ensure_config() -> dict:
 # ── Document parsing ───────────────────────────────────────────────────────
 def parse_file(path: Path) -> str:
     """Parse PDF, MD, TXT into plain text."""
+    path = path.resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {path}")
+    if not path.is_file():
+        raise ValueError(f"Not a file: {path}")
+    # Guard against reading system-sensitive files
+    forbidden_prefixes = ("/etc/", "/proc/", "/sys/", "/dev/")
+    if str(path).startswith(forbidden_prefixes):
+        raise PermissionError(f"Access denied to system path: {path}")
     suffix = path.suffix.lower()
     if suffix == ".pdf":
         if pymupdf is None:

@@ -2,24 +2,14 @@
 name: podcast-agent
 category: productivity
 description: Generate podcast-style dialogue scripts from source documents (PDF, MD, TXT, web pages)
-trigger:
-  - regex: "(?i)(podcast|\\u64ad\\u5ba2|\\u751f\\u6210\\u64ad\\u5ba2|\\u8bb2\\u8bb2\\u8fd9\\u7bc7|\\u8f6c\\u6210\\u97f3\\u9891)"
-  - intent: "generate podcast from document"
-  - intent: "convert text to podcast script"
-requires:
-  - openai>=1.0
-  - pymupdf
-input:
-  source: file | url | text          # Document to convert
-  tone: professional | casual | humorous | educational
-  lang: zh-CN | en | zh-TW
-  length: short | medium | long
-output:
-  format: JSON
-  content: dialogue array + title + summary
-composability:
-  upstream: [research-agent, wiki-sync, todo-ball-machine]
-  downstream: [feishu, email, tts-agent]
+triggers:
+  - podcast
+  - 播客
+  - 生成播客
+  - 讲讲这篇
+  - 转成音频
+tools:
+  - podcast_agent
 ---
 
 # Podcast Agent Skill

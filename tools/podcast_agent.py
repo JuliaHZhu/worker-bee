@@ -22,6 +22,12 @@ import textwrap
 from pathlib import Path
 from typing import List, Dict, Optional
 
+# Hermes registry integration
+try:
+    from registry import registry
+except ImportError:
+    registry = None
+
 # ── Optional deps ──────────────────────────────────────────────────────────
 try:
     from openai import OpenAI
@@ -376,3 +382,102 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ── Hermes Tool Registration ─────────────────────────────────────────────
+def podcast_agent(
+    source: str,
+    tone: str = "educational",
+    lang: str = "zh",
+    model: str = "",
+) -> str:
+    """Generate a podcast-style dialogue script from a source document.
+
+    Args:
+        source: Path to source file (PDF, MD, TXT)
+        tone: Podcast tone - professional, casual, humorous, educational
+        lang: Output language - zh, en, zh-CN, zh-TW
+        model: LLM model override (optional)
+    Returns:
+        JSON podcast script with title, summary, and dialogue array.
+    """
+    source_path = Path(source)
+    if not source_path.exists():
+        return f"Error: source file not found: {source}"
+
+    cfg = ensure_config()
+    provider = cfg.get("provider", "moonshot")
+    api_key = cfg.get("openai_api_key") or cfg.get("moonshot_api_key")
+    if not api_key:
+        return f"Error: No API key configured. Set OPENAI_API_KEY or MOONSHOT_API_KEY."
+
+    use_model = model or cfg.get("model", DEFAULT_MODEL)
+    if provider == "moonshot" and use_model.startswith("gpt-"):
+        use_model = "moonshot-v1-32k"
+    elif provider == "openai" and use_model.startswith("moonshot-"):
+        use_model = "gpt-4o"
+
+    raw_text = parse_file(source_path)
+    script = generate_script(raw_text, tone, lang, use_model, cfg)
+
+    # Save script
+    script_path = source_path.with_suffix(".podcast.json")
+    script_path.write_text(json.dumps(script, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    title = script.get("title", "Untitled")
+    dialogue = script["dialogue"]
+    preview = "\n".join(
+        f"{t.get('speaker', '?')}: {t.get('text', '')}"
+        for t in dialogue[:6]
+    )
+    more = f"\n... ({len(dialogue) - 6} more turns)" if len(dialogue) > 6 else ""
+
+    return (
+        f"✅ Podcast script generated!\n"
+        f"Title: {title}\n"
+        f"Turns: {len(dialogue)}\n"
+        f"Saved: {script_path}\n\n"
+        f"--- Preview ---\n"
+        f"{preview}{more}\n"
+        f"---------------"
+    )
+
+
+registry.register(
+    name="podcast_agent",
+    description=(
+        "NotebookLM-style podcast script generator.\n"
+        "Convert any document (PDF, MD, TXT) into a natural two-person dialogue podcast script.\n"
+        "Outputs JSON with title, summary, and dialogue array.\n"
+        "Supports OpenAI and Moonshot (Kimi) APIs."
+    ),
+    parameters={
+        "properties": {
+            "source": {
+                "type": "string",
+                "description": "Path to source file (PDF, MD, TXT)",
+            },
+            "tone": {
+                "type": "string",
+                "description": "Podcast tone",
+                "enum": ["professional", "casual", "humorous", "educational"],
+                "default": "educational",
+            },
+            "lang": {
+                "type": "string",
+                "description": "Output language",
+                "enum": ["zh", "en", "zh-CN", "zh-TW"],
+                "default": "zh",
+            },
+            "model": {
+                "type": "string",
+                "description": "LLM model override (optional)",
+                "default": "",
+            },
+        },
+        "required": ["source"]
+    },
+    handler=podcast_agent,
+    tags=["content", "podcast", "notebooklm"],
+    category="productivity"
+) if registry is not None else None

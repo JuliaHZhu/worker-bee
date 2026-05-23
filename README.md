@@ -184,6 +184,69 @@ Cron 每日 8:00 自动推送早报到飞书：今日安排 + 盒子剩余 + 昨
 
 ---
 
+## Podcast Agent 🎙️
+
+文档 → 播客脚本。受 Google NotebookLM Audio Overview 启发的内容重构工具。
+
+### 能做什么
+
+把任何文档（PDF、Markdown、TXT）转换成**自然双人对话式播客脚本**。不是 TTS，而是 LLM 理解、提炼、重新组织成对话。
+
+### 使用
+
+```bash
+# CLI 单机
+python tools/podcast_agent.py --source ~/paper.pdf --tone casual --lang zh
+
+# Hermes Tool 调用
+podcast_agent(source="~/notes.md", tone="educational", lang="zh")
+```
+
+**输出**：`paper.pdf.podcast.json` — title + summary + dialogue array
+
+### 工作流程
+
+```
+文档 → 解析(pymupdf) → 分块(超长文档自动压缩) → LLM生成对话脚本 → JSON输出
+```
+
+### Prompt 约束
+
+来源于开源实现 gabrielchua/open-notebooklm：
+- 每行 ≤100 字符（约 5-8 秒说话时长）
+- 严格 JSON 输出
+- 自然口语，不朗读原文
+- 三维可配：tone / lang / length
+
+### 配置
+
+`~/.hermes/podcast_agent_config.json` — 自动创建，自动检测 `OPENAI_API_KEY` / `MOONSHOT_API_KEY`
+
+### 组合工流：Todo → Podcast
+
+```bash
+python tools/brief_to_podcast.py
+```
+
+自动拉取 Todo Ball Machine 今日状态 → 生成播客脚本。这是 Hermes × NotebookLM "爆炸效果"的最小可用示例。
+
+### 接入 Deck
+
+```yaml
+---
+name: podcast-agent
+description: 文档转播客脚本
+triggers:
+  - podcast
+  - 播客
+  - 生成播客
+tools:
+  - podcast_agent
+---
+```
+
+---
+
 ## Skill 的生命周期
 
 **一个 session 内，skill 匹配一次、Deck 构建一次。**
@@ -199,20 +262,36 @@ Cron 每日 8:00 自动推送早报到飞书：今日安排 + 盒子剩余 + 昨
 ## 文件结构
 
 ```
-├── deck.py                    # Deck（不可变工具栈）+ build_deck（装填 + 冗余卡槽）
-├── skills.py                  # Skill 加载、trigger 匹配、缓存
-├── registry.py                # 工具注册中心（schema + handler）
-├── main.py                    # CLI 入口：skill 匹配 → Deck 装填 → Agent 执行
-├── tools/
-│   └── todo_ball_machine.py   # Todo Ball Machine 工具入口
-├── skills/
-│   └── todo-ball-machine.md   # Skill 契约（trigger + tools）
-├── todo_ball_machine/
-│   ├── engine.py              # 极简引擎（抽/完成/重抽/统计）
-│   ├── state.json             # 单文件运行时状态
-│   ├── balls.json             # 彩球定义（分类驱动）
-│   ├── config.json            # 周期配置
-│   └── morning_brief.py       # 每日早报脚本（cron 调用）
+┌─────────────────────────────────────────────────────────────┐
+│  核心框架                                               │
+├─────────────────────────────────────────────────────────────┤
+│  deck.py                    # Deck（不可变工具栈）+ build_deck     │
+│  skills.py                  # Skill 加载、trigger 匹配、缓存        │
+│  registry.py                # 工具注册中心（schema + handler）    │
+│  main.py                    # CLI 入口：skill 匹配 → Deck 装填 → 执行 │
+├─────────────────────────────────────────────────────────────┤
+│  工具                                                      │
+├─────────────────────────────────────────────────────────────┤
+│  tools/                                                     │
+│  ├── todo_ball_machine.py      # Todo Ball Machine 工具入口              │
+│  ├── podcast_agent.py          # 文档→播客脚本（NotebookLM-style）   │
+│  └── brief_to_podcast.py       # 组合工流：Todo → Brief → Podcast    │
+├─────────────────────────────────────────────────────────────┤
+│  Skill 定义                                                  │
+├─────────────────────────────────────────────────────────────┤
+│  skills/                                                     │
+│  ├── todo-ball-machine.md      # Todo Ball Machine 契约               │
+│  └── podcast-agent.md          # Podcast Agent 契约                   │
+├─────────────────────────────────────────────────────────────┤
+│  数据                                                       │
+├─────────────────────────────────────────────────────────────┤
+│  todo_ball_machine/                                           │
+│  ├── engine.py                # 极简引擎（抽/完成/重抽/统计）    │
+│  ├── state.json               # 单文件运行时状态                   │
+│  ├── balls.json               # 彩球定义（分类驱动）               │
+│  ├── config.json              # 周期配置                         │
+│  └── morning_brief.py         # 每日早报脚本（cron 调用）        │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -232,3 +311,4 @@ Cron 每日 8:00 自动推送早报到飞书：今日安排 + 盒子剩余 + 昨
 > **从 Hermes 取了 skill 的概念，加了 Deck 的边界。**
 > 
 > **Todo Ball Machine 是这套边界里的第一个应用。**
+> **Podcast Agent 是第二个——它证明了 Deck 的 skill 不仅可以是工具，还可以是内容引擎。**

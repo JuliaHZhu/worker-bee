@@ -178,9 +178,7 @@ def run_session():
     skill_mgr = SkillManager()
     infra = InfraToolSet()
 
-    # Session-aware system prompt so the agent knows its session ID for tagged-session tools
     base_system_prompt = agent.system_prompt
-    agent.system_prompt = f"{base_system_prompt}\n\nCurrent session ID: {session_id}"
 
     loaded_skills = skill_mgr.load_all()
     if loaded_skills:
@@ -300,14 +298,12 @@ def run_session():
         skill_tools = skill_mgr.get_tools_for_skills(matched_skills)
 
         # 3. Build deck with redundancy slots (+3 baseline)
-        from deck import build_deck
         deck = build_deck(skill_tools, registry, redundancy=3)
 
         # 4. Merge platform base tools from config
         base_tools = set(config.get("tools", []))
         merged_tools = set(deck.tools) | base_tools
         final_tools = infra.filter_tools(list(merged_tools))
-        from deck import Deck
         deck = Deck(final_tools, registry)
 
         print(f"  [Deck ready: {deck.size()} tools]")

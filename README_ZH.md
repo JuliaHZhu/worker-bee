@@ -7,6 +7,7 @@
 
 **如果你想要一个最小化的 Hermes 来学习、fork 或嵌入，用这个。**  
 完整的设计演化见 [DESIGN.md](./DESIGN.md)。
+完整功能文档见 [README.md](./README.md)（英文），包含 Deck 机制详解、Todo Ball Machine 与 Podcast Agent 使用文档。
 
 ---
 

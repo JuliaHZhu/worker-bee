@@ -39,7 +39,7 @@ Deck 就是这个机制。
 用户输入
     │
     ▼
-Skill Manager 匹配 triggers
+Skill Manager 匹配 triggers（子串匹配）
     │
     ▼
 收集匹配 skills 声明的 tools
@@ -50,6 +50,8 @@ Deck 装填：skill tools + 冗余卡槽（+3）
     ▼
 LLM 只能从 Deck 里抽工具 → 不会越界
 ```
+
+> **实现细节**：当前 `skills.py` 对每个 skill 的 `triggers` 做子串匹配（`trigger.lower() in user_input.lower()`）。在 ~15 个 skill 的规模下，这种匹配足够精准且零额外 LLM 调用，无需升级为语义选择。
 
 ### 堆栈思维
 

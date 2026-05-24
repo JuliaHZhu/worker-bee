@@ -119,10 +119,12 @@ We needed a **boundary**.
 
 ### Procurement (Build the Engine)
 
-1. LLM reads all skill summaries (name, description, triggers, tools)
-2. LLM selects relevant skills **semantically** — these are the formulas we need
-3. Collect all tools declared by selected skills → form a **Deck**
+1. Load all skills from `skills/` (YAML frontmatter with triggers and tools)
+2. Match triggers against user input via **substring search** (`trigger.lower() in ui_lower`)
+3. Collect all tools declared by matched skills → form a **Deck**
 4. Verify each tool exists in the Registry
+
+> **Implementation note:** The current trigger matcher is a substring search, not LLM semantic selection. At ~15 skills, this is precise enough and avoids an extra LLM call during procurement. Semantic selection can be introduced when the skill library grows significantly.
 
 The Deck is the **engine**: a flat, immutable, verified set of capabilities. No more, no less.
 
@@ -175,11 +177,11 @@ User Input
           │
           ▼
 ┌─────────────────────┐
-│  DeckBuilder        │  LLM semantic selection
+│  DeckBuilder        │  trigger substring match
 │  - Enumerate skills │
-│  - LLM picks S      │
+│  - Match triggers   │
 │  - Deck = ⋃ T(s)    │
-└─────────┬───────────┘
+└─────────┼───────────┘
           │ immutable
           ▼
 ┌─────────────────────┐

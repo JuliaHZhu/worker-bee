@@ -1,4 +1,8 @@
-"""Minimal AI Agent — Anthropic-compatible with tool use."""
+"""Minimal AI Agent — dual-protocol (Anthropic/OpenAI) with Deck-bound tool execution.
+
+When run with a Deck, the agent can only use tools in the Deck.
+Without a Deck, falls back to config-level tool list.
+"""
 import json
 from typing import List, Dict, Optional
 

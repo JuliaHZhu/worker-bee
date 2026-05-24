@@ -7,9 +7,9 @@ triggers:
   - kanban
   - job board
   - jobs
-  - 监工
-  - 工单
-  - 看看进度
+  - supervisor
+  - job ticket
+  - check progress
   - board
 tools:
   - job_supervisor_status

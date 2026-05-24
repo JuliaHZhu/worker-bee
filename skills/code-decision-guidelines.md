@@ -5,15 +5,14 @@ description: |
   或判断"这样实现好不好"时触发。不教你写代码——
   帮你把系统思维翻译成代码层面的正确决策。
 triggers:
-  - 代码决策
-  - 怎么改
-  - 这个能简化吗
-  - 过度设计
-  - 技术债
-  - 重构
-  - 这样实现好吗
-  - 代码评审
   - code decision
+  - how to change
+  - can this simplify
+  - over-engineered
+  - tech debt
+  - refactor
+  - is this good implementation
+  - code review
   - is this overcomplicated
   - simplify this
   - refactor check

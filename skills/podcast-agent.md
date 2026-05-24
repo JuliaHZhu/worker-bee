@@ -4,10 +4,9 @@ category: productivity
 description: Generate podcast-style dialogue scripts from source documents (PDF, MD, TXT, web pages)
 triggers:
   - podcast
-  - 播客
-  - 生成播客
-  - 讲讲这篇
-  - 转成音频
+  - generate podcast
+  - explain this
+  - to audio
 tools:
   - podcast_agent
 ---

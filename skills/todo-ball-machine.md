@@ -6,11 +6,11 @@ triggers:
   - todo_ball_machine
   - Todo Ball Machine
   - todo ball
-  - 抽球
-  - 场次
-  - 今日安排
-  - 盒子配额
-  - 早报
+  - draw ball
+  - session
+  - today plan
+  - box quota
+  - morning report
 tools:
   - todo_ball_machine
 ---

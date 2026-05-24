@@ -32,6 +32,9 @@ def _ensure_dir() -> None:
     JOBS_DIR.mkdir(exist_ok=True)
 
 
+_LIST_FIELDS = {"skills", "deliverables", "acceptance"}
+
+
 def _parse_frontmatter(content: str) -> Tuple[Optional[dict], str]:
     m = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
     if not m:
@@ -41,12 +44,21 @@ def _parse_frontmatter(content: str) -> Tuple[Optional[dict], str]:
         meta = _parse_yamlish(m.group(1))
     except Exception:
         meta = {}
+    # Type correction: known list fields should be lists
+    for k in _LIST_FIELDS:
+        if k in meta and not isinstance(meta[k], list):
+            if meta[k] in ("", None):
+                meta[k] = []
+            else:
+                meta[k] = [meta[k]]
     return meta, content[m.end():].strip()
 
 
 def _render_frontmatter(meta: dict) -> str:
     lines = ["---"]
     for k, v in meta.items():
+        if v is None:
+            continue
         if isinstance(v, list):
             lines.append(f"{k}:")
             for item in v:
@@ -55,6 +67,13 @@ def _render_frontmatter(meta: dict) -> str:
             lines.append(f"{k}: {v}")
     lines.append("---\n")
     return "\n".join(lines)
+
+
+def _atomic_write(path: Path, content: str) -> None:
+    """Atomic file write via temp file + rename."""
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(content, encoding="utf-8")
+    tmp.replace(path)
 
 
 def _read_index() -> dict:
@@ -68,7 +87,7 @@ def _read_index() -> dict:
 
 
 def _write_index(index: dict) -> None:
-    INDEX_FILE.write_text(json.dumps(index, indent=2, ensure_ascii=False) + "\n")
+    _atomic_write(INDEX_FILE, json.dumps(index, indent=2, ensure_ascii=False) + "\n")
 
 
 def _next_job_id() -> str:
@@ -222,7 +241,7 @@ def job_supervisor_create(
     body += f"- [{time.strftime('%H:%M', time.gmtime())}] created — state=Todo\n"
     content = _render_frontmatter(meta) + body
     path = JOBS_DIR / f"{job_id}.md"
-    path.write_text(content)
+    _atomic_write(path, content)
     _update_index_entry(job_id, meta)
     return f"Created {job_id}: {title}"
 
@@ -258,7 +277,7 @@ def job_supervisor_update(
     if changed:
         meta["updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         new_content = _render_frontmatter(meta) + body
-        path.write_text(new_content)
+        _atomic_write(path, new_content)
         _update_index_entry(job_id, meta)
 
     return f"Updated {job_id}"
@@ -295,7 +314,7 @@ def job_supervisor_checkpoint(
 
     meta["updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     new_content = _render_frontmatter(meta) + body
-    path.write_text(new_content)
+    _atomic_write(path, new_content)
     _update_index_entry(job_id, meta)
 
     return f"Checkpoint {job_id}: {phase} by {who}"
@@ -334,14 +353,14 @@ def job_supervisor_self_check(
 
     # Also update the checklist in body if we can match items
     for d in done_del:
-        body = body.replace(f"- [ ] {d}", f"- [x] {d}")
+        body = body.replace(f"- [ ] {d}\n", f"- [x] {d}\n")
     for a in passed_acc:
-        body = body.replace(f"- [ ] {a}", f"- [x] {a}")
+        body = body.replace(f"- [ ] {a}\n", f"- [x] {a}\n")
 
     meta["phase"] = "self_checked"
     meta["updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     new_content = _render_frontmatter(meta) + body
-    path.write_text(new_content)
+    _atomic_write(path, new_content)
     _update_index_entry(job_id, meta)
 
     return f"Self-check {job_id}: deliverables {del_status}, acceptance {acc_status}"
@@ -366,7 +385,7 @@ def job_supervisor_evaluate(
     body = _append_event(body, f"eval — {eval_skill}: {eval_result}")
     meta["updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     new_content = _render_frontmatter(meta) + body
-    path.write_text(new_content)
+    _atomic_write(path, new_content)
     _update_index_entry(job_id, meta)
     return f"Evaluated {job_id} with {eval_skill}: {eval_result}"
 

@@ -1,300 +1,191 @@
 # Hermes Lite
 
-> 借鉴理念，改造形态。取 Hermes Agent 的 skill 概念，加一层 Deck。
+> 一个 Agent，一块板。够了。
 
 ---
 
-## 我们与 Hermes Agent 的关系
+## 一句话
 
-Hermes Agent 是完整的 AI 工程框架，功能全面。我们在其设计理念上做了精简改造：
+**Hermes Lite = 一台 Agent + 一块 Job Board。**
 
-| | Hermes Agent | Hermes Lite |
+不需要 Symphony，不需要多 Agent 编排，不需要 daemon。Agent 自己读板、自己派活、自己留下信息素。人随时打开文件就能看到全貌。
+
+---
+
+## 为什么一个 Agent 就够了
+
+多 Agent 框架的默认假设：任务复杂到需要分工，所以要有 orchestrator、worker pool、agent 间通信协议。
+
+Hermes Lite 的假设不同：
+
+> **Agent 自己就是 dispatcher。** Deck 架构已经解决了工具分发——每次任务只暴露相关工具。Agent 不需要"被调度"，它只需要"被激活"。
+
+```
+用户说"监工，看看进度"
+    │
+    ▼
+trigger 匹配 job-supervisor skill
+    │
+    ▼
+Deck 装填 board 管理 tools（8 个）
+    │
+    ▼
+Agent 读 board → 汇报 → halt
+```
+
+Agent 一次只做一件事，但**一件事可以很复杂**——读多个 job、评估质量、生成报告。复杂不等于需要多个 agent。
+
+---
+
+## 快速开始
+
+```bash
+# 1. 克隆
+git clone https://github.com/JuliaHZhu/hermes-lite.git
+cd hermes-lite
+
+# 2. 装依赖
+pip install -e .
+
+# 3. 配置 API key
+cp config.example.json config.json
+# 编辑 config.json 填入你的 API key
+
+# 4. 测试
+python -m pytest tests/ -q
+# 299 passed
+
+# 5. 跑起来
+python main.py
+# 测试连通: python main.py -m ping
+```
+
+没有 daemon，没有配置文件目录，没有 orchestrator。`main.py` 就是入口。
+
+---
+
+## Text as Model
+
+Job 的真实状态不在内存里，不在数据库里，在 `jobs/JOB-XXX.md` 的 frontmatter 里。
+
+**人 `cat` 一下就能看懂，LLM 读一遍就能操作，git diff 能追踪变更。**
+
+一个完整的 Job 文件：
+
+```markdown
+---
+id: JOB-001
+title: 重构 auth 模块
+owner: agent-001
+reviewer: human
+skills: [code-review, refactor]
+deliverables:
+  - auth/sso.py
+  - tests/test_sso.py
+  - migration_guide.md
+acceptance:
+  - 向后兼容
+  - 测试覆盖率>80%
+  - 不改 public API
+state: Done
+phase: done
+created: 2026-05-24T14:00:00Z
+updated: 2026-05-24T14:55:00Z
+---
+
+## 任务描述
+将 SSO 逻辑拆分成独立模块，保持向后兼容。
+
+## 交付物
+- [x] auth/sso.py
+- [x] tests/test_sso.py
+- [x] migration_guide.md
+
+## 验收标准
+- [x] 向后兼容
+- [x] 测试覆盖率>80%
+- [x] 不改 public API
+
+## 事件流 (append-only)
+
+- [14:00] created — state=Todo
+- [14:05] checkpoint — phase=confirmed, who=agent-001, note=理解了任务和交付标准
+- [14:10] checkpoint — phase=planned, who=agent-001, note=方案：先迁移函数，再补测试
+- [14:15] checkpoint — phase=planned, who=human, note=方案通过，执行
+- [14:20] state_change — Todo → Running
+- [14:30] log — 创建 auth/sso.py
+- [14:35] log — 测试通过，覆盖率 85%
+- [14:40] self_check — deliverables 3/3, acceptance 3/3
+- [14:45] eval — design-alignment: Pass
+- [14:50] checkpoint — phase=reviewed, who=human, note=验收通过
+- [14:55] checkpoint — phase=done, who=system
+- [14:55] state_change — Running → Done
+```
+
+**这就是全部。** 没有隐藏状态，没有数据库，没有 ORM。一个 Markdown 文件 = 一个完整的工作记录。
+
+---
+
+## 交付质量四要素
+
+每个 job 天然包含：
+
+| 要素 | 字段 | 含义 |
+|---------|-------|---------|
+| **What** | `title` + `description` + `skills` | 任务内容和所需能力 |
+| **Who** | `owner` + `reviewer` | 责任链：谁执行，谁确认 |
+| **Deliverables** | `deliverables` checklist | 交付什么产出物 |
+| **Acceptance** | `acceptance` checklist | 质量门槛是什么 |
+
+---
+
+## 七阶段生命周期
+
+```
+created → confirmed → planned → executing → self_checked → reviewed → done
+```
+
+| Phase | 意思 | 谁确认 | 产出 |
+|-------|------|---------|------|
+| `created` | 刚创建 | 系统 | job 文件 |
+| `confirmed` | 责任人确认理解 | owner | 理解摘要 |
+| `planned` | 方案提交并通过 | reviewer | 方案批准 |
+| `executing` | 执行中 | owner | 代码/文档 |
+| `self_checked` | 责任人自检 | owner | checklist 结果 |
+| `reviewed` | 评估人复核 | reviewer | 评估结论 |
+| `done` | 归档 | 系统 | 完整历史 |
+
+每个关卡迁移都是 **checkpoint** 事件，记录：谁、什么关卡、什么结论、时间。
+
+---
+
+## 与 Symphony 的区别
+
+| | **Symphony** | **Hermes Lite** |
 |---|---|---|
-| Skill 定义 | 目录树 + `SKILL.md` | 单文件 + YAML frontmatter |
-| 激活方式 | 子 agent 索引匹配 | 声明式 `trigger` |
-| 工具边界 | 全部可见 | **Deck 裁剪**（仅加载相关工具） |
-| 架构目标 | 功能完整 | **精准调用** |
+| **核心假设** | 任务需要多个 worker 分工 | 一个 agent 可以序列处理多个任务 |
+| **调度** | 硬代码 orchestrator（`while/for/sleep`） | agent 自己读板、自己决策 |
+| **并发** | 内部管理多个 agent 实例 | 顺序执行，简单可预测 |
+| **状态存哪** | 内存 / 数据库 / JSON | **Markdown 文件**（人可读） |
+| **人怎么干预** | 改配置重启 | **直接改 job 文件** |
+| **形态** | 工厂流水线（自动化） | 工单板（可管理） |
 
-核心区别：**我们抽了一层 Deck 出来。**
-
----
-
-## Deck：运行时工具边界
-
-### 为什么要 Deck？
-
-Registry 里注册了所有工具，如果全部丢给 LLM，它会混乱——用 `fs_write_file` 改 todo、用 `sys_terminal` 查天气。我们需要一种机制：**每次任务只暴露相关的工具。**
-
-Deck 就是这个机制。
-
-### 概念
-
-- **Registry** = 工具仓库（全部工具常驻内存，数量随注册动态变化）
-- **Skill** = 契约：声明 trigger（何时激活）+ tools（需要什么工具）
-- **Deck** = 运行时堆栈：装填 → 抽取 → halt
-
-### 工作流程
-
-```
-用户输入
-    │
-    ▼
-Skill Manager 匹配 triggers（子串匹配）
-    │
-    ▼
-收集匹配 skills 声明的 tools
-    │
-    ▼
-Deck 装填：skill tools + 冗余卡槽（+3）
-    │
-    ▼
-LLM 只能从 Deck 里抽工具 → 不会越界
-```
-
-> **实现细节**：当前 `skills.py` 对每个 skill 的 `triggers` 做子串匹配（`trigger.lower() in user_input.lower()`）。在 ~15 个 skill 的规模下，这种匹配足够精准且零额外 LLM 调用，无需升级为语义选择。
-
-### 堆栈思维
-
-Deck 就是一个**工具栈**：
-
-- **装填**：匹配到的 skill 工具 → 入栈
-- **冗余**：自动填 +3 个基础工具卡槽（如 `fs_read_file`、`sys_terminal`等）
-- **抽取**：LLM 只能在栈里选
-- **Halt**：栈空了就停
-
-```python
-# 采购
-Deck = skill_tools + redundancy_slots(+3)
-
-# 执行（约束）
-LLM.draw(tool) ∈ Deck  # 不能越界
-```
-
-### 动态大小
-
-Deck 的大小是**动态**的：
-
-| 组成 | 来源 | 可变？ |
-|------|------|------|
-| Skill tools | 匹配到的 skills 声明 | ✅ 随用户输入变化 |
-| 冗余卡槽 | 固定 +3 ，从基础池填 | ❌ 恒定上限 |
-
-举例：匹配到 1 个 skill 声明 1 个工具 → Deck 大小 = 1 + 3 = **4**。匹配到 2 个 skills 共 5 个工具 → Deck 大小 = 5 + 3 = **8**。
-
-基础池只是一个安全网，确保 LLM 在需要查配置/看日志/执行命令时不会 halt。
-
-### 代码
-
-```python
-class Deck:
-    """不可变工具栈。"""
-    def __init__(self, tools, registry):
-        self.tools = dedup(tools)  # 有序列表
-
-    def has(self, name): 
-        return name in self.tools
-
-    def schemas(self): 
-        return [registry.get_schema(t) for t in self.tools]
-
-def build_deck(skill_tools, registry, redundancy=3):
-    """采购：skill_tools + 基础工具填充到 +3 卡槽。"""
-    tools = list(skill_tools)
-    added = 0
-    for t in BASELINE_POOL:  # 按优先级填充
-        if t not in tools and registry.has_tool(t):
-            tools.append(t)
-            added += 1
-            if added >= redundancy:
-                break
-    return Deck(tools, registry)
-```
-
-整个 Deck 模块不到 100 行。
+> **Symphony 是"机器自己跟着流水线跑"。Hermes Lite 是"机器跟着人的板子走"。**
 
 ---
 
-## Todo Ball Machine
+## 还有别的吗？
 
-人生任务管理系统——基于"抽彩球"的日程安排。
+有。这些是现有的 skill，都走同一套 Deck 架构：
 
-### 核心概念
+| Skill | 做什么 | Trigger |
+|-------|---------|---------|
+| **job-supervisor** | Job board 管理 | 监工、工单、board |
+| **todo-ball-machine** | 人生任务抽球系统 | 抽球、场次 |
+| **podcast-agent** | 文档转播客 | 播客、podcast |
+| **code-review** | 代码审查 | code review、审代码 |
 
-装填 → 抽取 → 完成
-
-- **装填（Fill）**：彩球 shuffle 后入栈，单文件 `state.json` 持久化
-- **抽取（Draw）**：random.choice + pop，一场一球
-- **重抽（Redraw）**：旧球 push 回栈顶，再抽
-- **完成（Done）**：status 标记，完成率可统计
-
-### 默认盒子（可自定义）
-
-| 盒子 | emoji | 配额 |
-|------|-------|------|
-| 学习 | 📚 | 21 |
-| 工作 | 💼 | 21 |
-| 运动 | 🏃 | 15 |
-| 治愈 | 🧘 | 14 |
-| 社交 | 🎉 | 7 |
-| 家务 | 🧹 | 6 |
-
-改分类、改配额、改球内容 → 编辑 `balls.json` + `config.json`，**零代码改架构**。
-
-### 接入 Deck
-
-Todo Ball Machine 是 Deck 体系中的**一个 skill**，必须写清楚 tools：
-
-```yaml
----
-name: todo-ball-machine
-description: 人生任务管理系统，基于抽球机制的日常场次管理
-triggers:
-  - todo_ball_machine
-  - Todo Ball Machine
-  - todo ball
-  - 抽球
-  - 场次
-  - 今日安排
-  - 盒子配额
-  - 早报
-tools:
-  - todo_ball_machine
----
-```
-
-当用户说"帮我抽今天的 todo"，trigger 匹配 → `todo_ball_machine` 工具进入 Deck → LLM 只能在 Deck 里调用这个工具操作。
-
-### Tool API
-
-| action | session | content | 说明 |
-|--------|---------|---------|-----|
-| `dashboard` | — | — | 仪表盘：今日安排 + 盒子剩余 + 周期进度 |
-| `today` | — | — | 今日 4 场详情 |
-| `draw` | morning/afternoon/evening/overtime | — | 抽取指定场次 |
-| `quick_draw` | — | — | 快速抽取三场 |
-| `complete` | morning/... | — | 标记完成 |
-| `redraw` | morning/... | — | 重抽：旧球回栈 → 新抽 |
-| `edit` | morning/... | 新内容 | 修改场次内容 |
-| `history` | — | N天（默认7） | 历史记录 |
-| `day` | — | 日期（默认今天） | 指定日期详情 |
-| `stats` | — | N天（默认7） | 统计报告 |
-| `new_cycle` | — | 周期名 | 开启新周期 |
-
-### 自动化
-
-Cron 每日 8:00 自动推送早报到飞书：今日安排 + 盒子剩余 + 昨日回顾 + 连续完成天数 🔥
-
----
-
-## Podcast Agent 🎙️
-
-文档 → 播客脚本。受 Google NotebookLM Audio Overview 启发的内容重构工具。
-
-### 能做什么
-
-把任何文档（PDF、Markdown、TXT）转换成**自然双人对话式播客脚本**。不是 TTS，而是 LLM 理解、提炼、重新组织成对话。
-
-### 使用
-
-```bash
-# CLI 单机
-python tools/podcast_agent.py --source ~/paper.pdf --tone casual --lang zh
-
-# Hermes Tool 调用
-podcast_agent(source="~/notes.md", tone="educational", lang="zh")
-```
-
-**输出**：`paper.pdf.podcast.json` — title + summary + dialogue array
-
-### 工作流程
-
-```
-文档 → 解析(pymupdf) → 分块(超长文档自动压缩) → LLM生成对话脚本 → JSON输出
-```
-
-### Prompt 约束
-
-来源于开源实现 gabrielchua/open-notebooklm：
-- 每行 ≤100 字符（约 5-8 秒说话时长）
-- 严格 JSON 输出
-- 自然口语，不朗读原文
-- 三维可配：tone / lang / length
-
-### 配置
-
-`~/.hermes/podcast_agent_config.json` — 自动创建，自动检测 `OPENAI_API_KEY` / `MOONSHOT_API_KEY`
-
-### 组合工流：Todo → Podcast
-
-```bash
-python tools/brief_to_podcast.py
-```
-
-自动拉取 Todo Ball Machine 今日状态 → 生成播客脚本。这是 Hermes × NotebookLM "爆炸效果"的最小可用示例。
-
-### 接入 Deck
-
-```yaml
----
-name: podcast-agent
-description: 文档转播客脚本
-triggers:
-  - podcast
-  - 播客
-  - 生成播客
-tools:
-  - podcast_agent
----
-```
-
----
-
-## Skill 的生命周期
-
-**一个 session 内，skill 匹配一次、Deck 构建一次。**
-
-- 用户说"帮我看看今天的 todo" → trigger 匹配 `todo-ball-machine` → Deck 包含 `todo_ball_machine` 工具 → LLM 开始调用
-- 用户聊别的 → **session 切换，skill 结束，Deck 释放**
-- 用户再提 todo → 重新匹配，重新构建 Deck
-
-**没有常驻 skill，没有状态漂移。** 每次都是从 trigger → skill → Deck → 执行，干净闭环。
-
----
-
-## 文件结构
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  核心框架                                               │
-├─────────────────────────────────────────────────────────────┤
-│  deck.py                    # Deck（不可变工具栈）+ build_deck     │
-│  skills.py                  # Skill 加载、trigger 匹配、缓存        │
-│  registry.py                # 工具注册中心（schema + handler）    │
-│  main.py                    # CLI 入口：skill 匹配 → Deck 装填 → 执行 │
-├─────────────────────────────────────────────────────────────┤
-│  工具                                                      │
-├─────────────────────────────────────────────────────────────┤
-│  tools/                                                     │
-│  ├── todo_ball_machine.py      # Todo Ball Machine 工具入口              │
-│  ├── podcast_agent.py          # 文档→播客脚本（NotebookLM-style）   │
-│  └── brief_to_podcast.py       # 组合工流：Todo → Brief → Podcast    │
-├─────────────────────────────────────────────────────────────┤
-│  Skill 定义                                                  │
-├─────────────────────────────────────────────────────────────┤
-│  skills/                                                     │
-│  ├── todo-ball-machine.md      # Todo Ball Machine 契约               │
-│  └── podcast-agent.md          # Podcast Agent 契约                   │
-├─────────────────────────────────────────────────────────────┤
-│  数据                                                       │
-├─────────────────────────────────────────────────────────────┤
-│  todo_ball_machine/                                           │
-│  ├── engine.py                # 极简引擎（抽/完成/重抽/统计）    │
-│  ├── state.json               # 单文件运行时状态                   │
-│  ├── balls.json               # 彩球定义（分类驱动）               │
-│  ├── config.json              # 周期配置                         │
-│  └── morning_brief.py         # 每日早报脚本（cron 调用）        │
-└─────────────────────────────────────────────────────────────┘
-```
+添加新 skill 只需要：写一个 `skills/xxx.md` 契约 + 一个 `tools/xxx.py` handler。零核心侵入。
 
 ---
 
@@ -302,15 +193,22 @@ tools:
 
 | 原则 | 含义 |
 |------|------|
-| Skill as Contract | trigger + tools + description，模糊即 bug |
-| Procure Before Execute | Deck 构建一次，运行时不可变 |
-| Immutable Boundary | 执行中不加载新工具， Deck 不膨胀 |
-| Halt on Exhaustion | 工具不够就停，不回退重试 |
-| 约分 | 嵌套 skill 的工具空间在采购阶段扁平化 |
+| **一个 Agent 就够了** | 不要多 agent，不要 orchestrator，不要 daemon |
+| **Text as Model** | 所有状态在 Markdown 里，人随时可读可改 |
+| **Append-Only** | 事件流不可覆盖，历史不丢 |
+| **Deck 裁剪** | 每次任务只暴露相关工具，不越界 |
+| **关卡驱动** | 任务不是"Todo→Done"，是 7 个确认节点 |
 
 ---
 
-> **从 Hermes 取了 skill 的概念，加了 Deck 的边界。**
+> 你有一个 Agent。
 > 
-> **Todo Ball Machine 是这套边界里的第一个应用。**
-> **Podcast Agent 是第二个——它证明了 Deck 的 skill 不仅可以是工具，还可以是内容引擎。**
+> 你有一块板。
+> 
+> 这两个东西一直在对话。
+> 
+> 你随时可以拍拍它的肩膀问："这个怎么样了？"
+> 
+> 它会指给你看板上的记录。
+> 
+> 够了。

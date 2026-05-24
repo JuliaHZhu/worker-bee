@@ -1,29 +1,12 @@
-# Hermes Lite
+# Hermes Lite — 快速索引
 
-> 🤖 **本仓库由 AI Agent 自动托管维护。**  
-> 提交记录、文档和代码变更均通过人机协作完成。
-
-受 [Hermes Agent](https://github.com/nousresearch/hermes-agent) 启发的最小化、独立 AI Agent 框架。它在单仓库、零额外依赖的包中，保留了核心架构——skill 合约、trigger 匹配、不可变工具边界。
-
-**如果你想要一个最小化的 Hermes 来学习、fork 或嵌入，用这个。**  
-完整的设计演化见 [DESIGN.md](./DESIGN.md)。
-完整功能文档见 [README.md](./README.md)（英文），包含 Deck 机制详解、Todo Ball Machine 与 Podcast Agent 使用文档。
+> 完整文档见 [README.md](./README.md)
 
 ---
 
-## 与 Hermes 的核心差异
+## 是什么
 
-| | Hermes | Hermes Lite |
-|---|---|---|
-| **代码量** | ~35,900 行 | **~2,500 行** |
-| **平台** | 15+（Discord、Telegram、Feishu 等） | **Linux CLI**（可选 webhook） |
-| **Skill 匹配** | 被动列举——LLM 从扁平索引中自己挑 | **主动匹配**——系统通过 `trigger` 字段推送 |
-| **工具边界** | 宏 toolset（每次调用 4–40 个工具） | **不可变 Deck**（每个任务 1–5 个工具） |
-| **注册表** | 以 toolset 为中心，静态 YAML 配置 | **动态加载**——`fs_*`、`net_*`、`sys_*`、`agent_*` 命名空间 |
-| **消息格式** | 内部统一为 OpenAI | **双协议**——Anthropic + OpenAI |
-| **定位** | 全功能生产系统 | **便于学习的最小核心** |
-
----
+一台 Agent + 一块 Job Board = 可管理的任务执行。没有 Symphony，没有多 Agent。
 
 ## 快速开始
 
@@ -31,31 +14,35 @@
 git clone https://github.com/JuliaHZhu/hermes-lite.git
 cd hermes-lite
 pip install -e .
-hermes-lite setup          # 生成 ./config.json（已被 gitignore）
-hermes-lite -m "hello"     # 验证模型连通性
-hermes-lite                # 启动交互会话
+cp config.example.json config.json
+# 填 API key
+python -m pytest tests/ -q  # 299 passed
+python main.py
 ```
 
----
+## 三个核心概念
 
-## 架构
+| 概念 | 作用 |
+|------|------|
+| **Deck** | 运行时工具边界——每次任务只暴露相关 tools |
+| **Skill** | 契约——trigger + tools，声明式激活 |
+| **Job Board** | 文本信息素场——Markdown 文件 = 状态 |
 
-```
-hermes-lite/
-├── main.py              # CLI 入口
-├── agent.py             # Agent 循环（双协议）
-├── deck.py              # 不可变工具边界
-├── registry.py          # 带元数据的工具注册表
-├── skills.py            # Skill 加载器 + trigger 匹配
-├── memory.py            # SQLite 持久化
-├── DESIGN.md            # 完整设计演化文档
-└── tools/               # fs_*、net_*、sys_*、agent_*
-```
+## 常用 Skill
 
----
+| Skill | Trigger | 用途 |
+|-------|---------|------|
+| job-supervisor | 监工、工单 | 任务管理、进度跟踪 |
+| todo-ball-machine | 抽球、场次 | 人生任务抽球系统 |
+| podcast-agent | 播客 | 文档转播客脚本 |
+| code-review | 审代码 | 代码审查 |
 
-## 协议
+## 为什么不要 Symphony
 
-MIT —— 详见 [LICENSE](./LICENSE)。
+- Agent 自己就是 dispatcher
+- 顺序执行，简单可预测
+- 状态在 Markdown 里，人随时可改
 
-Hermes Lite 的设计思想和架构源自 [Hermes Agent](https://github.com/nousresearch/hermes-agent)（Nous Research）。本项目与 Nous Research 无关联，也未获其背书。
+## 完整文档
+
+详见 [README.md](./README.md)

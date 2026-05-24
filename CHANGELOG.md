@@ -88,10 +88,6 @@ Deck 从线性工具集重写为堆栈模型，Todo Ball Machine 重构为 v2。
 - 移除硬编码文件扩展名
 - workspace guard（cron 脚本必须在允许目录内）
 
-### 🚀 gstack 集成 (`670a54d`)
-
-集成 gstack（Bun/TS browser 守护进程），适配 5 个 skill：review、cso、investigate、ship、browse。
-
 ### 🤖 并行子代理 (`6ecf3fe`)
 
 `agent_delegate_parallel` + `agent_cross_validate` — 多子代理并行执行 + 多模型交叉验证。

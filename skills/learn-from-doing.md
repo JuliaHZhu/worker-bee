@@ -13,7 +13,7 @@ tools:
 
 > "从执行中学习，但不让学习漂移。"
 
-Extract, structure, and persist learning from hermes-lite sessions into the wiki.
+Extract, structure, and persist learning from worker-bee sessions into the wiki.
 This skill produces **dual-layer records**: objective facts are immutable; inferential
 analysis is explicitly speculative and tied to user-profile context.
 
@@ -28,7 +28,7 @@ analysis is explicitly speculative and tied to user-profile context.
 ## Wiki Location
 
 ```bash
-WIKI="${WIKI_PATH:-$HOME/wiki-hermes-lite}"
+WIKI="${WIKI_PATH:-$HOME/wiki-worker-bee}"
 OBJECTIVE_DIR="$WIKI/learn-from-doing/objective"
 INFERENCE_DIR="$WIKI/learn-from-doing/inference"
 USER_PROFILE="$WIKI/entities/user-profile.md"
@@ -63,11 +63,11 @@ versions are moved to `_archive/` within `learn-from-doing/inference/`.
 
 ## How to Extract Session Data
 
-Sessions live in `state.db` (SQLite, co-located with hermes-lite).
+Sessions live in `state.db` (SQLite, co-located with worker-bee).
 
 Read recent sessions:
 ```bash
-cd /path/to/hermes-lite
+cd /path/to/worker-bee
 sqlite3 state.db "SELECT id, created_at, title FROM sessions ORDER BY created_at DESC LIMIT 10;"
 ```
 

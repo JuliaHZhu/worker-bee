@@ -1,5 +1,5 @@
 """
-Cron job management tool for Hermes Lite.
+Cron job management tool for Worker Bee.
 
 Unified action-oriented tool to avoid schema/context bloat.
 """

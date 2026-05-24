@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Hermes Lite — CLI entry point.
+"""Worker Bee — CLI entry point.
 
 Usage:
-    hermes-lite              Start interactive session
-    hermes-lite setup        Configure API key and model
-    hermes-lite -m "hello"   Quick model ping test
-    hermes-lite -c "hello"   Quick channel ping test (Feishu/Discord)
-    hermes-lite --version    Show version
+    worker-bee              Start interactive session
+    worker-bee setup        Configure API key and model
+    worker-bee -m "hello"   Quick model ping test
+    worker-bee -c "hello"   Quick channel ping test (Feishu/Discord)
+    worker-bee --version    Show version
 """
 import argparse
 import json
@@ -96,7 +96,7 @@ def _make_config(provider, model, api_key, base_url, max_iter=20):
 def setup():
     """Interactive onboarding — just provider + api_key."""
     print("=" * 45)
-    print("  Hermes Lite — Setup")
+    print("  Worker Bee — Setup")
     print("=" * 45)
     print()
 
@@ -141,7 +141,7 @@ def ping_model(message: str):
     """Quick model connectivity test."""
     config = load_config()
     if not config:
-        print("❌ No config. Run: hermes-lite setup")
+        print("❌ No config. Run: worker-bee setup")
         sys.exit(1)
     print(f"→ Pinging {config['model']} ({config['provider']})...")
     try:
@@ -173,7 +173,7 @@ def run_session():
     config = load_config()
     if not config:
         print("❌ No config found.")
-        print("Run: hermes-lite setup")
+        print("Run: worker-bee setup")
         sys.exit(1)
 
     agent = AIAgent(config)
@@ -230,7 +230,7 @@ def run_session():
     # Session-aware system prompt so the agent knows its session ID for tagged-session tools
     agent.system_prompt = f"{base_system_prompt}\n\nCurrent session ID: {session_id}"
 
-    print(f"\n✨ Hermes Lite — Session: {session_id}")
+    print(f"\n✨ Worker Bee — Session: {session_id}")
     print("Commands: /exit, /history, /tools, /clear, /todo, /skills, /cats, /infra")
     print("-" * 50)
 
@@ -435,7 +435,7 @@ def _extract_tags(text: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="hermes-lite",
+        prog="worker-bee",
         description="Lightweight AI agent with tool access.",
         add_help=False,
     )
@@ -447,25 +447,25 @@ def main():
     args = parser.parse_args()
 
     if args.version:
-        print(f"hermes-lite {VERSION}")
+        print(f"worker-bee {VERSION}")
         return
 
     if args.help:
-        print("""Hermes Lite — Lightweight AI Agent
+        print("""Worker Bee — Lightweight AI Agent
 
 Usage:
-  hermes-lite              Start interactive session
-  hermes-lite setup        Configure API key and model
-  hermes-lite -m "hello"   Quick model connectivity test
-  hermes-lite -c "hello"   Quick channel connectivity test
-  hermes-lite -v           Show version
+  worker-bee              Start interactive session
+  worker-bee setup        Configure API key and model
+  worker-bee -m "hello"   Quick model connectivity test
+  worker-bee -c "hello"   Quick channel connectivity test
+  worker-bee -v           Show version
 
 Onboarding:
-  1. hermes-lite setup     → Enter API key
-  2. hermes-lite -m "hi"   → Verify model responds
+  1. worker-bee setup     → Enter API key
+  2. worker-bee -m "hi"   → Verify model responds
   3. export FEISHU_WEBHOOK_URL=...  → Optional: configure channel
-  4. hermes-lite -c "hi"   → Verify channel works
-  5. hermes-lite           → Start using
+  4. worker-bee -c "hi"   → Verify channel works
+  5. worker-bee           → Start using
 """)
         return
 

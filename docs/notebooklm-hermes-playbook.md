@@ -44,7 +44,7 @@ Hermes 是**主动的**：能搜索、执行代码、编排流程、定时任务
 ### 4.1 单机工具：文档 → 播客脚本
 
 ```bash
-cd /path/to/hermes-lite
+cd /path/to/worker-bee
 python3 tools/podcast_agent.py \
   --source ~/docs/paper.pdf \
   --tone casual \

@@ -23,7 +23,7 @@ DEFAULT_DB = HERMES_LITE_DIR / "state.db"
 
 
 def load_llm_config():
-    """Read hermes-lite config.json for API settings."""
+    """Read worker-bee config.json for API settings."""
     if CONFIG_PATH.exists():
         with open(CONFIG_PATH) as f:
             return json.load(f)
@@ -40,7 +40,7 @@ def load_llm_config():
 
 
 def get_wiki_path():
-    return Path(os.environ.get("WIKI_PATH", Path.home() / "wiki-hermes-lite"))
+    return Path(os.environ.get("WIKI_PATH", Path.home() / "wiki-worker-bee"))
 
 
 def get_client(config):
@@ -380,7 +380,7 @@ def main():
 
     config = load_llm_config()
     if not config:
-        print("❌ No LLM config found. Run hermes-lite setup first.")
+        print("❌ No LLM config found. Run worker-bee setup first.")
         sys.exit(1)
 
     client = get_client(config)

@@ -1,1 +1,1 @@
-# Cron subsystem for Hermes Lite
+# Cron subsystem for Worker Bee

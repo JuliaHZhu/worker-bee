@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hermes-lite"
+name = "worker-bee"
 version = "0.1.0"
 description = "A lightweight, minimal AI agent framework"
 readme = "README.md"
@@ -44,8 +44,8 @@ markers = [
 ]
 
 [project.scripts]
-hermes-lite = "main:main"
+worker-bee = "main:main"
 
 [project.urls]
-Homepage = "https://github.com/JuliaHZhu/hermes-lite"
-Repository = "https://github.com/JuliaHZhu/hermes-lite"
+Homepage = "https://github.com/JuliaHZhu/worker-bee"
+Repository = "https://github.com/JuliaHZhu/worker-bee"

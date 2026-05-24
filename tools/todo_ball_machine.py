@@ -1,4 +1,4 @@
-"""Todo Ball Machine — embedded tool for hermes-lite.
+"""Todo Ball Machine — embedded tool for worker-bee.
 
 调用极简引擎 engine.py，单文件持久化状态。
 """

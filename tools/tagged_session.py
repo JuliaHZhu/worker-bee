@@ -8,8 +8,8 @@ Stack semantics:
   resume → draw back into context
   list   → inspect the active pool
 
-Storage: ~/wiki-hermes-lite/sessions/*.md
-Archive: ~/wiki-hermes-lite/sessions/archive/*.md
+Storage: ~/wiki-worker-bee/sessions/*.md
+Archive: ~/wiki-worker-bee/sessions/archive/*.md
 """
 import json
 import os
@@ -25,7 +25,7 @@ from registry import registry
 # Paths
 # ---------------------------------------------------------------------------
 def _base_dir() -> Path:
-    default = Path.home() / "wiki-hermes-lite" / "sessions"
+    default = Path.home() / "wiki-worker-bee" / "sessions"
     return Path(os.environ.get("SESSIONS_PATH", str(default)))
 
 
@@ -157,7 +157,7 @@ def _action_save(session_id: str, content: Optional[str]) -> str:
         "tags": sorted(all_tags),
         "created": created,
         "archived": False,
-        "source": "hermes-lite",
+        "source": "worker-bee",
     }
     body = _build_body(msgs)
 

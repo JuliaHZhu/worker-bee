@@ -1,4 +1,4 @@
-# Hermes Lite — Design Evolution
+# Worker Bee — Design Evolution
 
 > How a curiosity about Hermes Agent turned into a new architecture for stable skill invocation.
 
@@ -49,7 +49,7 @@ We realized that a **skill is not a tool set**. A skill is a **playbook** — a 
 
 Hermes treats skills as **packages**. We wanted them to be **contracts** — precise, self-describing, and machine-readable.
 
-So we designed hermes-lite's skill as a single file with YAML frontmatter:
+So we designed worker-bee's skill as a single file with YAML frontmatter:
 
 ```yaml
 ---

@@ -5,7 +5,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 
-# Make cron module importable without full hermes-lite install
+# Make cron module importable without full worker-bee install
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 

@@ -1,8 +1,8 @@
 """
 Cron job storage and management.
 
-Jobs are stored in ~/.hermes-lite/cron/jobs.json
-Output is saved to ~/.hermes-lite/cron/output/{job_id}/{timestamp}.md
+Jobs are stored in ~/.worker-bee/cron/jobs.json
+Output is saved to ~/.worker-bee/cron/output/{job_id}/{timestamp}.md
 """
 
 import copy
@@ -67,7 +67,7 @@ except ImportError:
 # Configuration
 # =============================================================================
 
-HERMES_DIR = Path.home() / ".hermes-lite"
+HERMES_DIR = Path.home() / ".worker-bee"
 CRON_DIR = HERMES_DIR / "cron"
 JOBS_FILE = CRON_DIR / "jobs.json"
 

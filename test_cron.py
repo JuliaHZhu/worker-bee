@@ -9,7 +9,7 @@ import tempfile
 
 # Patch HERMES_DIR to a temp dir so we don't touch real data
 from pathlib import Path
-TEST_DIR = Path(tempfile.mkdtemp(prefix="hermes-lite-test-"))
+TEST_DIR = Path(tempfile.mkdtemp(prefix="worker-bee-test-"))
 
 import cron.jobs as jobs  # noqa: E402
 jobs.HERMES_DIR = TEST_DIR

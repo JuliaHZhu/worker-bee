@@ -1,6 +1,6 @@
 # Changelog
 
-Hermes Lite 开发历史。从 [Hermes Agent](https://github.com/NousResearch/hermes-agent) 剥离的最小核起步，逐步长出自己的架构。
+Worker Bee 开发历史。从 [Hermes Agent](https://github.com/NousResearch/hermes-agent) 剥离的最小核起步，逐步长出自己的架构。
 
 ---
 

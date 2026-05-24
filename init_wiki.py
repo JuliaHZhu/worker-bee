@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Initialize LLM Wiki for hermes-lite.
+"""Initialize LLM Wiki for worker-bee.
 
 Usage:
     python init_wiki.py [WIKI_PATH]
 
-Defaults to ~/wiki-hermes-lite or $WIKI_PATH env var.
+Defaults to ~/wiki-worker-bee or $WIKI_PATH env var.
 """
 import os
 import sys
@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 def main():
-    wiki_path = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("WIKI_PATH", str(Path.home() / "wiki-hermes-lite"))
+    wiki_path = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("WIKI_PATH", str(Path.home() / "wiki-worker-bee"))
     wiki = Path(wiki_path)
 
     if wiki.exists() and any(wiki.iterdir()):
@@ -137,7 +137,7 @@ When new info conflicts:
 > Actions: ingest, update, query, lint, create, archive, delete, learn-from-doing
 
 ## [{__import__('datetime').datetime.now().strftime('%Y-%m-%d')}] create | Wiki initialized
-- Domain: hermes-lite operations & learnings
+- Domain: worker-bee operations & learnings
 - Structure created with SCHEMA.md, index.md, log.md
 - learn-from-doing/ space prepared for dual-layer session analysis
 """, encoding="utf-8")

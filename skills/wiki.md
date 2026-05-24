@@ -1,6 +1,6 @@
 ---
 name: wiki
-description: Operate the LLM Wiki — initialize, ingest sources, query knowledge, lint integrity. Karpathy-style interlinked markdown KB adapted for hermes-lite.
+description: Operate the LLM Wiki — initialize, ingest sources, query knowledge, lint integrity. Karpathy-style interlinked markdown KB adapted for worker-bee.
 trigger: wiki, knowledge base, 知识库, 笔记, ingest, query, lint, 整理笔记
 tools:
   - fs_read_file
@@ -26,14 +26,14 @@ Unlike RAG (which rediscovers per query), the wiki compiles once and keeps curre
 
 ## Wiki Location
 
-Path: `${WIKI_PATH:-$HOME/wiki-hermes-lite}`
+Path: `${WIKI_PATH:-$HOME/wiki-worker-bee}`
 
-Hermes-lite resolves this via env var or falls back to `~/wiki-hermes-lite`.
+Hermes-lite resolves this via env var or falls back to `~/wiki-worker-bee`.
 
 ## Architecture
 
 ```
-wiki-hermes-lite/
+wiki-worker-bee/
 ├── SCHEMA.md           # Domain conventions, tag taxonomy, thresholds
 ├── index.md            # Sectioned catalog with one-line summaries
 ├── log.md              # Chronological action log (append-only, rotate yearly)
@@ -64,7 +64,7 @@ Every session that touches the wiki MUST orient first:
 3. Read last 20-30 lines of `log.md`
 
 ```bash
-WIKI="${WIKI_PATH:-$HOME/wiki-hermes-lite}"
+WIKI="${WIKI_PATH:-$HOME/wiki-worker-bee}"
 # Use fs_read_file on these three files
 ```
 
@@ -76,7 +76,7 @@ Only then ingest, query, or lint.
 
 When user asks to create a wiki:
 
-1. Determine path (env var or ask; default `~/wiki-hermes-lite`)
+1. Determine path (env var or ask; default `~/wiki-worker-bee`)
 2. Create directory structure above
 3. Ask user for domain — be specific
 4. Write `SCHEMA.md` (customized to domain)

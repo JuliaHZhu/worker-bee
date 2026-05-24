@@ -31,7 +31,7 @@ phase: implement
 When the user wants to preserve the current (or a past) session:
 
 1. Call `tagged_session(action='save', session=<session_id>, content=<optional title>)`
-2. The tool reads all messages from SQLite, builds a markdown note with YAML frontmatter, and writes to `~/wiki-hermes-lite/sessions/{session_id}.md`
+2. The tool reads all messages from SQLite, builds a markdown note with YAML frontmatter, and writes to `~/wiki-worker-bee/sessions/{session_id}.md`
 3. Report: "已保存到 ... (共 N 条消息)"
 
 If `content` is omitted, the tool uses the session's existing title or purpose.
@@ -53,7 +53,7 @@ When the user wants to add or remove labels on an existing note:
 When the user wants to search past notes:
 
 1. Call `tagged_session(action='find', content=<comma-separated tags>)`
-2. The tool searches the active pool (`~/wiki-hermes-lite/sessions/*.md`, excluding `archive/`)
+2. The tool searches the active pool (`~/wiki-worker-bee/sessions/*.md`, excluding `archive/`)
 3. Returns a list of matching sessions with title and tags
 
 Tag matching uses **intersection** — a note must have ALL requested tags to match.

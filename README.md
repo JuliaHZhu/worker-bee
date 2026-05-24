@@ -1,4 +1,4 @@
-# Hermes Lite
+# Worker Bee
 
 > One Agent. One Board. That's enough.
 
@@ -6,7 +6,7 @@
 
 ## One Sentence
 
-**Hermes Lite = One Agent + One Job Board.**
+**Worker Bee = One Agent + One Job Board.**
 
 No Symphony. No multi-agent orchestration. No daemon. The agent reads the board, assigns itself work, and leaves pheromones. Humans open the file anytime and see everything.
 
@@ -16,7 +16,7 @@ No Symphony. No multi-agent orchestration. No daemon. The agent reads the board,
 
 Multi-agent frameworks assume: tasks are so complex they need分工, so you need orchestrators, worker pools, and inter-agent protocols.
 
-Hermes Lite assumes differently:
+Worker Bee assumes differently:
 
 > **The agent itself is the dispatcher.** The Deck architecture already solves tool distribution—each task only exposes relevant tools. The agent doesn't need to be "scheduled"; it only needs to be "activated".
 
@@ -41,8 +41,8 @@ The agent does one thing at a time, but **one thing can be very complex**—read
 
 ```bash
 # 1. Clone
-git clone https://github.com/JuliaHZhu/hermes-lite.git
-cd hermes-lite
+git clone https://github.com/JuliaHZhu/worker-bee.git
+cd worker-bee
 
 # 2. Install dependencies
 pip install -e .
@@ -161,7 +161,7 @@ Every phase transition is a **checkpoint** event, recording: who, what phase, wh
 
 ## vs Symphony
 
-| | **Symphony** | **Hermes Lite** |
+| | **Symphony** | **Worker Bee** |
 |---|---|---|
 | **Core Assumption** | Tasks need multiple workers | One agent can sequence multiple tasks |
 | **Scheduling** | Hard-coded orchestrator (`while/for/sleep`) | Agent reads board, decides itself |
@@ -170,7 +170,7 @@ Every phase transition is a **checkpoint** event, recording: who, what phase, wh
 | **Human Intervention** | Restart with config changes | **Edit job file directly** |
 | **Metaphor** | Factory assembly line (automation) | Kanban board (manageable) |
 
-> **Symphony is "machines running the assembly line themselves". Hermes Lite is "machines following the human's board".**
+> **Symphony is "machines running the assembly line themselves". Worker Bee is "machines following the human's board".**
 
 ---
 

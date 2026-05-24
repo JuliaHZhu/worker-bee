@@ -1,4 +1,4 @@
-"""Shared test fixtures for hermes-lite."""
+"""Shared test fixtures for worker-bee."""
 import os
 import tempfile
 import pytest
@@ -8,7 +8,7 @@ from pathlib import Path
 @pytest.fixture
 def temp_dir():
     """Create a temporary directory, cleaned up after test."""
-    with tempfile.TemporaryDirectory(prefix="hermes-lite-test-") as d:
+    with tempfile.TemporaryDirectory(prefix="worker-bee-test-") as d:
         yield Path(d)
 
 

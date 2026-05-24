@@ -43,7 +43,7 @@ def test_frontmatter_roundtrip(sessions_dir):
         "tags": ["#design", "#review"],
         "created": "2026-05-23T10:00:00",
         "archived": False,
-        "source": "hermes-lite",
+        "source": "worker-bee",
     }
     body = "## user | 2026-05-23T10:00:00\nHello world\n\n## assistant | 2026-05-23T10:01:00\nHi there\n"
     _write_frontmatter(path, meta, body)

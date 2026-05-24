@@ -1,4 +1,4 @@
-# Hermes Lite
+# Worker Bee
 
 > 一个 Agent，一块板。够了。
 
@@ -6,7 +6,7 @@
 
 ## 一句话
 
-**Hermes Lite = 一台 Agent + 一块 Job Board。**
+**Worker Bee = 一台 Agent + 一块 Job Board。**
 
 不需要 Symphony，不需要多 Agent 编排，不需要 daemon。Agent 自己读板、自己派活、自己留下信息素。人随时打开文件就能看到全貌。
 
@@ -16,7 +16,7 @@
 
 多 Agent 框架的默认假设：任务复杂到需要分工，所以要有 orchestrator、worker pool、agent 间通信协议。
 
-Hermes Lite 的假设不同：
+Worker Bee 的假设不同：
 
 > **Agent 自己就是 dispatcher。** Deck 架构已经解决了工具分发——每次任务只暴露相关的工具。Agent 不需要"被调度"，它只需要"被激活"。
 
@@ -41,8 +41,8 @@ Agent 一次只做一件事，但**一件事可以很复杂**——读多个 job
 
 ```bash
 # 1. 克隆
-git clone https://github.com/JuliaHZhu/hermes-lite.git
-cd hermes-lite
+git clone https://github.com/JuliaHZhu/worker-bee.git
+cd worker-bee
 
 # 2. 装依赖
 pip install -e .
@@ -161,7 +161,7 @@ created → confirmed → planned → executing → self_checked → reviewed �
 
 ## 与 Symphony 的区别
 
-| | **Symphony** | **Hermes Lite** |
+| | **Symphony** | **Worker Bee** |
 |---|---|---|
 | **核心假设** | 任务需要多个 worker 分工 | 一个 agent 可以序列处理多个任务 |
 | **调度** | 硬代码 orchestrator（`while/for/sleep`） | agent 自己读板、自己决策 |
@@ -170,7 +170,7 @@ created → confirmed → planned → executing → self_checked → reviewed �
 | **人怎么干预** | 改配置重启 | **直接改 job 文件** |
 | **形态** | 工厂流水线（自动化） | 工单板（可管理） |
 
-> **Symphony 是"机器自己跟着流水线跑"。Hermes Lite 是"机器跟着人的板子走"。**
+> **Symphony 是"机器自己跟着流水线跑"。Worker Bee 是"机器跟着人的板子走"。**
 
 ---
 

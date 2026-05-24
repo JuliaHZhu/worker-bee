@@ -1,11 +1,15 @@
-"""supervisor — Job board management for agent work tracking.
+"""job_supervisor — Job board management with delivery-quality tracking.
 
-Jobs are Markdown files with YAML frontmatter. The board is a text
-information field: humans read it, LLMs read it, git tracks it.
+Jobs are Markdown files with YAML frontmatter. Each job tracks:
+- What: title + description + skills
+- Who: owner (responsible) + reviewer (validator)
+- Deliverables: checklist of artifacts to produce
+- Acceptance: checklist of quality gates
 
-Design constraint: HISTORY IS APPEND-ONLY. Never overwrite past events.
-State changes are recorded as events in the body; frontmatter state is
-a derived cache for fast board scans.
+Phase checkpoints (append-only):
+    created → confirmed → planned → executing → self_checked → reviewed → done
+
+Design: text-as-model. All history is append-only. Frontmatter state is a cache.
 """
 import json
 import re
@@ -18,6 +22,10 @@ JOBS_DIR = Path(__file__).parent.parent / "jobs"
 INDEX_FILE = JOBS_DIR / "_index.json"
 
 _VALID_STATES = ("Todo", "Running", "Done", "Blocked")
+_VALID_PHASES = (
+    "created", "confirmed", "planned", "executing",
+    "self_checked", "reviewed", "done",
+)
 
 
 def _ensure_dir() -> None:
@@ -75,6 +83,7 @@ def _update_index_entry(job_id: str, meta: dict) -> None:
     index = _read_index()
     index["jobs"][job_id] = {
         "state": meta.get("state", "Todo"),
+        "phase": meta.get("phase", "created"),
         "title": meta.get("title", ""),
         "updated": meta.get("updated", ""),
     }
@@ -93,12 +102,10 @@ def _append_event(body: str, event: str) -> str:
     line = f"- [{ts}] {event}\n"
     marker = "## 事件流"
     if marker in body:
-        # Find end of event-stream section (next ## or EOF) and insert there
         parts = body.split(marker, 1)
         before = parts[0]
         after = parts[1]
-        # after starts with " (append-only)\n\n..." or "\n\n..."
-        # Find next section header (## ) or end of string
+        # Find end of event-stream section (next ## or EOF)
         next_section = after.find("\n## ", 1)
         if next_section == -1:
             section = after
@@ -106,7 +113,6 @@ def _append_event(body: str, event: str) -> str:
         else:
             section = after[:next_section]
             rest = after[next_section:]
-        # Append line to section
         section = section.rstrip("\n") + "\n" + line
         return before + marker + section + rest
     return body + f"\n{marker} (append-only)\n\n{line}"
@@ -114,7 +120,7 @@ def _append_event(body: str, event: str) -> str:
 
 # ── Public tools ────────────────────────────────────────────────────
 
-def supervisor_status() -> str:
+def job_supervisor_status() -> str:
     """Return a human-readable Kanban board summary."""
     _ensure_dir()
     jobs = []
@@ -124,6 +130,8 @@ def supervisor_status() -> str:
             "id": meta.get("id", p.stem),
             "title": meta.get("title", "(untitled)"),
             "state": meta.get("state", "Todo"),
+            "phase": meta.get("phase", "created"),
+            "owner": meta.get("owner", ""),
             "skills": ", ".join(meta.get("skills", [])),
         })
 
@@ -140,14 +148,16 @@ def supervisor_status() -> str:
         if entries:
             lines.append(f"## {st} ({len(entries)})")
             for j in entries:
-                skill_hint = f"  [{j['skills']}]" if j["skills"] else ""
-                lines.append(f"- {j['id']}: {j['title']}{skill_hint}")
+                phase_hint = f" ({j['phase']})" if j["phase"] != "created" else ""
+                owner_hint = f" @{j['owner']}" if j["owner"] else ""
+                skill_hint = f" [{j['skills']}]" if j["skills"] else ""
+                lines.append(f"- {j['id']}: {j['title']}{phase_hint}{owner_hint}{skill_hint}")
             lines.append("")
 
     return "\n".join(lines)
 
 
-def supervisor_read(job_id: str) -> str:
+def job_supervisor_read(job_id: str) -> str:
     """Read the full Markdown of a job."""
     _ensure_dir()
     path = JOBS_DIR / f"{job_id}.md"
@@ -156,22 +166,48 @@ def supervisor_read(job_id: str) -> str:
     return path.read_text()
 
 
-def supervisor_create(title: str, description: str,
-                      skills: Optional[List[str]] = None) -> str:
-    """Create a new job file and return its ID."""
+def job_supervisor_create(
+    title: str,
+    description: str,
+    skills: Optional[List[str]] = None,
+    owner: str = "",
+    reviewer: str = "",
+    deliverables: Optional[List[str]] = None,
+    acceptance: Optional[List[str]] = None,
+) -> str:
+    """Create a new job file and return its ID.
+
+    Four elements of delivery quality:
+      - owner: who is responsible
+      - reviewer: who validates
+      - deliverables: what artifacts to produce
+      - acceptance: quality gates to pass
+    """
     _ensure_dir()
     job_id = _next_job_id()
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     meta = {
         "id": job_id,
         "title": title,
+        "owner": owner,
+        "reviewer": reviewer,
         "skills": skills or [],
+        "deliverables": deliverables or [],
+        "acceptance": acceptance or [],
         "state": "Todo",
+        "phase": "created",
         "priority": 2,
         "created": now,
         "updated": now,
     }
-    body = f"## 任务描述\n{description}\n\n## 事件流 (append-only)\n\n"
+    body = f"## 任务描述\n{description}\n\n"
+    body += "## 交付物\n"
+    for d in (deliverables or []):
+        body += f"- [ ] {d}\n"
+    body += "\n## 验收标准\n"
+    for a in (acceptance or []):
+        body += f"- [ ] {a}\n"
+    body += "\n## 事件流 (append-only)\n\n"
     body += f"- [{time.strftime('%H:%M', time.gmtime())}] created — state=Todo\n"
     content = _render_frontmatter(meta) + body
     path = JOBS_DIR / f"{job_id}.md"
@@ -180,8 +216,11 @@ def supervisor_create(title: str, description: str,
     return f"Created {job_id}: {title}"
 
 
-def supervisor_update(job_id: str, state: Optional[str] = None,
-                      append_log: Optional[str] = None) -> str:
+def job_supervisor_update(
+    job_id: str,
+    state: Optional[str] = None,
+    append_log: Optional[str] = None,
+) -> str:
     """Update job state and/or append a log/event line. All history is append-only."""
     _ensure_dir()
     path = JOBS_DIR / f"{job_id}.md"
@@ -214,13 +253,95 @@ def supervisor_update(job_id: str, state: Optional[str] = None,
     return f"Updated {job_id}"
 
 
-def supervisor_evaluate(job_id: str, eval_skill: str,
-                        eval_result: str) -> str:
-    """Append an evaluation result to a job's event stream.
+def job_supervisor_checkpoint(
+    job_id: str,
+    phase: str,
+    who: str,
+    note: str = "",
+) -> str:
+    """Record a phase checkpoint. Phase must be one of the valid lifecycle phases.
 
-    eval_skill: name of the skill that performed evaluation (e.g. design-alignment)
-    eval_result: short conclusion (Pass / NeedClarify / NeedMeeting / ...)
+    Phases: created → confirmed → planned → executing → self_checked → reviewed → done
     """
+    if phase not in _VALID_PHASES:
+        return f"Error: phase '{phase}' invalid. Valid: {', '.join(_VALID_PHASES)}"
+
+    _ensure_dir()
+    path = JOBS_DIR / f"{job_id}.md"
+    if not path.exists():
+        return f"Error: {job_id} not found."
+
+    content = path.read_text()
+    meta, body = _parse_frontmatter(content)
+    if meta is None:
+        meta = {}
+
+    meta["phase"] = phase
+    event = f"checkpoint — phase={phase}, who={who}"
+    if note:
+        event += f", note={note}"
+    body = _append_event(body, event)
+
+    meta["updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    new_content = _render_frontmatter(meta) + body
+    path.write_text(new_content)
+    _update_index_entry(job_id, meta)
+
+    return f"Checkpoint {job_id}: {phase} by {who}"
+
+
+def job_supervisor_self_check(
+    job_id: str,
+    deliverables_done: Optional[List[str]] = None,
+    acceptance_passed: Optional[List[str]] = None,
+) -> str:
+    """Owner self-check: verify deliverables and acceptance criteria.
+    Automatically appends a checkpoint event."""
+    _ensure_dir()
+    path = JOBS_DIR / f"{job_id}.md"
+    if not path.exists():
+        return f"Error: {job_id} not found."
+
+    content = path.read_text()
+    meta, body = _parse_frontmatter(content)
+    if meta is None:
+        meta = {}
+
+    # Read expected deliverables / acceptance from meta
+    expected_del = meta.get("deliverables", []) or []
+    expected_acc = meta.get("acceptance", []) or []
+    done_del = deliverables_done or []
+    passed_acc = acceptance_passed or []
+
+    del_status = f"{len(done_del)}/{len(expected_del)}"
+    acc_status = f"{len(passed_acc)}/{len(expected_acc)}"
+
+    body = _append_event(
+        body,
+        f"self_check — deliverables {del_status}, acceptance {acc_status}"
+    )
+
+    # Also update the checklist in body if we can match items
+    for d in done_del:
+        body = body.replace(f"- [ ] {d}", f"- [x] {d}")
+    for a in passed_acc:
+        body = body.replace(f"- [ ] {a}", f"- [x] {a}")
+
+    meta["phase"] = "self_checked"
+    meta["updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    new_content = _render_frontmatter(meta) + body
+    path.write_text(new_content)
+    _update_index_entry(job_id, meta)
+
+    return f"Self-check {job_id}: deliverables {del_status}, acceptance {acc_status}"
+
+
+def job_supervisor_evaluate(
+    job_id: str,
+    eval_skill: str,
+    eval_result: str,
+) -> str:
+    """Append an evaluation result to a job's event stream."""
     _ensure_dir()
     path = JOBS_DIR / f"{job_id}.md"
     if not path.exists():
@@ -239,7 +360,7 @@ def supervisor_evaluate(job_id: str, eval_skill: str,
     return f"Evaluated {job_id} with {eval_skill}: {eval_result}"
 
 
-def supervisor_delete(job_id: str) -> str:
+def job_supervisor_delete(job_id: str) -> str:
     """Delete a job file and its index entry."""
     _ensure_dir()
     path = JOBS_DIR / f"{job_id}.md"
@@ -257,13 +378,13 @@ try:
     from registry import registry
 
     registry.register(
-        name="supervisor_status",
+        name="job_supervisor_status",
         description="Read the job board and return a Kanban summary (Todo/Running/Blocked/Done).",
         parameters={"type": "object", "properties": {}},
-        handler=supervisor_status,
+        handler=job_supervisor_status,
     )
     registry.register(
-        name="supervisor_read",
+        name="job_supervisor_read",
         description="Read the full Markdown content of a specific job by ID.",
         parameters={
             "type": "object",
@@ -272,25 +393,28 @@ try:
             },
             "required": ["job_id"],
         },
-        handler=supervisor_read,
+        handler=job_supervisor_read,
     )
     registry.register(
-        name="supervisor_create",
-        description="Create a new job with title, description, and optional skills. Returns job ID.",
+        name="job_supervisor_create",
+        description="Create a new job with title, description, and optional skills, owner, reviewer, deliverables, acceptance. Returns job ID.",
         parameters={
             "type": "object",
             "properties": {
                 "title": {"type": "string"},
                 "description": {"type": "string"},
-                "skills": {"type": "array", "items": {"type": "string"},
-                           "description": "Skill names for Deck assembly"},
+                "skills": {"type": "array", "items": {"type": "string"}, "description": "Skill names for Deck assembly"},
+                "owner": {"type": "string", "description": "Responsible agent/human"},
+                "reviewer": {"type": "string", "description": "Validator agent/human"},
+                "deliverables": {"type": "array", "items": {"type": "string"}, "description": "Artifacts to produce"},
+                "acceptance": {"type": "array", "items": {"type": "string"}, "description": "Quality gates"},
             },
             "required": ["title", "description"],
         },
-        handler=supervisor_create,
+        handler=job_supervisor_create,
     )
     registry.register(
-        name="supervisor_update",
+        name="job_supervisor_update",
         description="Update a job's state and/or append a log line. All history is append-only.",
         parameters={
             "type": "object",
@@ -301,31 +425,60 @@ try:
             },
             "required": ["job_id"],
         },
-        handler=supervisor_update,
+        handler=job_supervisor_update,
     )
     registry.register(
-        name="supervisor_evaluate",
-        description="Append an evaluation result to a job's event stream. eval_skill is the skill name that performed the evaluation; eval_result is the conclusion (Pass/NeedClarify/NeedMeeting).",
+        name="job_supervisor_checkpoint",
+        description="Record a phase checkpoint. Phases: created, confirmed, planned, executing, self_checked, reviewed, done.",
         parameters={
             "type": "object",
             "properties": {
                 "job_id": {"type": "string"},
-                "eval_skill": {"type": "string", "description": "Skill that performed evaluation, e.g. design-alignment"},
-                "eval_result": {"type": "string", "description": "Conclusion: Pass, NeedClarify, NeedMeeting, etc."},
+                "phase": {"type": "string", "enum": list(_VALID_PHASES)},
+                "who": {"type": "string", "description": "Agent or human confirming this phase"},
+                "note": {"type": "string"},
+            },
+            "required": ["job_id", "phase", "who"],
+        },
+        handler=job_supervisor_checkpoint,
+    )
+    registry.register(
+        name="job_supervisor_self_check",
+        description="Owner self-check: verify deliverables and acceptance criteria. Automatically appends a checkpoint.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "job_id": {"type": "string"},
+                "deliverables_done": {"type": "array", "items": {"type": "string"}},
+                "acceptance_passed": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["job_id"],
+        },
+        handler=job_supervisor_self_check,
+    )
+    registry.register(
+        name="job_supervisor_evaluate",
+        description="Append an evaluation result. eval_skill is the skill name that performed evaluation; eval_result is Pass/NeedClarify/NeedMeeting.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "job_id": {"type": "string"},
+                "eval_skill": {"type": "string"},
+                "eval_result": {"type": "string"},
             },
             "required": ["job_id", "eval_skill", "eval_result"],
         },
-        handler=supervisor_evaluate,
+        handler=job_supervisor_evaluate,
     )
     registry.register(
-        name="supervisor_delete",
+        name="job_supervisor_delete",
         description="Delete a job from the board.",
         parameters={
             "type": "object",
             "properties": {"job_id": {"type": "string"}},
             "required": ["job_id"],
         },
-        handler=supervisor_delete,
+        handler=job_supervisor_delete,
     )
 except ImportError:
     pass

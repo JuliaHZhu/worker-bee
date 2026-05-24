@@ -35,3 +35,6 @@ todo_ball_machine/audit_logs/
 todo_ball_machine/cycle_stats.json
 todo_ball_machine/pool_state.json
 todo_ball_machine/test_heartbeat_log.json
+
+# Job board runtime data
+jobs/

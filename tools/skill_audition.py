@@ -28,6 +28,20 @@ if _sys_path_guard not in sys.path:
     sys.path.insert(0, _sys_path_guard)
 from skills import _parse_yamlish  # noqa: E402
 
+# ── Import tools to trigger registration (needed for registry check) ─
+# When running standalone, tool modules haven't been imported yet, so registry
+# is empty. We pre-load all tools/ modules so check_tool_existence() works.
+import importlib  # noqa: E402
+import pkgutil  # noqa: E402
+
+_tools_dir = str(Path(__file__).parent)
+for _, _mod_name, _ in pkgutil.iter_modules([_tools_dir]):
+    if not _mod_name.startswith("_"):
+        try:
+            importlib.import_module(f"tools.{_mod_name}")
+        except Exception:
+            pass  # silently skip tools that fail to load
+
 def _parse_frontmatter(content: str) -> Tuple[Optional[dict], str]:
     m = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
     if not m:

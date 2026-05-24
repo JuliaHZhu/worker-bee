@@ -1,8 +1,44 @@
 import fnmatch
 import os
 import re
+import shutil
 from pathlib import Path
 from registry import registry
+
+
+# ── Snapshot / Rollback ─────────────────────────────────────────────
+
+_SNAPSHOT_DIR = Path.home() / ".workerbee" / "snapshots"
+
+
+def _snapshot_path(path: str) -> Path:
+    """Return the snapshot file path for a given target file."""
+    # Use a hash of the absolute path to avoid collisions and path issues
+    key = Path(path).expanduser().resolve().as_posix()
+    import hashlib
+    h = hashlib.sha256(key.encode()).hexdigest()[:16]
+    return _SNAPSHOT_DIR / f"{h}.bak"
+
+
+def save_snapshot(path: str) -> None:
+    """Save a snapshot of the file before overwriting. No-op if file doesn't exist."""
+    src = Path(path).expanduser()
+    if not src.exists():
+        return
+    _SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    dst = _snapshot_path(path)
+    shutil.copy2(src, dst)
+
+
+def fs_rollback_file(path: str) -> str:
+    """Rollback a file to its last snapshot."""
+    src = _snapshot_path(path)
+    if not src.exists():
+        return f"No snapshot found for {path}"
+    dst = Path(path).expanduser()
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+    return f"Rolled back {path} from snapshot"
 
 
 # ── Workspace guard ─────────────────────────────────────────────────
@@ -76,6 +112,8 @@ def fs_write_file(path: str, content: str) -> str:
         return err
     try:
         p = Path(path).expanduser()
+        # Save snapshot before overwriting
+        save_snapshot(path)
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(content, encoding="utf-8")
         return f"Written {len(content)} chars to {path}"
@@ -154,5 +192,19 @@ registry.register(
     },
     handler=fs_search_files,
     tags=["filesystem", "search"],
+    category="filesystem"
+)
+
+registry.register(
+    name="fs_rollback_file",
+    description="Rollback a file to its last snapshot taken before the most recent write.",
+    parameters={
+        "properties": {
+            "path": {"type": "string", "description": "File path to rollback"}
+        },
+        "required": ["path"]
+    },
+    handler=fs_rollback_file,
+    tags=["filesystem", "rollback"],
     category="filesystem"
 )

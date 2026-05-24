@@ -73,7 +73,18 @@ def _write_index(index: dict) -> None:
 
 def _next_job_id() -> str:
     index = _read_index()
-    idx = index["last_id"] + 1
+    idx = index["last_id"]
+    if idx == 0:
+        # Index may be empty/corrupted — scan disk for existing IDs
+        existing = sorted(JOBS_DIR.glob("JOB-*.md"))
+        if existing:
+            max_id = 0
+            for p in existing:
+                m = re.match(r"JOB-(\d+)", p.stem)
+                if m:
+                    max_id = max(max_id, int(m.group(1)))
+            idx = max_id
+    idx += 1
     index["last_id"] = idx
     _write_index(index)
     return f"JOB-{idx:03d}"
@@ -310,8 +321,8 @@ def job_supervisor_self_check(
     # Read expected deliverables / acceptance from meta
     expected_del = meta.get("deliverables", []) or []
     expected_acc = meta.get("acceptance", []) or []
-    done_del = deliverables_done or []
-    passed_acc = acceptance_passed or []
+    done_del = [d for d in (deliverables_done or []) if d in expected_del]
+    passed_acc = [a for a in (acceptance_passed or []) if a in expected_acc]
 
     del_status = f"{len(done_del)}/{len(expected_del)}"
     acc_status = f"{len(passed_acc)}/{len(expected_acc)}"

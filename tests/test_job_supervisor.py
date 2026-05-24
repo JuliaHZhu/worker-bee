@@ -166,5 +166,54 @@ def test_delete_job():
     assert job_id not in index["jobs"]
 
 
+def test_self_check_filters_unknown_items():
+    """P1: deliverables_done with items not in expected list → filtered."""
+    job_supervisor_create(
+        "Task A", "do A",
+        deliverables=["file.py"],
+        acceptance=["test passes"],
+    )
+    index = json.loads(INDEX_FILE.read_text())
+    job_id = list(index["jobs"].keys())[0]
+
+    result = job_supervisor_self_check(
+        job_id,
+        deliverables_done=["file.py", "extra.py"],
+        acceptance_passed=["test passes", "extra check"],
+    )
+    # Should report 1/1 not 2/1
+    assert "deliverables 1/1" in result
+    assert "acceptance 1/1" in result
+
+    content = job_supervisor_read(job_id)
+    assert "self_check — deliverables 1/1, acceptance 1/1" in content
+    # Only expected items are checked
+    assert "- [x] file.py" in content
+    assert "- [ ] extra.py" not in content  # never existed
+
+
+def test_index_recovery_after_deletion():
+    """P0: _index.json deleted → next create scans disk, no ID collision."""
+    # Create two jobs
+    r1 = job_supervisor_create("First", "desc")
+    id1 = r1.split(":")[0].replace("Created ", "")
+    r2 = job_supervisor_create("Second", "desc")
+    id2 = r2.split(":")[0].replace("Created ", "")
+
+    # Delete index
+    INDEX_FILE.unlink()
+    assert not INDEX_FILE.exists()
+
+    # Create third job → should scan disk, get JOB-003 not JOB-001
+    r3 = job_supervisor_create("Third", "desc")
+    id3 = r3.split(":")[0].replace("Created ", "")
+    assert id3 == "JOB-003"
+
+    # Verify old jobs still exist
+    assert (JOBS_DIR / f"{id1}.md").exists()
+    assert (JOBS_DIR / f"{id2}.md").exists()
+    assert (JOBS_DIR / f"{id3}.md").exists()
+
+
 def test_delete_missing_job():
     assert "not found" in job_supervisor_delete("JOB-999")

@@ -2,6 +2,10 @@
 
 Jobs are Markdown files with YAML frontmatter. The board is a text
 information field: humans read it, LLMs read it, git tracks it.
+
+Design constraint: HISTORY IS APPEND-ONLY. Never overwrite past events.
+State changes are recorded as events in the body; frontmatter state is
+a derived cache for fast board scans.
 """
 import json
 import re
@@ -13,6 +17,8 @@ from typing import Dict, List, Optional, Tuple
 JOBS_DIR = Path(__file__).parent.parent / "jobs"
 INDEX_FILE = JOBS_DIR / "_index.json"
 
+_VALID_STATES = ("Todo", "Running", "Done", "Blocked")
+
 
 def _ensure_dir() -> None:
     JOBS_DIR.mkdir(exist_ok=True)
@@ -22,20 +28,17 @@ def _parse_frontmatter(content: str) -> Tuple[Optional[dict], str]:
     m = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
     if not m:
         return None, content
-    # Re-use the lightweight yamlish parser from skills.py
     try:
         from skills import _parse_yamlish
         meta = _parse_yamlish(m.group(1))
     except Exception:
-        # Fallback: empty meta so the file is still readable
         meta = {}
     return meta, content[m.end():].strip()
 
 
 def _render_frontmatter(meta: dict) -> str:
-    """Render minimal YAML frontmatter (enough for our schema)."""
     lines = ["---"]
-    for k, v in sorted(meta.items()) if False else meta.items():
+    for k, v in meta.items():
         if isinstance(v, list):
             lines.append(f"{k}:")
             for item in v:
@@ -84,6 +87,31 @@ def _parse_job(path: Path) -> Tuple[dict, str]:
     return meta or {}, body
 
 
+def _append_event(body: str, event: str) -> str:
+    """Append an event line to the ## 事件流 section."""
+    ts = time.strftime("%H:%M", time.gmtime())
+    line = f"- [{ts}] {event}\n"
+    marker = "## 事件流"
+    if marker in body:
+        # Find end of event-stream section (next ## or EOF) and insert there
+        parts = body.split(marker, 1)
+        before = parts[0]
+        after = parts[1]
+        # after starts with " (append-only)\n\n..." or "\n\n..."
+        # Find next section header (## ) or end of string
+        next_section = after.find("\n## ", 1)
+        if next_section == -1:
+            section = after
+            rest = ""
+        else:
+            section = after[:next_section]
+            rest = after[next_section:]
+        # Append line to section
+        section = section.rstrip("\n") + "\n" + line
+        return before + marker + section + rest
+    return body + f"\n{marker} (append-only)\n\n{line}"
+
+
 # ── Public tools ────────────────────────────────────────────────────
 
 def supervisor_status() -> str:
@@ -102,7 +130,6 @@ def supervisor_status() -> str:
     if not jobs:
         return "Board is empty. No jobs yet."
 
-    # Group by state
     states = {"Todo": [], "Running": [], "Done": [], "Blocked": []}
     for j in jobs:
         states.setdefault(j["state"], []).append(j)
@@ -144,7 +171,8 @@ def supervisor_create(title: str, description: str,
         "created": now,
         "updated": now,
     }
-    body = f"## 任务描述\n{description}\n\n## 执行记录\n\n## 阻塞记录\n"
+    body = f"## 任务描述\n{description}\n\n## 事件流 (append-only)\n\n"
+    body += f"- [{time.strftime('%H:%M', time.gmtime())}] created — state=Todo\n"
     content = _render_frontmatter(meta) + body
     path = JOBS_DIR / f"{job_id}.md"
     path.write_text(content)
@@ -154,7 +182,7 @@ def supervisor_create(title: str, description: str,
 
 def supervisor_update(job_id: str, state: Optional[str] = None,
                       append_log: Optional[str] = None) -> str:
-    """Update job state and/or append a log line."""
+    """Update job state and/or append a log/event line. All history is append-only."""
     _ensure_dir()
     path = JOBS_DIR / f"{job_id}.md"
     if not path.exists():
@@ -166,17 +194,15 @@ def supervisor_update(job_id: str, state: Optional[str] = None,
         meta = {}
 
     changed = False
-    if state and state in ("Todo", "Running", "Done", "Blocked"):
+    old_state = meta.get("state", "Todo")
+
+    if state and state in _VALID_STATES and state != old_state:
         meta["state"] = state
+        body = _append_event(body, f"state_change — {old_state} → {state}")
         changed = True
 
     if append_log:
-        ts = time.strftime("%H:%M", time.gmtime())
-        log_line = f"- [{ts}] {append_log}\n"
-        if "## 执行记录" in body:
-            body = body.replace("## 执行记录\n", "## 执行记录\n" + log_line)
-        else:
-            body += f"\n## 执行记录\n{log_line}"
+        body = _append_event(body, f"log — {append_log}")
         changed = True
 
     if changed:
@@ -186,6 +212,31 @@ def supervisor_update(job_id: str, state: Optional[str] = None,
         _update_index_entry(job_id, meta)
 
     return f"Updated {job_id}"
+
+
+def supervisor_evaluate(job_id: str, eval_skill: str,
+                        eval_result: str) -> str:
+    """Append an evaluation result to a job's event stream.
+
+    eval_skill: name of the skill that performed evaluation (e.g. design-alignment)
+    eval_result: short conclusion (Pass / NeedClarify / NeedMeeting / ...)
+    """
+    _ensure_dir()
+    path = JOBS_DIR / f"{job_id}.md"
+    if not path.exists():
+        return f"Error: {job_id} not found."
+
+    content = path.read_text()
+    meta, body = _parse_frontmatter(content)
+    if meta is None:
+        meta = {}
+
+    body = _append_event(body, f"eval — {eval_skill}: {eval_result}")
+    meta["updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    new_content = _render_frontmatter(meta) + body
+    path.write_text(new_content)
+    _update_index_entry(job_id, meta)
+    return f"Evaluated {job_id} with {eval_skill}: {eval_result}"
 
 
 def supervisor_delete(job_id: str) -> str:
@@ -208,10 +259,7 @@ try:
     registry.register(
         name="supervisor_status",
         description="Read the job board and return a Kanban summary (Todo/Running/Blocked/Done).",
-        parameters={
-            "type": "object",
-            "properties": {},
-        },
+        parameters={"type": "object", "properties": {}},
         handler=supervisor_status,
     )
     registry.register(
@@ -243,12 +291,12 @@ try:
     )
     registry.register(
         name="supervisor_update",
-        description="Update a job's state (Todo/Running/Done/Blocked) and/or append a log line.",
+        description="Update a job's state and/or append a log line. All history is append-only.",
         parameters={
             "type": "object",
             "properties": {
                 "job_id": {"type": "string"},
-                "state": {"type": "string", "enum": ["Todo", "Running", "Done", "Blocked"]},
+                "state": {"type": "string", "enum": list(_VALID_STATES)},
                 "append_log": {"type": "string"},
             },
             "required": ["job_id"],
@@ -256,16 +304,28 @@ try:
         handler=supervisor_update,
     )
     registry.register(
-        name="supervisor_delete",
-        description="Delete a job from the board.",
+        name="supervisor_evaluate",
+        description="Append an evaluation result to a job's event stream. eval_skill is the skill name that performed the evaluation; eval_result is the conclusion (Pass/NeedClarify/NeedMeeting).",
         parameters={
             "type": "object",
             "properties": {
                 "job_id": {"type": "string"},
+                "eval_skill": {"type": "string", "description": "Skill that performed evaluation, e.g. design-alignment"},
+                "eval_result": {"type": "string", "description": "Conclusion: Pass, NeedClarify, NeedMeeting, etc."},
             },
+            "required": ["job_id", "eval_skill", "eval_result"],
+        },
+        handler=supervisor_evaluate,
+    )
+    registry.register(
+        name="supervisor_delete",
+        description="Delete a job from the board.",
+        parameters={
+            "type": "object",
+            "properties": {"job_id": {"type": "string"}},
             "required": ["job_id"],
         },
         handler=supervisor_delete,
     )
 except ImportError:
-    pass  # standalone import guard
+    pass

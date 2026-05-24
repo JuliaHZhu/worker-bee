@@ -1,7 +1,6 @@
 """Tests for supervisor toolset."""
 import json
 import shutil
-import time
 from pathlib import Path
 
 import pytest
@@ -11,6 +10,7 @@ from tools.supervisor import (
     supervisor_read,
     supervisor_create,
     supervisor_update,
+    supervisor_evaluate,
     supervisor_delete,
     JOBS_DIR,
     INDEX_FILE,
@@ -24,7 +24,6 @@ def clean_jobs_dir():
         shutil.rmtree(JOBS_DIR)
     JOBS_DIR.mkdir()
     yield
-    # leave teardown to next test's setup
 
 
 def test_status_empty_board():
@@ -41,6 +40,8 @@ def test_create_job_returns_id():
     assert "Fix auth" in content
     assert "code-review" in content
     assert "state: Todo" in content
+    assert "事件流" in content
+    assert "created — state=Todo" in content
 
 
 def test_create_increments_id():
@@ -62,19 +63,19 @@ def test_status_shows_jobs():
 
 def test_read_existing_job():
     supervisor_create("Task A", "do A")
-    # find the id from index
     index = json.loads(INDEX_FILE.read_text())
     job_id = list(index["jobs"].keys())[0]
     content = supervisor_read(job_id)
     assert "Task A" in content
-    assert "## 任务描述" in content
+    assert "任务描述" in content
+    assert "事件流" in content
 
 
 def test_read_missing_job():
     assert "not found" in supervisor_read("JOB-999")
 
 
-def test_update_state():
+def test_update_state_appends_event():
     supervisor_create("Task A", "do A")
     index = json.loads(INDEX_FILE.read_text())
     job_id = list(index["jobs"].keys())[0]
@@ -84,6 +85,7 @@ def test_update_state():
 
     content = supervisor_read(job_id)
     assert "state: Running" in content
+    assert "state_change — Todo → Running" in content
 
 
 def test_update_append_log():
@@ -93,7 +95,39 @@ def test_update_append_log():
 
     supervisor_update(job_id, append_log="started work")
     content = supervisor_read(job_id)
-    assert "started work" in content
+    assert "log — started work" in content
+
+
+def test_evaluate_appends_event():
+    supervisor_create("Task A", "do A")
+    index = json.loads(INDEX_FILE.read_text())
+    job_id = list(index["jobs"].keys())[0]
+
+    result = supervisor_evaluate(job_id, "design-alignment", "Pass")
+    assert "Evaluated" in result
+
+    content = supervisor_read(job_id)
+    assert "eval — design-alignment: Pass" in content
+
+
+def test_multiple_events_preserved():
+    supervisor_create("Task A", "do A")
+    index = json.loads(INDEX_FILE.read_text())
+    job_id = list(index["jobs"].keys())[0]
+
+    supervisor_update(job_id, state="Running")
+    supervisor_update(job_id, append_log="step 1 done")
+    supervisor_update(job_id, state="Done")
+    supervisor_evaluate(job_id, "security-check", "NeedClarify")
+
+    content = supervisor_read(job_id)
+    events = [line for line in content.split("\n") if line.startswith("- [")]
+    assert len(events) == 5  # created + state_change + log + state_change + eval
+    assert "created" in events[0]
+    assert "state_change — Todo → Running" in events[1]
+    assert "log — step 1 done" in events[2]
+    assert "state_change — Running → Done" in events[3]
+    assert "eval — security-check: NeedClarify" in events[4]
 
 
 def test_delete_job():

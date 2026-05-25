@@ -17,9 +17,9 @@ from datetime import datetime
 from pathlib import Path
 
 # ── Config ──
-HERMES_LITE_DIR = Path(__file__).parent.resolve()
-CONFIG_PATH = HERMES_LITE_DIR / "config.json"
-DEFAULT_DB = HERMES_LITE_DIR / "state.db"
+WORKER_BEE_DIR = Path(__file__).parent.resolve()
+CONFIG_PATH = WORKER_BEE_DIR / "config.json"
+DEFAULT_DB = WORKER_BEE_DIR / "state.db"
 
 
 def load_llm_config():
@@ -375,7 +375,7 @@ def main():
 
     if not Path(db_path).exists():
         print(f"❌ State DB not found: {db_path}")
-        print("   Hermes-lite must be run at least once to create state.db.")
+        print("   Worker-bee must be run at least once to create state.db.")
         sys.exit(1)
 
     config = load_llm_config()

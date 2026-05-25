@@ -17,12 +17,12 @@ def cron_env():
 
     # Setup module-level config
     import cron.jobs as jobs
-    old_home = jobs.HERMES_DIR
+    old_home = jobs.APP_DIR
     old_cron = jobs.CRON_DIR
     old_jobs_file = jobs.JOBS_FILE
     old_output = jobs.OUTPUT_DIR
 
-    jobs.HERMES_DIR = tmp
+    jobs.APP_DIR = tmp
     jobs.CRON_DIR = tmp / "cron"
     jobs.JOBS_FILE = jobs.CRON_DIR / "jobs.json"
     jobs.OUTPUT_DIR = jobs.CRON_DIR / "output"
@@ -31,7 +31,7 @@ def cron_env():
     yield tmp
 
     # Restore
-    jobs.HERMES_DIR = old_home
+    jobs.APP_DIR = old_home
     jobs.CRON_DIR = old_cron
     jobs.JOBS_FILE = old_jobs_file
     jobs.OUTPUT_DIR = old_output

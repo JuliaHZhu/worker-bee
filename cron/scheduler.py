@@ -42,7 +42,7 @@ SILENT_MARKER = "[SILENT]"
 
 # ── Workspace guard for cron scripts ─────────────────────────────────────────────────────
 
-_CRON_WORKSPACE = os.environ.get("HERMES_WORKSPACE", os.getcwd())
+_CRON_WORKSPACE = os.environ.get("WORKER_BEE_WORKSPACE", os.getcwd())
 
 
 def _is_inside_workspace(path: str) -> bool:

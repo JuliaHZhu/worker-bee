@@ -43,7 +43,7 @@ def fs_rollback_file(path: str) -> str:
 
 # ── Workspace guard ─────────────────────────────────────────────────
 
-_WORKSPACE = os.environ.get("HERMES_WORKSPACE", os.getcwd())
+_WORKSPACE = os.environ.get("WORKER_BEE_WORKSPACE", os.getcwd())
 
 # Sensitive paths that should never be written, and require confirmation to read.
 _SENSITIVE_PATTERNS = [

@@ -67,8 +67,8 @@ except ImportError:
 # Configuration
 # =============================================================================
 
-HERMES_DIR = Path.home() / ".worker-bee"
-CRON_DIR = HERMES_DIR / "cron"
+APP_DIR = Path.home() / ".worker-bee"
+CRON_DIR = APP_DIR / "cron"
 JOBS_FILE = CRON_DIR / "jobs.json"
 
 # In-process lock protecting load_jobs->modify->save_jobs cycles.

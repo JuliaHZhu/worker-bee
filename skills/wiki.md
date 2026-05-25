@@ -28,7 +28,7 @@ Unlike RAG (which rediscovers per query), the wiki compiles once and keeps curre
 
 Path: `${WIKI_PATH:-$HOME/wiki-worker-bee}`
 
-Hermes-lite resolves this via env var or falls back to `~/wiki-worker-bee`.
+Worker-bee resolves this via env var or falls back to `~/wiki-worker-bee`.
 
 ## Architecture
 

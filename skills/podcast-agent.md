@@ -52,7 +52,7 @@ Hermes: ✅ 已生成播客脚本，共16轮对话...
 
 ## Configuration
 
-`~/.hermes/podcast_agent_config.json`
+`~/.worker-bee/podcast_agent_config.json`
 
 ```json
 {

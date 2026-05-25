@@ -17,12 +17,12 @@ def cron_scheduler_env():
     imported_scheduler = __import__('cron.scheduler', fromlist=['scheduler'])
     sched = imported_scheduler
 
-    old_home = jobs.HERMES_DIR
+    old_home = jobs.APP_DIR
     old_cron = jobs.CRON_DIR
     old_jobs_file = jobs.JOBS_FILE
     old_output = jobs.OUTPUT_DIR
 
-    jobs.HERMES_DIR = tmp
+    jobs.APP_DIR = tmp
     jobs.CRON_DIR = tmp / "cron"
     jobs.JOBS_FILE = jobs.CRON_DIR / "jobs.json"
     jobs.OUTPUT_DIR = jobs.CRON_DIR / "output"
@@ -42,7 +42,7 @@ def cron_scheduler_env():
     yield tmp, mock_cfg, sched, jobs
 
     # Restore
-    jobs.HERMES_DIR = old_home
+    jobs.APP_DIR = old_home
     jobs.CRON_DIR = old_cron
     jobs.JOBS_FILE = old_jobs_file
     jobs.OUTPUT_DIR = old_output
@@ -94,7 +94,7 @@ class TestSchedulerNoAgent:
         outside_script.write_text("#!/bin/bash\necho 'outside'")
         os.chmod(outside_script, 0o755)
 
-        os.environ["HERMES_WORKSPACE"] = str(tmp)
+        os.environ["WORKER_BEE_WORKSPACE"] = str(tmp)
 
         try:
             jobs.create_job(
@@ -110,7 +110,7 @@ class TestSchedulerNoAgent:
             # Should not crash, the job should just fail gracefully
             assert count >= 1
         finally:
-            del os.environ["HERMES_WORKSPACE"]
+            del os.environ["WORKER_BEE_WORKSPACE"]
             try:
                 outside_script.unlink()
             except OSError:
@@ -119,7 +119,7 @@ class TestSchedulerNoAgent:
     def test_no_agent_missing_script(self, cron_scheduler_env):
         tmp, config, sched, jobs = cron_scheduler_env
 
-        os.environ["HERMES_WORKSPACE"] = str(tmp)
+        os.environ["WORKER_BEE_WORKSPACE"] = str(tmp)
 
         try:
             jobs.create_job(
@@ -135,4 +135,4 @@ class TestSchedulerNoAgent:
             # Should not crash
             assert count >= 1
         finally:
-            del os.environ["HERMES_WORKSPACE"]
+            del os.environ["WORKER_BEE_WORKSPACE"]

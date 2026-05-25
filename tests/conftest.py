@@ -14,14 +14,14 @@ def temp_dir():
 
 @pytest.fixture
 def temp_workspace(temp_dir):
-    """Temp dir + set HERMES_WORKSPACE env var."""
-    old = os.environ.get("HERMES_WORKSPACE")
-    os.environ["HERMES_WORKSPACE"] = str(temp_dir)
+    """Temp dir + set WORKER_BEE_WORKSPACE env var."""
+    old = os.environ.get("WORKER_BEE_WORKSPACE")
+    os.environ["WORKER_BEE_WORKSPACE"] = str(temp_dir)
     yield temp_dir
     if old is None:
-        del os.environ["HERMES_WORKSPACE"]
+        del os.environ["WORKER_BEE_WORKSPACE"]
     else:
-        os.environ["HERMES_WORKSPACE"] = old
+        os.environ["WORKER_BEE_WORKSPACE"] = old
 
 
 @pytest.fixture

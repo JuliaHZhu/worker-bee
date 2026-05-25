@@ -53,7 +53,7 @@ python3 tools/podcast_agent.py \
 
 **输出**：`paper.pdf.podcast.json` — 含 title、summary、dialogue array
 
-**Config** (`~/.hermes/podcast_agent_config.json`)：自动检测 `OPENAI_API_KEY` / `MOONSHOT_API_KEY`
+**Config** (`~/.worker-bee/podcast_agent_config.json`)：自动检测 `OPENAI_API_KEY` / `MOONSHOT_API_KEY`
 
 ### 4.2 组合工流：Todo Ball Machine → 播客
 

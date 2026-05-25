@@ -43,7 +43,7 @@ def main():
     schema.write_text("""# Wiki Schema
 
 ## Domain
-Hermes-lite operations, skill design, and user-AI interaction learnings.
+Worker-bee operations, skill design, and user-AI interaction learnings.
 
 ## Conventions
 - File names: lowercase, hyphens, no spaces

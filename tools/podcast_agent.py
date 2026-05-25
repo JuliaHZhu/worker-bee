@@ -10,7 +10,7 @@ Usage:
     python podcast_agent.py --source ~/docs/paper.pdf --tone casual --lang zh
     python podcast_agent.py --source ~/docs/notes.md --tone educational --lang en
 
-Config: ~/.hermes/podcast_agent_config.json (auto-created on first run)
+Config: ~/.worker-bee/podcast_agent_config.json (auto-created on first run)
 """
 
 import argparse
@@ -45,7 +45,7 @@ except ImportError:
     pymupdf = None
 
 # ── Constants ──────────────────────────────────────────────────────────────
-CONFIG_PATH = Path.home() / ".hermes" / "podcast_agent_config.json"
+CONFIG_PATH = Path.home() / ".worker-bee" / "podcast_agent_config.json"
 DEFAULT_SPEAKER_A = "alloy"      # OpenAI TTS voices
 DEFAULT_SPEAKER_B = "nova"
 MAX_CHARS_PER_LINE = 100         # ~5-8s spoken, from open-notebooklm prompts.py

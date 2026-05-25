@@ -40,27 +40,25 @@ Agent 一次只做一件事，但**一件事可以很复杂**——读多个 job
 ## 快速开始
 
 ```bash
-# 1. 克隆
-git clone https://github.com/JuliaHZhu/worker-bee.git
-cd worker-bee
+# 1. 安装
+pip install git+https://github.com/JuliaHZhu/worker-bee.git
 
-# 2. 装依赖
-pip install -e .
+# 2. 初始化 — 配置 API key
+worker-bee setup
+# 或直接编辑 ~/.worker-bee/config.json
 
-# 3. 配置 API key
-cp config.example.json config.json
-# 编辑 config.json 填入你的 API key
+# 3. 测试模型连通
+worker-bee -m "hello"
 
-# 4. 测试
-python -m pytest tests/ -q
-# 299 passed
+# 4. 测试渠道（可选）
+export FEISHU_WEBHOOK_URL=...
+worker-bee -c "hello"
 
-# 5. 跑起来
-python main.py
-# 测试连通: python main.py -m ping
+# 5. 启动
+worker-bee
 ```
 
-没有 daemon，没有配置文件目录，没有 orchestrator。`main.py` 就是入口。
+没有 daemon，没有 orchestrator。一个 CLI 入口。
 
 ---
 

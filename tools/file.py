@@ -3,7 +3,7 @@ import os
 import re
 import shutil
 from pathlib import Path
-from registry import registry
+from worker_bee.registry import registry
 
 
 # ── Snapshot / Rollback ─────────────────────────────────────────────

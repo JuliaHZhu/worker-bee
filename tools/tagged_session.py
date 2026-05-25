@@ -18,7 +18,7 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from registry import registry
+from worker_bee.registry import registry
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +134,7 @@ def _action_save(session_id: str, content: Optional[str]) -> str:
     if not session_id:
         return "❌ 需要 session"
 
-    from memory import SessionDB
+    from worker_bee.memory import SessionDB
     db = SessionDB()
     meta = db.get_session_meta(session_id)
     if not meta:

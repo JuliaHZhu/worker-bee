@@ -40,27 +40,25 @@ The agent does one thing at a time, but **one thing can be very complex**—read
 ## Quick Start
 
 ```bash
-# 1. Clone
-git clone https://github.com/JuliaHZhu/worker-bee.git
-cd worker-bee
+# 1. Install
+pip install git+https://github.com/JuliaHZhu/worker-bee.git
 
-# 2. Install dependencies
-pip install -e .
+# 2. Onboard — configure API key
+worker-bee setup
+# Or edit ~/.worker-bee/config.json directly
 
-# 3. Configure API key
-cp config.example.json config.json
-# Edit config.json with your API key
+# 3. Test model connection
+worker-bee -m "hello"
 
-# 4. Test
-python -m pytest tests/ -q
-# 299 passed
+# 4. Test channel (optional)
+export FEISHU_WEBHOOK_URL=...
+worker-bee -c "hello"
 
 # 5. Run
-python main.py
-# Test connection: python main.py -m ping
+worker-bee
 ```
 
-No daemon. No config directory. No orchestrator. `main.py` is the entry point.
+No daemon. No orchestrator. One CLI entry point.
 
 ---
 

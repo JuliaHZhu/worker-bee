@@ -18,7 +18,7 @@ import threading
 import importlib
 import pkgutil
 
-_tools_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
+_tools_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools")
 for _, _mod_name, _ in pkgutil.iter_modules([_tools_dir]):
     if not _mod_name.startswith("_"):
         try:
@@ -26,12 +26,12 @@ for _, _mod_name, _ in pkgutil.iter_modules([_tools_dir]):
         except Exception as e:
             print(f"  [Tool load error] {_mod_name}: {e}", file=sys.stderr)
 
-from agent import AIAgent
-from memory import SessionDB
-from skills import SkillManager
-from registry import registry
-from infra_toolsets import InfraToolSet
-from deck import build_deck, Deck
+from worker_bee.agent import AIAgent
+from worker_bee.memory import SessionDB
+from worker_bee.skills import SkillManager
+from worker_bee.registry import registry
+from worker_bee.infra_toolsets import InfraToolSet
+from worker_bee.deck import build_deck, Deck
 
 VERSION = "0.1.0"
 
@@ -50,8 +50,19 @@ def _cron_tick_loop(config: dict, skill_mgr):
         _tick_stop.wait(60)
 
 
+import os
+import json
+from pathlib import Path
+
+
+def _config_dir() -> Path:
+    """Return the user config directory (~/.worker-bee)."""
+    return Path.home() / ".worker-bee"
+
+
 def get_config_path():
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+    _config_dir().mkdir(parents=True, exist_ok=True)
+    return str(_config_dir() / "config.json")
 
 
 def load_config():

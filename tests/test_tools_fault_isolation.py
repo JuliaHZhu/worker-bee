@@ -16,7 +16,7 @@ class TestToolsFaultIsolation:
         assert "except Exception" in source
         # And it must be inside the for-loop over pkgutil.iter_modules
         loop_start = source.find("for _, _mod_name, _ in pkgutil.iter_modules")
-        loop_end = source.find("from agent import AIAgent")
+        loop_end = source.find("from worker_bee.agent import AIAgent")
         loop_body = source[loop_start:loop_end]
         assert "try:" in loop_body
         assert "except Exception" in loop_body

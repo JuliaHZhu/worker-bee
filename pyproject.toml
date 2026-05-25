@@ -9,7 +9,7 @@ description = "A lightweight, minimal AI agent framework"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "JuliaHZhu", email = "007WorkLab"}
+    {name = "JuliaHZhu", email = "007@worklab.dev"}
 ]
 keywords = ["ai", "agent", "llm", "tools", "cli"]
 classifiers = [
@@ -35,6 +35,18 @@ test = [
     "croniter>=1.4",
 ]
 
+[tool.setuptools]
+packages = ["worker_bee", "cron", "tools", "todo_ball_machine"]
+
+[tool.setuptools.package-data]
+worker_bee = ["*.py"]
+cron = ["*.py"]
+tools = ["*.py"]
+todo_ball_machine = ["*.py", "*.json", "*.md"]
+skills = ["*.md"]
+templates = ["*.md"]
+jobs = ["*.md", "*.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
@@ -44,7 +56,7 @@ markers = [
 ]
 
 [project.scripts]
-worker-bee = "main:main"
+worker-bee = "worker_bee.main:main"
 
 [project.urls]
 Homepage = "https://github.com/JuliaHZhu/worker-bee"

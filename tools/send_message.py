@@ -5,7 +5,7 @@ No other platforms. No gateway. Just simple HTTP POST.
 import json
 import os
 import urllib.request
-from registry import registry
+from worker_bee.registry import registry
 
 
 def _send_feishu(content: str) -> str:

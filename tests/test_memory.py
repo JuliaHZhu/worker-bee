@@ -3,7 +3,7 @@ import pytest
 import tempfile
 from pathlib import Path
 
-from memory import SessionDB
+from worker_bee.memory import SessionDB
 
 
 @pytest.fixture

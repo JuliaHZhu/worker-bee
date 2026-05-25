@@ -24,7 +24,7 @@ from typing import List, Dict
 
 # Hermes registry integration
 try:
-    from registry import registry
+    from worker_bee.registry import registry
 except ImportError:
     registry = None
 

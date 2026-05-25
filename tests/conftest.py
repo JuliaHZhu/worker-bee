@@ -27,7 +27,7 @@ def temp_workspace(temp_dir):
 @pytest.fixture
 def fresh_registry():
     """Return a brand-new ToolRegistry instance."""
-    from registry import ToolRegistry
+    from worker_bee.registry import ToolRegistry
     return ToolRegistry()
 
 
@@ -78,7 +78,7 @@ Use net_web_search first, then net_web_extract for details.
 @pytest.fixture
 def skill_manager(skills_dir):
     """Return a SkillManager pointing at the temp skills dir."""
-    from skills import SkillManager
+    from worker_bee.skills import SkillManager
     mgr = SkillManager(str(skills_dir))
     mgr.load_all()
     return mgr

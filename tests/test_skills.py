@@ -1,6 +1,6 @@
 """Tests for skill loading, YAML parsing, trigger matching, and caching."""
 
-from skills import SkillManager, _parse_yamlish
+from worker_bee.skills import SkillManager, _parse_yamlish
 
 
 class TestYAMLParser:

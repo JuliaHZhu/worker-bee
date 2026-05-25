@@ -4,7 +4,7 @@ import fnmatch
 import re
 import shlex
 import subprocess
-from registry import registry
+from worker_bee.registry import registry
 ALLOWLIST = [
     "cat*", "head*", "tail*", "less*", "more*",
     "ls*", "ll*", "pwd", "id", "uname*", "whoami",

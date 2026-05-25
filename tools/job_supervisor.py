@@ -40,7 +40,7 @@ def _parse_frontmatter(content: str) -> Tuple[Optional[dict], str]:
     if not m:
         return None, content
     try:
-        from skills import _parse_yamlish
+        from worker_bee.skills import _parse_yamlish
         meta = _parse_yamlish(m.group(1))
     except Exception:
         meta = {}
@@ -405,7 +405,7 @@ def job_supervisor_delete(job_id: str) -> str:
 
 # ── Registry registration ───────────────────────────────────────────
 try:
-    from registry import registry
+    from worker_bee.registry import registry
 
     registry.register(
         name="job_supervisor_status",

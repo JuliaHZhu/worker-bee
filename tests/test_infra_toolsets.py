@@ -2,7 +2,7 @@
 import os
 import pytest
 
-from infra_toolsets import InfraToolSet
+from worker_bee.infra_toolsets import InfraToolSet
 
 
 @pytest.fixture

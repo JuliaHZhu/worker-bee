@@ -6,7 +6,7 @@ Without a Deck, falls back to config-level tool list.
 import json
 from typing import List, Dict, Optional
 
-from registry import registry
+from worker_bee.registry import registry
 
 
 class AIAgent:

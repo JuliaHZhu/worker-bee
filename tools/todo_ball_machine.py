@@ -8,7 +8,7 @@ from datetime import date
 from pathlib import Path
 from typing import Optional
 
-from registry import registry
+from worker_bee.registry import registry
 
 _DATA_DIR = Path(__file__).parent.parent / "todo_ball_machine"
 os.environ["ENTP_BASE_PATH"] = str(_DATA_DIR)

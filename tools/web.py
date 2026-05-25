@@ -71,18 +71,36 @@ def _guard_url(raw_url: str) -> None:
 
 
 def net_web_search(query: str, num_results: int = 5) -> str:
-    """Search the web using DuckDuckGo HTML endpoint (no API key needed)."""
+    """Search the web using Bing HTML endpoint (no API key needed)."""
     try:
-        url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        url = f"https://www.bing.com/search?q={urllib.parse.quote(query)}"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+            },
+        )
         with urllib.request.urlopen(req, timeout=15) as resp:
             html = resp.read().decode("utf-8", errors="replace")
         results = []
-        for m in re.finditer(r'<a rel="nofollow" class="result__a" href="([^"]+)">([^<]+)</a>', html):
-            href, title = m.group(1), re.sub(r'<[^>]+>', '', m.group(2))
-            results.append(f"- {title}\n  {href}")
-            if len(results) >= num_results:
-                break
+        blocks = re.findall(
+            r'<li[^>]*class=["\'][^"\']*b_algo[^"\']*["\'][^>]*>(.*?)</li>',
+            html,
+            re.DOTALL,
+        )
+        for block in blocks:
+            title_m = re.search(r"<h2[^>]*>(.*?)</h2>", block, re.DOTALL)
+            title = re.sub(r"<[^>]+>", "", title_m.group(1)).strip() if title_m else ""
+            href_m = re.search(r'href=["\']([^"\']+)["\']', block)
+            href = href_m.group(1) if href_m else ""
+            if title and href.startswith("http") and "bing.com" not in href:
+                results.append(f"- {title}\n  {href}")
+                if len(results) >= num_results:
+                    break
         return "\n".join(results) or "No results found."
     except Exception as e:
         return f"Search error: {e}"
@@ -106,7 +124,7 @@ def net_web_extract(url: str) -> str:
 
 registry.register(
     name="net_web_search",
-    description="Search the web using DuckDuckGo. No API key required. Returns titles and URLs.",
+    description="Search the web using Bing. No API key required. Returns titles and URLs.",
     parameters={
         "properties": {
             "query": {"type": "string", "description": "Search query"},

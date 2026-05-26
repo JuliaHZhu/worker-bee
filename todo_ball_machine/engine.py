@@ -220,6 +220,48 @@ class Engine:
         self._save()
         return self.draw(session)
 
+    def fill(self, session: str, box: str, content: str) -> dict:
+        """退弹重填 — 消耗指定box的一个ball，但内容自定义。"""
+        if box not in self.state["boxes"]:
+            return {"ok": False, "error": f"盒子 '{box}' 不存在"}
+        box_data = self.state["boxes"][box]
+        if not box_data["stack"]:
+            return {"ok": False, "error": f"盒子 '{box}' 已空，请换盒子或开启新周期"}
+
+        # 消耗一个球（从stack pop，放入used）
+        ball_id = box_data["stack"].pop()
+        box_data["used"].append(ball_id)
+
+        day = self._day()
+        day[session] = {
+            "box": box,
+            "content": content,
+            "status": "completed",
+            "ball_id": ball_id,
+        }
+        self._save()
+        return {
+            "ok": True,
+            "message": f"✅ {self.DISPLAY.get(session, session)} 已记录",
+            "block": day[session],
+        }
+
+    def log(self, session: str, content: str) -> dict:
+        """另外记账 — 旅行/休假/特殊活动，不消耗任何 box 彩球。"""
+        day = self._day()
+        day[session] = {
+            "box": "自由",
+            "content": content,
+            "status": "completed",
+            "ball_id": "",
+        }
+        self._save()
+        return {
+            "ok": True,
+            "message": f"✅ {self.DISPLAY.get(session, session)} 已记账（不占配额）",
+            "block": day[session],
+        }
+
     # ------------------------------------------------------------------
     # Queries
     # ------------------------------------------------------------------

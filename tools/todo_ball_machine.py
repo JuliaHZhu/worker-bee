@@ -42,7 +42,9 @@ _SESSION_LABEL = {
 def _fmt_block(block: dict) -> str:
     box = block.get("box", "")
     status = block.get("status", "unknown")
-    emoji = _eng().status()["boxes"].get(box, {}).get("emoji", "🔴")
+    # 自由/特殊记账不在 boxes 中，给个通用 emoji
+    emoji_map = {"自由": "✨"}
+    emoji = emoji_map.get(box, _eng().status()["boxes"].get(box, {}).get("emoji", "🔴"))
     return (
         f"{_STATUS_EMOJI.get(status, '❓')} "
         f"{emoji} "
@@ -142,6 +144,41 @@ def _action_redraw(session: str) -> str:
         f"🔄 重抽完成\n"
         f"  {_fmt_block(blk)}\n"
         f"  时长: {blk.get('duration', '?')}h"
+    )
+
+
+def _action_fill(session: str, content: str) -> str:
+    if not session or not content:
+        return "❌ 需要 session 和 content (格式: 盒子名|内容)"
+    # Parse box|content — 支持 | 或 中/英文冒号
+    if "|" in content:
+        box, text = content.split("|", 1)
+    elif "：" in content:
+        box, text = content.split("：", 1)
+    elif ":" in content:
+        box, text = content.split(":", 1)
+    else:
+        return "❌ content 格式应为: 盒子名|内容 (如: 治愈|妈妈说话)"
+    box = box.strip()
+    text = text.strip()
+    r = _eng().fill(session, box, text)
+    if not r["ok"]:
+        return f"❌ {r['error']}"
+    return (
+        f"✅ {r['message']}\n"
+        f"  {_fmt_block(r['block'])}"
+    )
+
+
+def _action_log(session: str, content: str) -> str:
+    if not session or not content:
+        return "❌ 需要 session 和 content"
+    r = _eng().log(session, content)
+    if not r["ok"]:
+        return f"❌ {r['error']}"
+    return (
+        f"✅ {r['message']}\n"
+        f"  {_fmt_block(r['block'])}"
     )
 
 
@@ -251,11 +288,13 @@ def _action_help() -> str:
         "用法: todo_ball_machine(action='...', [session=..., content=...])\n\n"
         "  dashboard     — 系统仪表盘\n"
         "  today         — 今日场次状态\n"
-        "  draw          — 抽取指定场次 (session=morning/afternoon/evening/overtime)\n"
+        "  draw          — 抽取指定场次 (session)\n"
         "  quick_draw    — 快速抽取三场\n"
         "  complete      — 完成场次 (session)\n"
         "  edit          — 编辑场次内容 (session + content)\n"
         "  redraw        — 重抽指定场次 (session)\n"
+        "  fill          — 退弹重填: 从box消耗球并自定义内容 (session + content='box|内容')\n"
+        "  log           — 另外记账: 旅行/休假/特殊活动，不占box配额 (session + content='...')\n"
         "  box_list      — 盒子配额列表\n"
         "  cycle_status  — 周期状态\n"
         "  new_cycle     — 开启新周期\n"
@@ -291,6 +330,8 @@ def todo_ball_machine(
         "complete": lambda: _action_complete(session or ""),
         "edit": lambda: _action_edit(session or "", content or ""),
         "redraw": lambda: _action_redraw(session or ""),
+        "fill": lambda: _action_fill(session or "", content or ""),
+        "log": lambda: _action_log(session or "", content or ""),
         "box_list": lambda: _action_box_list(),
         "box": lambda: _action_box_list(),
         "cycle_status": lambda: _action_cycle_status(),
@@ -324,7 +365,8 @@ registry.register(
                 "description": "操作类型",
                 "enum": [
                     "dashboard", "today", "draw", "quick_draw",
-                    "complete", "edit", "redraw", "box_list", "cycle_status",
+                    "complete", "edit", "redraw", "fill", "log",
+                    "box_list", "cycle_status",
                     "new_cycle", "history", "day", "stats", "help"
                 ]
             },

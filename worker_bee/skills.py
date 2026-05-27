@@ -63,9 +63,19 @@ class SkillManager:
     """Load, cache, and match skill markdown files."""
 
     def __init__(self, skills_dir: str = None):
-        if skills_dir is None:
-            skills_dir = os.path.join(os.path.dirname(__file__), "skills")
-        self.skills_dir = Path(skills_dir)
+        if skills_dir is not None:
+            self.skills_dir = Path(skills_dir)
+        else:
+            # Try package-internal skills first (works for pip installs)
+            internal = Path(os.path.join(os.path.dirname(__file__), "skills"))
+            # Fallback to repo-root skills (editable/dev installs)
+            external = Path(os.path.join(os.path.dirname(os.path.dirname(__file__)), "skills"))
+            if internal.exists() and list(internal.glob("*.md")):
+                self.skills_dir = internal
+            elif external.exists() and list(external.glob("*.md")):
+                self.skills_dir = external
+            else:
+                self.skills_dir = internal  # default to internal, will create if missing
         self._skills: Dict[str, dict] = {}
 
         # In-process LRU cache: key=(path_str, mtime_ns, size)

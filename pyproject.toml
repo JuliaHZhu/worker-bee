@@ -39,7 +39,7 @@ test = [
 packages = ["worker_bee", "cron", "tools", "todo_ball_machine"]
 
 [tool.setuptools.package-data]
-worker_bee = ["*.py"]
+worker_bee = ["*.py", "skills/*.md"]
 cron = ["*.py"]
 tools = ["*.py"]
 todo_ball_machine = ["*.py", "*.json", "*.md"]

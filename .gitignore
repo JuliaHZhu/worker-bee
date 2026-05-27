@@ -26,6 +26,7 @@ Thumbs.db
 
 # Skill cache
 .skills_cache.json
+**/.skills_cache.json
 
 # Todo Ball Machine runtime data
 todo_ball_machine/daily_logs/

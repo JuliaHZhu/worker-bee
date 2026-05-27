@@ -70,6 +70,7 @@ class AIAgent:
             role = m["role"]
             content = m.get("content", "")
             tool_calls = m.get("tool_calls")
+            reasoning = m.get("reasoning")
             if role == "tool":
                 if self._protocol == "anthropic":
                     api_msgs.append({
@@ -85,7 +86,9 @@ class AIAgent:
             elif role == "assistant" and tool_calls:
                 if self._protocol == "anthropic":
                     blocks = []
-                    if content:
+                    if reasoning:
+                        blocks.append({"type": "text", "text": reasoning})
+                    elif content:
                         blocks.append({"type": "text", "text": content})
                     for tc in tool_calls:
                         blocks.append({
@@ -96,7 +99,15 @@ class AIAgent:
                         })
                     api_msgs.append({"role": "assistant", "content": blocks})
                 else:
-                    api_msgs.append(m)
+                    # OpenAI protocol: preserve reasoning_content if present
+                    assistant_payload = {
+                        "role": "assistant",
+                        "content": content,
+                        "tool_calls": [{"id": tc["id"], "type": "function", "function": {"name": tc["name"], "arguments": json.dumps(tc["arguments"])}} for tc in tool_calls]
+                    }
+                    if reasoning:
+                        assistant_payload["reasoning_content"] = reasoning
+                    api_msgs.append(assistant_payload)
             else:
                 api_msgs.append({"role": role, "content": content})
         return api_msgs
@@ -110,6 +121,24 @@ class AIAgent:
                     texts.append(block.text)
             return "\n".join(texts)
         return msg.content or ""
+
+    def _extract_reasoning(self, msg) -> Optional[str]:
+        """Extract reasoning / thinking content from API response."""
+        if self._protocol == "anthropic":
+            parts = []
+            for block in msg.content:
+                if getattr(block, "type", None) == "thinking" and hasattr(block, "thinking"):
+                    parts.append(block.thinking)
+            return "\n".join(parts) if parts else None
+        else:
+            # OpenAI protocol: some providers (Moonshot/Kimi) include reasoning_content
+            rc = getattr(msg, "reasoning_content", None)
+            if rc:
+                return rc
+            # Some providers embed reasoning in the message object as an attribute
+            if hasattr(msg, "model_extra") and msg.model_extra:
+                return msg.model_extra.get("reasoning_content")
+            return None
 
     def _extract_tool_calls(self, msg) -> List[Dict]:
         """Extract tool calls from API response."""
@@ -176,18 +205,23 @@ class AIAgent:
                 msg = response.choices[0].message
 
             text = self._extract_text(msg)
+            reasoning = self._extract_reasoning(msg)
             tool_calls = self._extract_tool_calls(msg)
 
             if not tool_calls:
                 return text
 
-            # Record assistant message with tool calls
+            # Record assistant message with tool calls and reasoning
             assistant_msg = {"role": "assistant", "content": text, "tool_calls": tool_calls}
+            if reasoning:
+                assistant_msg["reasoning"] = reasoning
             messages.append(assistant_msg)
 
             if self._protocol == "anthropic":
                 api_msgs = []
-                if text:
+                if reasoning:
+                    api_msgs.append({"type": "thinking", "thinking": reasoning})
+                elif text:
                     api_msgs.append({"type": "text", "text": text})
                 for tc in tool_calls:
                     api_msgs.append({
@@ -198,11 +232,14 @@ class AIAgent:
                     })
                 api_messages.append({"role": "assistant", "content": api_msgs})
             else:
-                api_messages.append({
+                assistant_payload = {
                     "role": "assistant",
                     "content": text,
                     "tool_calls": [{"id": tc["id"], "type": "function", "function": {"name": tc["name"], "arguments": json.dumps(tc["arguments"])}} for tc in tool_calls]
-                })
+                }
+                if reasoning:
+                    assistant_payload["reasoning_content"] = reasoning
+                api_messages.append(assistant_payload)
 
             # Execute tools
             for tc in tool_calls:

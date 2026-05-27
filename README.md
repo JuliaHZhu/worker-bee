@@ -40,21 +40,25 @@ The agent does one thing at a time, but **one thing can be very complex**—read
 ## Quick Start
 
 ```bash
-# 1. Install
+# 1. Create a virtual environment (Ubuntu/Debian requires this)
+python3 -m venv venv
+source venv/bin/activate    # Windows: venv\Scripts\activate
+
+# 2. Install
 pip install git+https://github.com/JuliaHZhu/worker-bee.git
 
-# 2. Onboard — configure API key
+# 3. Onboard — configure API key
 worker-bee setup
 # Or edit ~/.worker-bee/config.json directly
 
-# 3. Test model connection
+# 4. Test model connection
 worker-bee -m "hello"
 
-# 4. Test channel (optional)
+# 5. Test channel (optional)
 export FEISHU_WEBHOOK_URL=...
 worker-bee -c "hello"
 
-# 5. Run
+# 6. Run
 worker-bee
 ```
 

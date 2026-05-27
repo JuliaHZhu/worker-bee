@@ -1,12 +1,24 @@
 #!/usr/bin/env python3
-"""Worker Bee — CLI entry point.
+"""Worker Bee — Lightweight AI agent with tool access.
 
 Usage:
     worker-bee              Start interactive session
     worker-bee setup        Configure API key and model
     worker-bee -m "hello"   Quick model ping test
     worker-bee -c "hello"   Quick channel ping test (Feishu/Discord)
-    worker-bee --version    Show version
+    worker-bee -v           Show version
+
+Options:
+    -m, --model-ping MSG    Quick model ping test
+    -c, --channel-ping MSG  Quick channel ping test
+    -v, --version           Show version
+    -h, --help              Show this help
+
+Config:
+    export MOONSHOT_API_KEY=sk-...        # or OPENAI_API_KEY
+    export MOONSHOT_PROVIDER=openai       # or anthropic
+    export MOONSHOT_MODEL=kimi-k2.6
+    export MOONSHOT_BASE_URL=https://api.moonshot.cn/v1
 """
 import argparse
 import json
@@ -59,10 +71,10 @@ def load_config():
     if os.path.exists(path):
         with open(path) as f:
             return json.load(f)
-    key = os.environ.get("ARKCODE_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
-    base = os.environ.get("ARKCODE_BASE_URL", "https://ark.cn-beijing.volces.com/api/coding")
+    key = os.environ.get("MOONSHOT_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    base = os.environ.get("MOONSHOT_BASE_URL", "https://api.moonshot.cn/v1")
     if key:
-        return _make_config("anthropic", "kimi-k2.6", key, base)
+        return _make_config("openai", "kimi-k2.6", key, base)
     return None
 
 
@@ -101,17 +113,17 @@ def setup():
 
     # Provider
     print("Provider:")
-    print("  [1] Anthropic / Volcano (Anthropic protocol)")
-    print("  [2] OpenAI-compatible (OpenAI protocol)")
+    print("  [1] OpenAI-compatible / Moonshot (OpenAI protocol)")
+    print("  [2] Anthropic / Volcano (Anthropic protocol)")
     p = input("> ").strip()
     if p == "2":
-        provider = "openai"
-        default_model = "gpt-4o"
-        default_base = "https://api.openai.com/v1"
-    else:
         provider = "anthropic"
         default_model = "kimi-k2.6"
         default_base = "https://ark.cn-beijing.volces.com/api/coding"
+    else:
+        provider = "openai"
+        default_model = "kimi-k2.6"
+        default_base = "https://api.moonshot.cn/v1"
 
     # API Key
     print()
@@ -459,12 +471,19 @@ Usage:
   worker-bee -c "hello"   Quick channel connectivity test
   worker-bee -v           Show version
 
-Onboarding:
-  1. worker-bee setup     → Enter API key
-  2. worker-bee -m "hi"   → Verify model responds
-  3. export FEISHU_WEBHOOK_URL=...  → Optional: configure channel
-  4. worker-bee -c "hi"   → Verify channel works
-  5. worker-bee           → Start using
+Config:
+  export MOONSHOT_API_KEY=sk-...        # or OPENAI_API_KEY
+  export MOONSHOT_PROVIDER=openai       # or anthropic
+  export MOONSHOT_MODEL=kimi-k2.6
+  export MOONSHOT_BASE_URL=https://api.moonshot.cn/v1
+
+Interactive commands:
+  /exit     Exit session
+  /tools    List available tools
+  /skills   List loaded skills
+  /clear    Clear conversation
+  /todo     Manage todos
+  /history  Show recent messages
 """)
         return
 

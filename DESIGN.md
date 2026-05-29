@@ -237,3 +237,224 @@ User Input
 - Add a `decks/` directory for pre-curated tool sets (e.g., `math-deck`, `web-research-deck`)
 - Add skill-level priority scoring for conflict resolution
 - Add a `skill validate` command to check trigger coverage and tool existence
+
+---
+
+## Phase 5: Batch Handoff (Session Continuation)
+
+> *Worker Bee sessions are batch pipelines, not endless chats. When a session grows long, don't compress history — snapshot the work-state and start a fresh session.*
+
+### 5.1 Design Principle
+
+Hermes Agent uses **context compaction** (summarize middle history, keep head+tail). That works for open-ended conversations where most turns are disposable.
+
+Worker Bee is different: every message advances a business task. The whole chain matters. Compressing it loses critical constraints.
+
+**Solution:** Export a **handoff document** — a work-state snapshot, not a chat summary.
+
+### 5.2 Handoff Format
+
+```markdown
+# Handoff
+
+**Session:** `a1b2c3d4`
+**Exported:** 2026-05-29T18:30:00
+
+## Purpose
+Generate a Python onboarding course for backend engineers
+
+## Completed
+- Chapter 01 outline approved
+- `chapter_01.md` generated with project-driven structure
+
+## Todos
+- [ ] Generate exercise solutions
+- [ ] Review chapter 02 outline
+
+## Context
+- Target audience is backend engineers with 1-2 years experience
+- Course should be project-driven, not syntax-reference style
+
+## Next Step
+Generate exercise solutions for chapter 01
+```
+
+### 5.3 Usage
+
+```bash
+# During session
+> /export
+Handoff exported to: ~/.worker-bee/handoffs/a1b2c3d4.md
+
+# Exit also auto-exports
+> /exit
+[Handoff] exported to ~/.worker-bee/handoffs/a1b2c3d4.md
+
+# Start fresh session with handoff
+$ worker-bee --continue ~/.worker-bee/handoffs/a1b2c3d4.md
+```
+
+### 5.4 Implementation
+
+- `memory.py`: `export_handoff()` — builds the Markdown from session meta + recent messages + todos
+- `main.py`: `/export` command + auto-export on exit
+- Future: `--continue <path>` CLI arg to load handoff into a new session's system prompt
+
+### 5.5 Why This Fits Worker Bee
+
+| Hermes Compaction | Worker Bee Handoff |
+|---|---|
+| For open-ended, multi-topic chats | For focused, single-task pipelines |
+| LLM summarizes history (lossy) | Raw state preserved (lossless) |
+| Automatic, user-unaware | User-controlled (`/export` or exit) |
+| 64K-750K token threshold | Human decides when a "batch" ends |
+
+**Each session = one batch. Handoff = the batch output. Next session = next batch, reading previous output as input.**
+
+---
+
+## Phase 6: Forks — Specialized Bees
+
+> *Worker Bee is a shell. The skills determine what kind of thinker you are talking to.*
+
+The core (deck, registry, agent loop) stays the same. But by swapping skills and exogenous-pheromone formats, we fork Worker Bee into **domain-specific cognitive tools**.
+
+Each fork follows the same first-principles:
+- **Human is the cognitive center** — the B executes, does not decide
+- **All state is Markdown** — human-readable, human-editable
+- **LLM is a glove** — it wears the skill, follows the protocol, does not improvise
+
+---
+
+### 6.1 Aristotle B — Definition Master
+
+**Problem:** The same word means different things in different sessions. "Immersion" today is flow, tomorrow it is sensory. The LLM does not notice the drift.
+
+**Behavior:**
+1. When the user mentions a term, check `~/.worker-bee/dict/<project>.md`
+2. If the term exists — quote its definition, flag drift if context differs
+3. If the term does not exist — ask: "What do you mean by X?"
+4. If the user coins a new term — record it with `[New term]` label
+
+**Exogenous Pheromone:** `~/.worker-bee/dict/<project>.md`
+
+```markdown
+## Immersion
+- **Definition**: Player forgets reality, fully absorbed
+- **Variants**: flow | sensory | narrative
+- **Context**: Session e5f6g7h8 — meant narrative
+- **Drift warning**: Session a1b2c3d4 used for sensory
+```
+
+**Skill:** `worker_bee/skills/aristotle.md`
+
+**Why it works:** The dictionary is a **shared mental model** between human and LLM. Both species read the same Markdown. The LLM does not "understand" the term — it looks it up and injects the definition into context. Precision without comprehension.
+
+---
+
+### 6.2 Architecture Prototype B — Structure Reducer
+
+**Problem:** You have a vague idea ("I want a roguelike"). You need to reduce it to irreducible constraints before writing code.
+
+**Behavior:**
+1. **Interrogate** — ask what, not how ("What is the goal?" not "What framework?")
+2. **Reduce** — ask "why" until you hit physical or user constraints that cannot split further
+3. **Estimate** — sketch Big O for each module (time vs space tradeoffs)
+4. **Output** — module decomposition as orthogonal basis (high cohesion, low coupling)
+
+**Exogenous Pheromone:** `~/.worker-bee/arch/<project>.md`
+
+```markdown
+# Architecture: Simple Roguelike
+
+## Goal
+Combat depth from positional tactics, not stat grinding.
+
+## Core Constraints
+- Must run at 60fps on 2015 laptop
+- Combat completable without leveling
+- Map generation produces solvable dungeons
+
+## Modules
+
+### Map Generator
+- **Responsibility**: Procedural layout + enemy placement
+- **Interface**: Input(seed, difficulty) → Output(tilemap, entities)
+- **Algorithm**: Cellular automata + A* solvability check
+- **Complexity**: O(n²) for n×n grid, n≤50
+```
+
+**Skill:** `worker_bee/skills/architect.md`
+
+**Why it works:** Architecture is **reduction**, not construction. The B forces the human to strip away ambiguity until only constraints remain. Code comes after structure is agreed upon. The LLM does not design — it interrogates and records.
+
+---
+
+### 6.3 Project Manager B — Orchestration Optimizer
+
+**Problem:** You have real-world materials (regulations, contacts, deadlines) and limited resources. You need to sequence tasks, not just list them.
+
+**Behavior:**
+1. **Decompose** — what actually needs to happen (regulations, contacts, documents)
+2. **Template-first** — lay out the final artifact format immediately (thesis, proposal, design doc)
+3. **Focus on presentation** — "What will the final artifact look like? How many sections?"
+4. **Leave blanks** — mark uncertain parts `[TBD]`, do not polish
+5. **Optimize orchestration** — given limited time/energy, what order minimizes risk? Blockers first.
+
+**Exogenous Pheromone:** `~/.worker-bee/pm/<project>.md`
+
+```markdown
+# Project: Master's Thesis
+
+## Final Artifact
+15,000-word thesis on procedural content generation.
+
+## Template
+- Abstract — 300 words — [TBD]
+- Chapter 1: Introduction — 3 pages — [TBD]
+- Chapter 2: Literature Review — 8 pages — [TBD]
+...
+
+## Tasks
+- [ ] Submit proposal — me — Week 1 — [blocker: none]
+- [ ] Get IRB approval — me — Week 2-3 — [blocker: proposal]
+- [ ] Recruit participants — me+lab — Week 4-6 — [blocker: IRB]
+
+## Contacts
+- [Prof. Smith]: advisor — contact 1st — [status: meeting scheduled]
+
+## Risks
+- [Recruitment slow]: mitigate by online forums
+```
+
+**Skill:** `worker_bee/skills/project-manager.md`
+
+**Why it works:** PM B treats every project as a **pipeline with a known output format**. The conversation is not "what should I do?" but "what goes in each slot of the template?" Done is better than perfect. The scaffold makes iteration cheap.
+
+---
+
+### 6.4 How Forks Work
+
+All three Bs share the same Worker Bee core. The only difference is:
+
+| Fork | Skill Loaded | Exogenous Pheromone | Conversation Style |
+|------|-------------|---------------------|-------------------|
+| Aristotle B | `aristotle.md` | `dict/*.md` | Abstract, definitional — "What do you mean by X?" |
+| Architecture B | `architect.md` | `arch/*.md` | Structural — "Why? Can it split further?" |
+| Project Manager B | `project-manager.md` | `pm/*.md` | Concrete — "What is the deliverable? What goes in slot 3?" |
+
+**No code changes to core.** Just skills + Markdown files. The human decides which B to invoke by which skill they place in `~/.worker-bee/skills/` or which directory they maintain.
+
+---
+
+## Summary: The First Principles
+
+| Fact | Design Decision |
+|------|-----------------|
+| LLM is a next-token predictor | It executes, does not decide. Human is the cognitive center. |
+| LLM context window is finite | State must be externalized as Markdown (exogenous pheromone). |
+| Text is the only shared language | All persistent state is human-readable Markdown. |
+| Complexity grows exponentially with abstraction layers | Skill is minimal: trigger + tools + behavior. No eval frameworks. |
+| User needs a mental model | Predictable, fixed behavior > smart but unpredictable. |
+
+**Worker Bee = shell. Skills = gloves. Human = hand.**

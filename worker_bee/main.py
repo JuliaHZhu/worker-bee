@@ -242,7 +242,7 @@ def run_session():
     agent.system_prompt = f"{base_system_prompt}\n\nCurrent session ID: {session_id}"
 
     print(f"\n✨ Worker Bee — Session: {session_id}")
-    print("Commands: /exit, /history, /tools, /clear, /todo, /skills, /cats, /infra")
+    print("Commands: /exit, /history, /tools, /clear, /todo, /skills, /cats, /infra, /export")
     print("-" * 50)
 
     while True:
@@ -297,6 +297,11 @@ def run_session():
                     print(f"  • {name}: {meta.get('description', 'No description')}{trig_str}{tool_str}")
             else:
                 print("No skills loaded.")
+            continue
+        if user_input.lower() == "/export":
+            path = db.export_handoff(session_id)
+            print(f"Handoff exported to: {path}")
+            print("  Start a new session with: worker-bee --continue <path>")
             continue
 
         # --- Deck procurement: gather tools BEFORE execution ---
@@ -385,6 +390,13 @@ def run_session():
         from cron import scheduler
         scheduler.shutdown()
         print("[Cron scheduler] stopped")
+
+    # Export handoff on exit
+    try:
+        handoff_path = db.export_handoff(session_id)
+        print(f"[Handoff] exported to {handoff_path}")
+    except Exception as e:
+        print(f"[Handoff] export failed: {e}")
 
     print(f"\nSession {session_id} saved.")
 
@@ -484,6 +496,7 @@ Interactive commands:
   /clear    Clear conversation
   /todo     Manage todos
   /history  Show recent messages
+  /export   Export session summary to markdown
 """)
         return
 

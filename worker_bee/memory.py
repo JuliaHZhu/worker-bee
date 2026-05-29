@@ -5,6 +5,7 @@ import threading
 import os
 import time
 from datetime import datetime
+from pathlib import Path
 
 
 class SessionDB:
@@ -319,3 +320,95 @@ class SessionDB:
             "SELECT id, content, priority FROM tasks WHERE assigned_to = ? AND status IN ('todo', 'in_progress') ORDER BY priority DESC, created_at ASC",
             (assigned_to,)
         ).fetchall()
+
+    # ── Batch Handoff Export ──
+    def export_handoff(self, session_id: str, out_path: str | None = None) -> str:
+        """Export a batch handoff document for session continuation.
+
+        This is NOT a chat summary — it is a work-state snapshot meant for
+        the next session to pick up where this one left off (batch pipeline
+        handoff style).
+
+        Returns the path to the written Markdown file.
+        """
+        meta = self.get_session_meta(session_id) or {}
+        msgs = self.get_messages(session_id, include_archived=False)
+        todos = self.list_todos(session_id)
+
+        # ── Completed work: recent assistant outputs (non-error, deduped) ──
+        completed = []
+        seen = set()
+        for m in reversed(msgs):   # newest first
+            if m.get("role") == "assistant":
+                text = m.get("content", "").strip()
+                if text and not text.startswith("Error:") and not text.startswith("["):
+                    key = text[:120]
+                    if key not in seen:
+                        seen.add(key)
+                        completed.append(text[:500])
+                if len(completed) >= 5:
+                    break
+        completed.reverse()  # chronological order
+
+        # ── Recent user context (last 3 non-empty user messages) ──
+        recent_user_msgs = []
+        for m in msgs:
+            if m.get("role") == "user":
+                text = m.get("content", "").strip()
+                if text:
+                    recent_user_msgs.append(text[:300])
+        recent_user_msgs = recent_user_msgs[-3:]
+
+        # ── Build handoff Markdown ──
+        lines = [
+            "# Handoff",
+            "",
+            f"**Session:** `{session_id}`",
+            f"**Exported:** {datetime.now().isoformat()}",
+            "",
+        ]
+
+        purpose = meta.get("purpose", "")
+        if purpose:
+            lines.extend(["## Purpose", f"{purpose}", ""])
+
+        if completed:
+            lines.extend(["## Completed", ""])
+            for item in completed:
+                lines.append(f"- {item}")
+            lines.append("")
+
+        if todos:
+            lines.extend(["## Todos", ""])
+            for tid, content, status, _ in todos:
+                mark = "[x]" if status == "done" else "[ ]"
+                lines.append(f"- {mark} {content}")
+            lines.append("")
+
+        if recent_user_msgs:
+            lines.extend(["## Context", ""])
+            for text in recent_user_msgs:
+                lines.append(f"- {text}")
+            lines.append("")
+
+            # Next step = last user message
+            lines.extend(["## Next Step", f"{recent_user_msgs[-1]}", ""])
+
+        lines.extend([
+            "---",
+            "",
+            "Load this handoff in a new session with `worker-bee --continue <path>`.",
+        ])
+
+        content = "\n".join(lines)
+
+        if out_path is None:
+            handoffs_dir = Path.home() / ".worker-bee" / "handoffs"
+            handoffs_dir.mkdir(parents=True, exist_ok=True)
+            out_path = str(handoffs_dir / f"{session_id}.md")
+
+        Path(out_path).write_text(content, encoding="utf-8")
+        return out_path
+
+    # Legacy alias — kept for compat but redirects to handoff format
+    export_session_summary = export_handoff

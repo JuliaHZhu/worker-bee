@@ -39,3 +39,4 @@ todo_ball_machine/test_heartbeat_log.json
 
 # Job board runtime data
 jobs/
+venv_tmp/

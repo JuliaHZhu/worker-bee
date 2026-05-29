@@ -191,6 +191,45 @@ Adding a new skill only requires: write a `skills/xxx.md` contract + a `tools/xx
 
 ---
 
+## Session Handoff
+
+When a session grows long, don't compress history. Export a handoff and start fresh:
+
+```bash
+# During session
+> /export
+Handoff exported to: ~/.worker-bee/handoffs/a1b2c3d4.md
+
+# Exit also auto-exports
+> /exit
+[Handoff] exported to ~/.worker-bee/handoffs/a1b2c3d4.md
+```
+
+Load it in a new session:
+```bash
+worker-bee --continue ~/.worker-bee/handoffs/a1b2c3d4.md
+```
+
+Handoff is a work-state snapshot (Purpose, Completed, Todos, Context, Next Step) — not a chat summary.
+
+---
+
+## Specialized Forks
+
+Swap skills and exogenous-pheromone formats to turn Worker Bee into domain-specific tools:
+
+| Fork | Skill | Pheromone | What It Does |
+|------|-------|-----------|-------------|
+| **Aristotle B** | aristotle | `dict/*.md` | Terminology guardian — dictionary lookup + drift detection |
+| **Architecture B** | architect | `arch/*.md` | Structure reducer — reduce vague goals to irreducible constraints |
+| **Project Manager B** | project-manager | `pm/*.md` | Orchestration optimizer — template-first delivery with `[TBD]` blanks |
+
+All forks share the same core. Only the skill and data format change.
+
+See `design_notes/` for full design docs and `examples/` for sample formats.
+
+---
+
 ## Design Principles
 
 | Principle | Meaning |

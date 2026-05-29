@@ -4,6 +4,35 @@ Worker Bee 开发历史。从 [Hermes Agent](https://github.com/NousResearch/her
 
 ---
 
+## 2026-05-29
+
+### ✅ 批次交接 (Batch Handoff)
+
+用户决定什么时候结束一个 batch，而不是等 LLM 的 context window 爆满自动压缩。
+
+- 退出 session 时自动导出 handoff 文档
+- `/export` 手动导出
+- 保存路径：`~/.worker-bee/handoffs/<session_id>.md`
+- Handoff 是工作态快照，不是对话摘要
+
+### ✅ 三个专业化 fork
+
+同一套 Worker Bee 核心，换 skill + 外源信息素格式：
+
+| Fork | Skill | 信息素格式 | 作用 |
+|------|-------|----------|------|
+| Aristotle B | aristotle | `dict/*.md` | 术语守护 — 查词典、检测漂移 |
+| Architecture B | architect | `arch/*.md` | 结构规约 — 目标 → 不可再分约束 |
+| Project Manager B | project-manager | `pm/*.md` | 编排优化 — 模板先行、留白交付 |
+
+设计文档见 `design_notes/` 目录。
+
+### ✅ 移除 Input Contract 验证
+
+Skill 本质是 function call protocol，用户自己负责参数。不需要系统层做参数校验。
+
+---
+
 ## 2026-05-22
 
 ### 🔄 /goal → /task 系统 (`26efd3e`)

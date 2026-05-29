@@ -22,6 +22,9 @@ category: ...
 
 1. Step one
 2. Step two
+```
+
+> **Note on Input/Output sections**: The sections below are reference format, NOT mandatory. Worker Bee does not perform automatic parameter validation. The skill is a function call protocol — the user is responsible for providing correct parameters.
 
 ## Input
 

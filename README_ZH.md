@@ -187,6 +187,45 @@ created → confirmed → planned → executing → self_checked → reviewed �
 
 ---
 
+## 批次交接 (Session Handoff)
+
+Session 变长后，不压缩历史，导出 handoff 开新 session：
+
+```bash
+# 会话中
+> /export
+Handoff exported to: ~/.worker-bee/handoffs/a1b2c3d4.md
+
+# 退出时自动导出
+> /exit
+[Handoff] exported to ~/.worker-bee/handoffs/a1b2c3d4.md
+```
+
+新 session 加载：
+```bash
+worker-bee --continue ~/.worker-bee/handoffs/a1b2c3d4.md
+```
+
+Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step），不是对话摘要。
+
+---
+
+## 专业化 Fork
+
+换 skill + 外源信息素格式，把 Worker Bee 变成领域专用工具：
+
+| Fork | Skill | 信息素格式 | 作用 |
+|------|-------|----------|------|
+| **Aristotle B** | aristotle | `dict/*.md` | 术语守护 — 查词典、检测漂移 |
+| **Architecture B** | architect | `arch/*.md` | 结构规约 — 目标 → 不可再分约束 |
+| **Project Manager B** | project-manager | `pm/*.md` | 编排优化 — 模板先行、留白交付 |
+
+所有 fork 共享同一套核心，只有 skill 和数据格式不同。
+
+设计文档见 `design_notes/`，格式示例见 `examples/` 。
+
+---
+
 ## 设计原则
 
 | 原则 | 含义 |

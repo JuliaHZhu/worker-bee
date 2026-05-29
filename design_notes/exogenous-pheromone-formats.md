@@ -1,168 +1,168 @@
-# Exogenous Pheromone Formats
+# 外源信息素格式
 
-> *All state must be human-readable Markdown. Both species read the same file.*
+> *所有状态必须是人可读的 Markdown。两个物种看同一个文件。*
 
-## What Is an Exogenous Pheromone?
+## 什么是外源信息素？
 
-In Worker Bee, **exogenous pheromone** = external state files that human and LLM both read/write.
+在 Worker Bee 里，**外源信息素** = 人和 LLM 都可以读写的外部状态文件。
 
-- **Exogenous** (外源的): outside the LLM's context window, outside the program's memory
-- **Pheromone** (信息素): a shared chemical signal that both parties can sense and respond to
+- **外源**：在 LLM 的 context window 外面，在程序的内存外面
+- **信息素**：两个物种都能感知和响应的共享信号
 
-The metaphor: ants leave pheromone trails for other ants to follow. Worker Bee leaves Markdown trails for the next session (or the human) to pick up.
+比喻：蚂蚁留下信息素路径给其他蚂蚁跟随。Worker Bee 留下 Markdown 路径给下一个 session（或人）拾起来。
 
-## Design Rules
+## 设计规则
 
-1. **Markdown only** — no JSON, no binary, no database schemas
-2. **Both species read it** — format must be parseable by LLM (`read_file`) and readable by human (any text editor)
-3. **Append-friendly** — new entries go at the end or as new sections, no renumbering
-4. **Human is the source of truth** — if LLM and human disagree, human wins
+1. **只用 Markdown** — 没有 JSON，没有二进制，没有数据库 schema
+2. **两个物种都能读** — LLM 能用 `read_file` 解析，人能用任何文本编辑器打开
+3. **尾部添加友好** — 新条目往末尾或新节里放，不用重新编号
+4. **人是最终真理** — LLM 和人有冲突，人赢
 
 ---
 
-## Format 1: Terminology Dictionary
+## 格式 1：术语词典
 
-Path: `~/.worker-bee/dict/<project>.md`
+路径：`~/.worker-bee/dict/<project>.md`
 
-Used by: **Aristotle Bee**
+使用：**Aristotle Bee**
 
 ```markdown
-# 术语词典：<Project>
+# 术语词典：<项目>
 
-## <Term>
-- **Definition**: <exact definition>
-- **Variants**: <variant 1> | <variant 2>
-- **Context**: Session <id> — meant <which variant>
-- **Drift warning**: Session <id> used it for <different meaning>
+## <术语>
+- **Definition**: <准确定义>
+- **Variants**: <变体 1> | <变体 2>
+- **Context**: Session <id> — 指 <哪个变体>
+- **Drift warning**: Session <id> 用了不同意思
 
-## <Another Term>
+## <另一术语>
 ...
 ```
 
-### Rules
-- Each term = one H2 (`##`)
-- Fields = bullet list with `**bold key**`
-- `Drift warning` is optional but encouraged
-- No strict ordering — append new terms at bottom
+### 规则
+- 每个术语 = 一个 H2 (`##`)
+- 字段 = 带 `**粗体键**` 的列表
+- `Drift warning` 非必需，但建议加
+- 不需严格排序 — 新术语往末尾追加
 
 ---
 
-## Format 2: Architecture Document
+## 格式 2：架构文档
 
-Path: `~/.worker-bee/arch/<project>.md`
+路径：`~/.worker-bee/arch/<project>.md`
 
-Used by: **Architecture Prototype B**
+使用：**Architecture Prototype Bee**
 
 ```markdown
-# Architecture: <Project>
+# Architecture: <项目>
 
 ## Goal
-<One sentence, irreducible>
+<一句话，不可再约简>
 
 ## Core Constraints
-- [Constraint 1]: <cannot be split further>
-- [Constraint 2]: <physical or user boundary>
+- [约束 1]: <不能再拆了>
+- [约束 2]: <物理边界或用户需求>
 
 ## Modules
 
-### <Module A>
-- **Responsibility**: <single sentence>
-- **Interface**: <input → output contract>
-- **Algorithm**: <name or sketch>
-- **Complexity**: <Big O>
-- **Dependencies**: <other modules>
+### <模块 A>
+- **Responsibility**: <一句话>
+- **Interface**: <输入 → 输出契约>
+- **Algorithm**: <名称或草图>
+- **Complexity**: <大 O>
+- **Dependencies**: <其他模块>
 
-### <Module B>
+### <模块 B>
 ...
 
 ## Tradeoffs
-- Chose X over Y because <reason>
+- 选 X 而非 Y 因为 <原因>
 ```
 
-### Rules
-- Goal must be one sentence. If you need two, it is not reduced enough.
-- Constraints must be "irreducible" — if you can ask "why?" and get a meaningful answer, keep going.
-- Each module is an H3 under `## Modules`.
-- Tradeoffs are decisions that could be reversed. Record them so future you knows why.
+### 规则
+- Goal 必须一句话。需要两句 = 还没规约到位。
+- 约束必须"不可再分"。如果你还能问"为什么？"并得到有意义的答案，继续推。
+- 每个模块是 `## Modules` 下的 H3。
+- Tradeoffs 是可以被反转的决策。记录下来，以后的你才知道为什么。
 
 ---
 
-## Format 3: Project Plan
+## 格式 3：项目计划
 
-Path: `~/.worker-bee/pm/<project>.md`
+路径：`~/.worker-bee/pm/<project>.md`
 
-Used by: **Project Manager Bee**
+使用：**Project Manager Bee**
 
 ```markdown
-# Project: <Project>
+# Project: <项目>
 
 ## Final Artifact
-<What is being delivered?>
+<交付什么？>
 
 ## Template
-- <Section 1>: <title> — <size> — [TBD/Draft/Done]
-- <Section 2>: <title> — <size> — [status]
+- <部分 1>: <标题> — <大小> — [TBD/Draft/Done]
+- <部分 2>: <标题> — <大小> — [状态]
 
 ## Tasks
-- [ ] <Task> — <owner> — <due> — [blocker: <what>]
+- [ ] <任务> — <负责人> — <截止日> — [blocker: <什么>]
 
 ## Contacts
-- [<Name>]: <role> — <contact order> — [status]
+- [<姓名>]: <角色> — <联系顺序> — [状态]
 
 ## Risks
-- [<Risk>]: <mitigation>
+- [<风险>]: <缓解方案>
 ```
 
-### Rules
-- `Final Artifact` is the north star. Everything else serves it.
-- `Template` is the scaffold. It should look like the final doc, just with blanks.
-- `Tasks` use `[blocker: X]` to show dependencies. No blockers = can start now.
-- `Contacts` include contact order (who to reach first, second...).
-- `Risks` are not fears — they are specific events with mitigations.
+### 规则
+- `Final Artifact` 是北极星。其他一切都为它服务。
+- `Template` 是脚手架。它应该看起来像最终文档，只是有空白。
+- `Tasks` 用 `[blocker: X]` 表示依赖。没有阻塞 = 现在就能开始。
+- `Contacts` 包括联系顺序（先联系谁、再联系谁...）。
+- `Risks` 不是担忧 — 是具体事件加缓解方案。
 
 ---
 
-## Format 4: Handoff Document
+## 格式 4：Handoff 文档
 
-Path: `~/.worker-bee/handoffs/<session_id>.md`
+路径：`~/.worker-bee/handoffs/<session_id>.md`
 
-Used by: **All Bs** (batch continuation)
+使用：**所有 Bee**（批次继续）
 
 ```markdown
 # Handoff
 
 **Session:** `<session_id>`
-**Exported:** <ISO timestamp>
+**Exported:** <ISO 时间戳>
 
 ## Purpose
-<What was this session trying to achieve?>
+<本次 session 想完成什么？>
 
 ## Completed
-- <What got done>
+- <完成了什么>
 
 ## Todos
-- [ ] <Remaining work>
+- [ ] <剩余工作>
 
 ## Context
-- <Key facts the next session needs>
+- <下一次 session 需要的关键信息>
 
 ## Next Step
-<What should the next session do first?>
+<下一个 session 应该先做什么？>
 ```
 
-### Rules
-- Not a chat summary. A **work-state snapshot**.
-- `Completed` = factual, not interpretive.
-- `Context` = anything the next session would otherwise have to rediscover.
-- `Next Step` = one clear action, not a list of options.
+### 规则
+- 不是对话摘要。是**工作态快照**。
+- `Completed` = 事实，不是解读。
+- `Context` = 下一次 session 否则需要重新发现的东西。
+- `Next Step` = 一个明确动作，不是选项列表。
 
 ---
 
-## Comparison
+## 对比
 
-| Format | Path | Used By | Content |
-|--------|------|---------|---------|
-| Dictionary | `dict/*.md` | Aristotle Bee | Term definitions + drift tracking |
-| Architecture | `arch/*.md` | Architecture Bee | Modules + constraints + tradeoffs |
-| Project Plan | `pm/*.md` | Project Manager Bee | Template + tasks + contacts + risks |
-| Handoff | `handoffs/*.md` | All Bees | Work-state snapshot for continuation |
+| 格式 | 路径 | 使用者 | 内容 |
+|--------|------|--------|------|
+| 词典 | `dict/*.md` | Aristotle Bee | 术语定义 + 漂移跟踪 |
+| 架构 | `arch/*.md` | Architecture Bee | 模块 + 约束 + tradeoffs |
+| 项目计划 | `pm/*.md` | Project Manager Bee | 模板 + 任务 + 联系人 + 风险 |
+| Handoff | `handoffs/*.md` | 所有 Bee | 工作态快照用于继续 |

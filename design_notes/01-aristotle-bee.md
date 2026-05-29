@@ -1,26 +1,26 @@
-# Aristotle Bee — Definition Master
+# Aristotle Bee — 定义大师
 
-> *Words drift. Meaning must be anchored.*
+> *词会漂移，意思必须锚定。*
 
-## Problem
+## 问题
 
-The same word means different things in different sessions. "沉浸感" today is flow, tomorrow it is sensory. The LLM does not notice the drift — it just generates the next token based on whatever context it has.
+同一个词在不同 session 里意思不一样。"沉浸感"今天是心流，明天是感官。LLM 不会自动察觉这种漂移 — 它只是根据当前 context 生成下一个 token。
 
-## First Principle
+## 第一原理
 
-**LLM does not "understand" words. It matches patterns.** If you want precision, you must externalize definitions and force the LLM to look them up before use. The dictionary is a **shared mental model** between human and LLM.
+**LLM 不“理解”词，只是匹配 pattern。**如果你要精确，就必须把定义外置化，并强制 LLM 先查词典再使用。词典是人和 LLM 之间的**共享心智模型**。
 
-## Behavior
+## 行为
 
-1. When the user mentions a term, check `~/.worker-bee/dict/<project>.md`
-2. If the term exists — quote its definition at the start of the reply in a `[Definition: term]` block
-3. If the current context differs from the recorded usage — raise a **drift warning**
-4. If the term does not exist — ask: "What do you mean by 'X'? Suggest writing it into the dictionary."
-5. If the user is coining a new term — record it with `[New term]` label, ask for exact definition
+1. 用户提到一个术语时，先查 `~/.worker-bee/dict/<project>.md`
+2. 如果该术语存在 — 在回复开头用 `[Definition: 术语名]` 卡片引入定义
+3. 如果当前语境与记录的用法不同 — 抬起**漂移警告**
+4. 如果该术语不存在 — 质问："你说的'X'是什么意思？建议写进词典。"
+5. 如果用户在造新词 — 用 `[New term]` 标签记录，并要求精确定义
 
-## Exogenous Pheromone Format
+## 外源信息素格式
 
-File: `~/.worker-bee/dict/<project>.md`
+文件路径：`~/.worker-bee/dict/<project>.md`
 
 ```markdown
 # 术语词典：游戏策划
@@ -32,7 +32,7 @@ File: `~/.worker-bee/dict/<project>.md`
   - 感官沉浸 (Sensory): 视听包裹感
   - 叙事沉浸 (Narrative): 与角色共情
 - **Context**: Session e5f6g7h8 — 指叙事沉浸
-- **Drift warning**: Session a1b2c3d4 used it for 感官沉浸
+- **Drift warning**: Session a1b2c3d4 用于感官沉浸
 
 ## 叙事弧
 - **Definition**: 玩家情感体验的三幕结构（起-承-转-合）
@@ -41,28 +41,28 @@ File: `~/.worker-bee/dict/<project>.md`
 - **Usage**: Session b2c3d4e5 — 指关卡节奏
 ```
 
-Each term is an H2 block. Fields are bullet lists with bold keys. Both human and LLM read the same file.
+每个术语是一个 H2 块。字段是带 `**粗体键**` 的列表。人和 LLM 看同一个文件。
 
-## Drift Warning Format
+## 漂移警告格式
 
 ```
-[Drift] You said "沉浸感". Last session (e5f6g7h8) this meant "心流沉浸".
-Current context suggests "感官沉浸". Clarify which one?
+[Drift] 你说了"沉浸感"。上次 session (e5f6g7h8) 这个词是"心流沉浸"。
+当前语境像是"感官沉浸"。确认是哪一个？
 ```
 
-## Skill Contract
+## Skill 契约
 
-See `worker_bee/skills/aristotle.md`
+见 `worker_bee/skills/aristotle.md`
 
-## Why It Works
+## 为什么能用
 
-- The dictionary is **human-editable** — you can open it in any text editor
-- The LLM does not "learn" the terms — it **looks them up** via `read_file`
-- Drift is caught because the LLM compares current context against recorded usage
-- New terms are **explicitly coined**, not silently invented
+- 词典是**人可编辑**的 — 任何文本编辑器都能打开
+- LLM 不“学习”术语 — 它是**查词典** `read_file` 看到什么就用什么
+- 漂移被抓住，因为 LLM 会对比当前语境和记录的用法
+- 新词是**明确造出来**的，不是默默自创的
 
-## Use Cases
+## 使用场景
 
-- Game design teams with domain-specific jargon ("战斗节奏", "循环经济")
-- Research projects with abstract constructs that need precise operationalization
-- Any domain where words are slippery and precision matters
+- 游戏策划团队的行话（"战斗节奏"、"循环经济"）
+- 研究项目中需要精确操作化的抽象构念
+- 任何词义模糊、精度重要的领域

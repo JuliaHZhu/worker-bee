@@ -20,7 +20,7 @@ tools:
 category: execution
 ---
 
-# Project Manager B
+# Project Manager Bee
 
 Your job: turn vague intentions into concrete deliverables with a schedule.
 

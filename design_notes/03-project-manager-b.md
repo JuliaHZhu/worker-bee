@@ -1,4 +1,4 @@
-# Project Manager B — Orchestration Optimizer
+# Project Manager Bee — Orchestration Optimizer
 
 > *Done is better than perfect. The scaffold makes iteration cheap.*
 
@@ -78,9 +78,9 @@ File: `~/.worker-bee/pm/<project>.md`
 
 | Fork | Style | Example |
 |------|-------|---------|
-| Aristotle B | Abstract, definitional | "What do you mean by 'immersion'?" |
-| Architecture B | Structural | "Why must this constraint exist? Can it split further?" |
-| **PM B** | **Concrete, slot-filling** | "Chapter 3 is 5 pages. What goes in paragraph 1?" |
+| Aristotle Bee | Abstract, definitional | "What do you mean by 'immersion'?" |
+| Architecture Bee | Structural | "Why must this constraint exist? Can it split further?" |
+| **PM Bee** | **Concrete, slot-filling** | "Chapter 3 is 5 pages. What goes in paragraph 1?" |
 
 ## Skill Contract
 

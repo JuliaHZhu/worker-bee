@@ -326,7 +326,7 @@ Each fork follows the same first-principles:
 
 ---
 
-### 6.1 Aristotle B — Definition Master
+### 6.1 Aristotle Bee — Definition Master
 
 **Problem:** The same word means different things in different sessions. "Immersion" today is flow, tomorrow it is sensory. The LLM does not notice the drift.
 
@@ -390,7 +390,7 @@ Combat depth from positional tactics, not stat grinding.
 
 ---
 
-### 6.3 Project Manager B — Orchestration Optimizer
+### 6.3 Project Manager Bee — Orchestration Optimizer
 
 **Problem:** You have real-world materials (regulations, contacts, deadlines) and limited resources. You need to sequence tasks, not just list them.
 
@@ -429,7 +429,7 @@ Combat depth from positional tactics, not stat grinding.
 
 **Skill:** `worker_bee/skills/project-manager.md`
 
-**Why it works:** PM B treats every project as a **pipeline with a known output format**. The conversation is not "what should I do?" but "what goes in each slot of the template?" Done is better than perfect. The scaffold makes iteration cheap.
+**Why it works:** PM Bee treats every project as a **pipeline with a known output format**. The conversation is not "what should I do?" but "what goes in each slot of the template?" Done is better than perfect. The scaffold makes iteration cheap.
 
 ---
 
@@ -439,9 +439,9 @@ All three Bs share the same Worker Bee core. The only difference is:
 
 | Fork | Skill Loaded | Exogenous Pheromone | Conversation Style |
 |------|-------------|---------------------|-------------------|
-| Aristotle B | `aristotle.md` | `dict/*.md` | Abstract, definitional — "What do you mean by X?" |
-| Architecture B | `architect.md` | `arch/*.md` | Structural — "Why? Can it split further?" |
-| Project Manager B | `project-manager.md` | `pm/*.md` | Concrete — "What is the deliverable? What goes in slot 3?" |
+| Aristotle Bee | `aristotle.md` | `dict/*.md` | Abstract, definitional — "What do you mean by X?" |
+| Architecture Bee | `architect.md` | `arch/*.md` | Structural — "Why? Can it split further?" |
+| Project Manager Bee | `project-manager.md` | `pm/*.md` | Concrete — "What is the deliverable? What goes in slot 3?" |
 
 **No code changes to core.** Just skills + Markdown files. The human decides which B to invoke by which skill they place in `~/.worker-bee/skills/` or which directory they maintain.
 

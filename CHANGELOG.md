@@ -21,9 +21,9 @@ Worker Bee 开发历史。从 [Hermes Agent](https://github.com/NousResearch/her
 
 | Fork | Skill | 信息素格式 | 作用 |
 |------|-------|----------|------|
-| Aristotle B | aristotle | `dict/*.md` | 术语守护 — 查词典、检测漂移 |
-| Architecture B | architect | `arch/*.md` | 结构规约 — 目标 → 不可再分约束 |
-| Project Manager B | project-manager | `pm/*.md` | 编排优化 — 模板先行、留白交付 |
+| Aristotle Bee | aristotle | `dict/*.md` | 术语守护 — 查词典、检测漂移 |
+| Architecture Bee | architect | `arch/*.md` | 结构规约 — 目标 → 不可再分约束 |
+| Project Manager Bee | project-manager | `pm/*.md` | 编排优化 — 模板先行、留白交付 |
 
 设计文档见 `design_notes/` 目录。
 

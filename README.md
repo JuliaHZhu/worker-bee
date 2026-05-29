@@ -220,9 +220,9 @@ Swap skills and exogenous-pheromone formats to turn Worker Bee into domain-speci
 
 | Fork | Skill | Pheromone | What It Does |
 |------|-------|-----------|-------------|
-| **Aristotle B** | aristotle | `dict/*.md` | Terminology guardian — dictionary lookup + drift detection |
-| **Architecture B** | architect | `arch/*.md` | Structure reducer — reduce vague goals to irreducible constraints |
-| **Project Manager B** | project-manager | `pm/*.md` | Orchestration optimizer — template-first delivery with `[TBD]` blanks |
+| **Aristotle Bee** | aristotle | `dict/*.md` | Terminology guardian — dictionary lookup + drift detection |
+| **Architecture Bee** | architect | `arch/*.md` | Structure reducer — reduce vague goals to irreducible constraints |
+| **Project Manager Bee** | project-manager | `pm/*.md` | Orchestration optimizer — template-first delivery with `[TBD]` blanks |
 
 All forks share the same core. Only the skill and data format change.
 

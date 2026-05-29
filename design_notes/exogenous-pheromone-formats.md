@@ -24,7 +24,7 @@ The metaphor: ants leave pheromone trails for other ants to follow. Worker Bee l
 
 Path: `~/.worker-bee/dict/<project>.md`
 
-Used by: **Aristotle B**
+Used by: **Aristotle Bee**
 
 ```markdown
 # 术语词典：<Project>
@@ -91,7 +91,7 @@ Used by: **Architecture Prototype B**
 
 Path: `~/.worker-bee/pm/<project>.md`
 
-Used by: **Project Manager B**
+Used by: **Project Manager Bee**
 
 ```markdown
 # Project: <Project>
@@ -162,7 +162,7 @@ Used by: **All Bs** (batch continuation)
 
 | Format | Path | Used By | Content |
 |--------|------|---------|---------|
-| Dictionary | `dict/*.md` | Aristotle B | Term definitions + drift tracking |
-| Architecture | `arch/*.md` | Architecture B | Modules + constraints + tradeoffs |
-| Project Plan | `pm/*.md` | PM B | Template + tasks + contacts + risks |
-| Handoff | `handoffs/*.md` | All Bs | Work-state snapshot for continuation |
+| Dictionary | `dict/*.md` | Aristotle Bee | Term definitions + drift tracking |
+| Architecture | `arch/*.md` | Architecture Bee | Modules + constraints + tradeoffs |
+| Project Plan | `pm/*.md` | Project Manager Bee | Template + tasks + contacts + risks |
+| Handoff | `handoffs/*.md` | All Bees | Work-state snapshot for continuation |

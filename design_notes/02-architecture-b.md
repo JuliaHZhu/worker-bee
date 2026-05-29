@@ -1,4 +1,4 @@
-# Architecture Prototype B — Structure Reducer
+# Architecture Prototype Bee — Structure Reducer
 
 > *Architecture is reduction, not construction.*
 

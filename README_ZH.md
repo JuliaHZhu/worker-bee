@@ -216,9 +216,9 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 
 | Fork | Skill | 信息素格式 | 作用 |
 |------|-------|----------|------|
-| **Aristotle B** | aristotle | `dict/*.md` | 术语守护 — 查词典、检测漂移 |
-| **Architecture B** | architect | `arch/*.md` | 结构规约 — 目标 → 不可再分约束 |
-| **Project Manager B** | project-manager | `pm/*.md` | 编排优化 — 模板先行、留白交付 |
+| **Aristotle Bee** | aristotle | `dict/*.md` | 术语守护 — 查词典、检测漂移 |
+| **Architecture Bee** | architect | `arch/*.md` | 结构规约 — 目标 → 不可再分约束 |
+| **Project Manager Bee** | project-manager | `pm/*.md` | 编排优化 — 模板先行、留白交付 |
 
 所有 fork 共享同一套核心，只有 skill 和数据格式不同。
 

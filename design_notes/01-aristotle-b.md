@@ -1,4 +1,4 @@
-# Aristotle B — Definition Master
+# Aristotle Bee — Definition Master
 
 > *Words drift. Meaning must be anchored.*
 

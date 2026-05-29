@@ -166,3 +166,6 @@
 | 架构 | `arch/*.md` | Architecture Bee | 模块 + 约束 + tradeoffs |
 | 项目计划 | `pm/*.md` | Project Manager Bee | 模板 + 任务 + 联系人 + 风险 |
 | Handoff | `handoffs/*.md` | 所有 Bee | 工作态快照用于继续 |
+| 数据集 | `worldbee/data/*.md` | WorldBee | 原始数据 + 统计结果 |
+| 模型 | `worldbee/models/*.md` | WorldBee | 公式 + 参数 + 基准测试 |
+| 规则 | `worldbee/rules/*.md` | WorldBee | 硬约束 + 来源 + 红线 |

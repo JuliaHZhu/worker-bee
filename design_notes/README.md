@@ -7,6 +7,7 @@
 | [01-aristotle-bee.md](01-aristotle-bee.md) | 定义大师 — 术语守护 |
 | [02-architecture-bee.md](02-architecture-bee.md) | 结构规约器 — 从模糊想法到不可再分约束 |
 | [03-project-manager-bee.md](03-project-manager-bee.md) | 编排优化器 — 现实材料分解与排期 |
+| [04-worldbee.md](04-worldbee.md) | 环境引擎 — 现实检查、数据验证 |
 | [exogenous-pheromone-formats.md](exogenous-pheromone-formats.md) | 每个 fork 的外部状态 Markdown 格式 |
 
 ## 核心架构

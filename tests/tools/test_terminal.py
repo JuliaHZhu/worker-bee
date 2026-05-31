@@ -10,9 +10,6 @@ from tools.terminal import (
 class TestAllowlist:
     """Allowlist matching for safe commands."""
 
-    def test_cat_is_allowlisted(self):
-        assert _matches_allowlist("cat file.txt")
-
     def test_ls_is_allowlisted(self):
         assert _matches_allowlist("ls -la")
 

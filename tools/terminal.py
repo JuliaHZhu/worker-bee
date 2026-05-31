@@ -6,7 +6,7 @@ import shlex
 import subprocess
 from worker_bee.registry import registry
 ALLOWLIST = [
-    "cat*", "head*", "tail*", "less*", "more*",
+    "head*", "tail*", "less*", "more*",
     "ls*", "ll*", "pwd", "id", "uname*", "whoami",
     "echo*", "printf*", "which*", "whereis*", "stat*", "file*",
     "wc*", "ps*", "top*", "df*", "du*", "free", "uptime",

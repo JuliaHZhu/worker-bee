@@ -31,6 +31,11 @@ class TestSensitiveDetection:
     def test_normal_txt_not_sensitive(self):
         assert not file_mod._is_sensitive("/tmp/test.txt")
 
+    def test_env_like_filename_not_sensitive(self):
+        """my.env.py should NOT be flagged just because it contains '.env'."""
+        assert not file_mod._is_sensitive("/home/user/project/my.env.py")
+        assert not file_mod._is_sensitive("/app/settings.env.json")
+
 
 class TestWorkspaceGuard:
     """_is_inside_workspace boundary enforcement."""

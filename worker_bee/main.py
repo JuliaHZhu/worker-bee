@@ -310,8 +310,7 @@ def run_session():
         # 1. Match skills by triggers
         matched_skills = skill_mgr.match_skills(user_input)
         if not matched_skills:
-            # Fallback: let LLM semantically select (or use all if no skills)
-            matched_skills = list(skill_mgr.list_skills().keys())
+            matched_skills = []
 
         # 2. Collect tools from matched skills
         skill_tools = skill_mgr.get_tools_for_skills(matched_skills)

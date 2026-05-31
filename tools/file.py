@@ -56,8 +56,12 @@ _SENSITIVE_PATTERNS = [
 
 def _is_sensitive(path: str) -> bool:
     p = Path(path).as_posix()
+    basename = p.split("/")[-1]
     for pat in _SENSITIVE_PATTERNS:
         if pat in p:
+            # 精确文件名例外：短模式必须精确匹配文件名，避免误杀 my.env.py
+            if pat in (".env", ".bashrc", ".zshrc", ".profile") and basename != pat:
+                continue
             return True
     return False
 
@@ -136,6 +140,8 @@ def fs_search_files(pattern: str, path: str = ".", file_glob: str = "*") -> str:
             if not fnmatch.fnmatch(f, file_glob):
                 continue
             fp = os.path.join(root, f)
+            if _is_sensitive(fp):
+                continue
             try:
                 content = Path(fp).read_text(encoding="utf-8", errors="replace")
                 for i, line in enumerate(content.splitlines(), 1):

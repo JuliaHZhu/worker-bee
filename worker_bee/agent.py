@@ -88,7 +88,7 @@ class AIAgent:
                     blocks = []
                     if reasoning:
                         blocks.append({"type": "text", "text": reasoning})
-                    elif content:
+                    if content:
                         blocks.append({"type": "text", "text": content})
                     for tc in tool_calls:
                         blocks.append({
@@ -221,7 +221,7 @@ class AIAgent:
                 api_msgs = []
                 if reasoning:
                     api_msgs.append({"type": "thinking", "thinking": reasoning})
-                elif text:
+                if text:
                     api_msgs.append({"type": "text", "text": text})
                 for tc in tool_calls:
                     api_msgs.append({

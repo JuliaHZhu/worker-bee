@@ -6,34 +6,34 @@
 
 ## One Sentence
 
-**Worker Bee = One Agent + One Job Board.**
+**Worker Bee = Hermes Lite kernel + swarm extensions.**
 
-No Symphony. No multi-agent orchestration. No daemon. The agent reads the board, assigns itself work, and leaves pheromones. Humans open the file anytime and see everything.
+It keeps the same minimal architecture — registry, Deck, protocol abstraction, protocol-agnostic loop — and adds the things a real agent needs: sessions, cron, tags, platform awareness, and skill ecosystems.
 
 ---
 
 ## Why One Agent Is Enough
 
-Multi-agent frameworks assume: tasks are so complex they need分工, so you need orchestrators, worker pools, and inter-agent protocols.
+Multi-agent frameworks assume tasks are so complex they need division of labor, orchestrators, worker pools, and inter-agent protocols.
 
 Worker Bee assumes differently:
 
-> **The agent itself is the dispatcher.** The Deck architecture already solves tool distribution—each task only exposes relevant tools. The agent doesn't need to be "scheduled"; it only needs to be "activated".
+> **The agent itself is the dispatcher.** The Deck architecture already solves tool distribution — each task only exposes relevant tools. The agent does not need to be "scheduled"; it only needs to be "activated".
 
 ```
 User says "supervisor, check progress"
-    │
-    ▼
+    |
+    v
 Trigger matches job-supervisor skill
-    │
-    ▼
+    |
+    v
 Deck loads board management tools (8)
-    │
-    ▼
-Agent reads board → reports → halts
+    |
+    v
+Agent reads board -> reports -> halts
 ```
 
-The agent does one thing at a time, but **one thing can be very complex**—reading multiple jobs, evaluating quality, generating reports. Complexity ≠ need for multiple agents.
+The agent does one thing at a time, but **one thing can be very complex** — reading multiple jobs, evaluating quality, generating reports. Complexity does not imply multiple agents.
 
 ---
 
@@ -66,9 +66,42 @@ No daemon. No orchestrator. One CLI entry point.
 
 ---
 
+## Architecture
+
+Worker Bee reuses the Hermes Lite kernel verbatim and adds its own layers on top.
+
+```
++------------------------------------------+
+|  Worker Bee extensions (swarm layer)     |
+|  - SessionDB (SQLite, persistent)        |
+|  - Cron scheduler (background thread)    |
+|  - Tag extraction (#design #question)    |
+|  - InfraToolSet (platform detection)     |
+|  - SkillManager (Markdown contracts)     |
+|  - Handoff export / resume               |
++------------------------------------------+
+|  Agent shell (worker_bee/agent.py)       |
+|  - Config, schema cache, thin wrapper    |
++------------------------------------------+
+|  Hermes Lite kernel (reused as-is)       |
+|  - protocols.py  (Anthropic / OpenAI)    |
+|  - loop.py       (protocol-agnostic)     |
++------------------------------------------+
+|  Shared infrastructure                   |
+|  - registry.py   (tool registry)         |
+|  - deck.py       (tool boundary)         |
+|  - skills.py     (skill matching)        |
+|  - tools/        (file, terminal, web)   |
++------------------------------------------+
+```
+
+**What this means in practice**: if Hermes Lite fixes a protocol bug or adds a new provider, Worker Bee gets it for free by copying `protocols.py` and `loop.py`. No merge conflicts. No drift.
+
+---
+
 ## Text as Model
 
-The job's true state is not in memory, not in a database—it's in the `jobs/JOB-XXX.md` frontmatter.
+The job's true state is not in memory, not in a database — it is in the `jobs/JOB-XXX.md` frontmatter.
 
 **Humans `cat` and understand. LLMs read and operate. Git diff tracks changes.**
 
@@ -111,20 +144,17 @@ Split SSO logic into independent module, keep backward compatible.
 ## Event Stream (append-only)
 
 - [14:00] created — state=Todo
-- [14:05] checkpoint — phase=confirmed, who=agent-001, note=understood task and standards
-- [14:10] checkpoint — phase=planned, who=agent-001, note=approach: migrate funcs first, then tests
-- [14:15] checkpoint — phase=planned, who=human, note=approved, execute
-- [14:20] state_change — Todo → Running
+- [14:05] checkpoint — phase=confirmed, who=agent-001, note=understood task
+- [14:10] checkpoint — phase=planned, who=agent-001, note=approach agreed
+- [14:20] state_change — Todo -> Running
 - [14:30] log — created auth/sso.py
 - [14:35] log — tests passed, coverage 85%
 - [14:40] self_check — deliverables 3/3, acceptance 3/3
-- [14:45] eval — design-alignment: Pass
 - [14:50] checkpoint — phase=reviewed, who=human, note=pass
-- [14:55] checkpoint — phase=done, who=system
-- [14:55] state_change — Running → Done
+- [14:55] state_change — Running -> Done
 ```
 
-**That's it.** No hidden state. No database. No ORM. One Markdown file = one complete work record.
+**That is it.** No hidden state. No ORM. One Markdown file = one complete work record.
 
 ---
 
@@ -144,7 +174,7 @@ Every job natively contains:
 ## Seven-Phase Lifecycle
 
 ```
-created → confirmed → planned → executing → self_checked → reviewed → done
+created -> confirmed -> planned -> executing -> self_checked -> reviewed -> done
 ```
 
 | Phase | Meaning | Who Confirms | Output |
@@ -152,12 +182,12 @@ created → confirmed → planned → executing → self_checked → reviewed �
 | `created` | Just created | System | Job file |
 | `confirmed` | Owner confirms understanding | Owner | Understanding summary |
 | `planned` | Approach submitted and approved | Reviewer | Approved plan |
-| `executing` | Work in progress | Owner | Code/docs |
+| `executing` | Work in progress | Owner | Code / docs |
 | `self_checked` | Owner self-verification | Owner | Checklist results |
 | `reviewed` | Evaluator validates quality | Reviewer | Evaluation conclusion |
 | `done` | Archived | System | Complete history |
 
-Every phase transition is a **checkpoint** event, recording: who, what phase, what conclusion, when.
+Every phase transition is a **checkpoint** event recording: who, what phase, what conclusion, when.
 
 ---
 
@@ -178,7 +208,7 @@ Every phase transition is a **checkpoint** event, recording: who, what phase, wh
 
 ## What Else?
 
-Yes. These are existing skills, all using the same Deck architecture:
+Existing skills, all using the same Deck architecture:
 
 | Skill | What It Does | Trigger |
 |-------|-------------|---------|
@@ -193,7 +223,7 @@ Adding a new skill only requires: write a `skills/xxx.md` contract + a `tools/xx
 
 ## Session Handoff
 
-When a session grows long, don't compress history. Export a handoff and start fresh:
+When a session grows long, do not compress history. Export a handoff and start fresh:
 
 ```bash
 # During session
@@ -210,7 +240,7 @@ Load it in a new session:
 worker-bee --continue ~/.worker-bee/handoffs/a1b2c3d4.md
 ```
 
-Handoff is a work-state snapshot (Purpose, Completed, Todos, Context, Next Step) — not a chat summary.
+A handoff is a work-state snapshot (Purpose, Completed, Todos, Context, Next Step) — not a chat summary.
 
 ---
 
@@ -234,11 +264,12 @@ See `design_notes/` for full design docs and `examples/` for sample formats.
 
 | Principle | Meaning |
 |-----------|---------|
+| **Reuse the Kernel** | `protocols.py` + `loop.py` are copied verbatim from Hermes Lite. No divergence. |
 | **One Agent Is Enough** | No multi-agent, no orchestrator, no daemon |
 | **Text as Model** | All state in Markdown, human-readable and editable anytime |
 | **Append-Only** | Event stream never overwritten, history never lost |
 | **Deck Pruning** | Each task only exposes relevant tools, no boundary crossing |
-| **Checkpoint-Driven** | Tasks aren't "Todo→Done", they're 7 confirmation nodes |
+| **Checkpoint-Driven** | Tasks are not "Todo->Done"; they are 7 confirmation nodes |
 
 ---
 
@@ -248,8 +279,8 @@ See `design_notes/` for full design docs and `examples/` for sample formats.
 >
 > These two things are always talking.
 >
-> You can pat its shoulder anytime and ask: "How's this one going?"
+> You can pat its shoulder anytime and ask: "How is this one going?"
 >
 > It will point you to the records on the board.
 >
-> That's enough.
+> That is enough.

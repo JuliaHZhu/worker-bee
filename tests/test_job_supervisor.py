@@ -1,7 +1,6 @@
 """Tests for job_supervisor toolset."""
 import json
 import shutil
-from pathlib import Path
 
 import pytest
 

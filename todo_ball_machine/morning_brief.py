@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
-from todo_ball_machine.engine import Engine
+from todo_ball_machine.engine import Engine  # noqa: E402
 
 
 def main():

@@ -1,8 +1,5 @@
 """Tests for snapshot / rollback mechanism in tools/file.py."""
-import os
-from pathlib import Path
 
-import pytest
 
 from tools.file import (
     fs_write_file,

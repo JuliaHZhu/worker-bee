@@ -25,6 +25,7 @@ import json
 import os
 import sys
 import threading
+from pathlib import Path
 
 from worker_bee.agent import AIAgent
 from worker_bee.memory import SessionDB
@@ -48,11 +49,6 @@ def _cron_tick_loop(config: dict, skill_mgr):
         except Exception as e:
             print(f"  [Cron tick error: {e}]")
         _tick_stop.wait(60)
-
-
-import os
-import json
-from pathlib import Path
 
 
 def _config_dir() -> Path:

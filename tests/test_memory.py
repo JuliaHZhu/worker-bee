@@ -60,7 +60,7 @@ class TestSessions:
         assert meta["wiki_path"] == "/tmp/wiki/session-abc.md"
 
     def test_list_open_sessions(self, db):
-        open_sid = db.create_session(title="Open")
+        db.create_session(title="Open")
         closed_sid = db.create_session(title="Closed")
         db.close_session(closed_sid)
         open_sessions = db.list_open_sessions()
@@ -240,7 +240,7 @@ class TestTasks:
 
     def test_add_and_list_task(self, db):
         sid = db.create_session()
-        tid = db.add_task(sid, "Migrate auth module")
+        db.add_task(sid, "Migrate auth module")
         tasks = db.list_tasks(session_id=sid)
         assert len(tasks) == 1
         assert tasks[0][2] == "Migrate auth module"

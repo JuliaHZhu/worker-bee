@@ -15,7 +15,7 @@ import json
 import re
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 # ── Config ──────────────────────────────────────────────────────────
 JOBS_DIR = Path(__file__).parent.parent / "jobs"

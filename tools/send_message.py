@@ -1,5 +1,10 @@
 """Send message — Feishu (App Bot API + Webhook fallback) and Discord webhook.
 
+Design note: This is a **notification outlet** only. Worker Bee receives commands
+exclusively via GitHub (Issues/PRs); send_message is used to notify completion,
+failures, or WorldBee pheromones. It does NOT accept commands from messaging
+platforms.
+
 Feishu modes (priority order):
   1. App Bot API → requires FEISHU_APP_ID + FEISHU_APP_SECRET
      Supports chat_id / open_id / user_id / thread_id via receive_id.

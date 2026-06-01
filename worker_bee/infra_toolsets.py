@@ -47,8 +47,10 @@ class InfraToolSet:
         if self._platform:
             return self._platform
 
-        # 优先级：FEISHU > DISCORD > linux
-        if os.environ.get("FEISHU_WEBHOOK_URL"):
+        # 优先级：App Bot > Webhook > Discord > linux
+        if os.environ.get("FEISHU_APP_ID") and os.environ.get("FEISHU_APP_SECRET"):
+            self._platform = "feishu"
+        elif os.environ.get("FEISHU_WEBHOOK_URL"):
             self._platform = "feishu"
         elif os.environ.get("DISCORD_WEBHOOK_URL"):
             self._platform = "discord"

@@ -62,6 +62,46 @@ worker-bee
 
 ---
 
+## 项目结构
+
+```
+worker-bee/
+├── worker_bee/           # 核心 agent + CLI
+│   ├── main.py           # CLI 入口（setup / ping / session / lark）
+│   ├── agent.py          # Agent 外壳（配置、schema 缓存）
+│   ├── loop.py           # 协议无关运行循环（Hermes 内核）
+│   ├── protocols.py      # Anthropic / OpenAI 协议适配（Hermes 内核）
+│   ├── registry.py       # 工具注册表
+│   ├── deck.py           # 工具边界（Deck 装填）
+│   ├── skills.py         # Skill 匹配引擎
+│   ├── memory.py         # Session DB（SQLite，持久化）
+│   ├── infra_toolsets.py # 平台检测（Linux / 飞书 / Discord）
+│   ├── lark_cli.py       # 独立飞书 Lark Bot（HTTP webhook）
+│   └── skills/           # Markdown skill 契约
+│       ├── job-supervisor.md
+│       ├── code-review.md
+│       ├── todo-ball-machine.md
+│       └── ...
+├── tools/                # 工具实现（自动注册到 registry）
+│   ├── send_message.py   # 飞书 App Bot API / Webhook / Discord
+│   ├── terminal.py       # 执行 shell 命令
+│   ├── file.py           # 读写/搜索文件
+│   ├── web.py            # 网页搜索/抽取
+│   ├── subagent.py       # 委派子 agent
+│   ├── cronjob.py        # 定时任务管理
+│   ├── job_supervisor.py # Job Board 增删查改
+│   └── ...
+├── cron/                 # 后台定时器
+│   ├── scheduler.py      # 每 60s tick 循环
+│   └── jobs.py           # Job 定义
+├── tests/                # pytest 测试套件
+├── design_notes/         # 架构设计文档
+├── todo_ball_machine/    # 人生任务抽球系统
+└── templates/            # Skill 编写模板
+```
+
+---
+
 ## Text as Model
 
 Job 的真实状态不在内存里，不在数据库里，在 `jobs/JOB-XXX.md` 的 frontmatter 里。

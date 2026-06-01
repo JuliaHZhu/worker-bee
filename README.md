@@ -66,6 +66,46 @@ No daemon. No orchestrator. One CLI entry point.
 
 ---
 
+## Project Structure
+
+```
+worker-bee/
+├── worker_bee/           # Core agent + CLI
+│   ├── main.py           # CLI entry point (setup / ping / session / lark)
+│   ├── agent.py          # Agent shell (config, schema cache)
+│   ├── loop.py           # Protocol-agnostic run loop (Hermes kernel)
+│   ├── protocols.py      # Anthropic / OpenAI protocol adapters (Hermes kernel)
+│   ├── registry.py       # Tool registry
+│   ├── deck.py           # Tool boundary (Deck procurement)
+│   ├── skills.py         # Skill matching engine
+│   ├── memory.py         # Session DB (SQLite, persistent)
+│   ├── infra_toolsets.py # Platform detection (Linux / Feishu / Discord)
+│   ├── lark_cli.py       # Standalone Feishu Lark bot (HTTP webhook)
+│   └── skills/           # Markdown skill contracts
+│       ├── job-supervisor.md
+│       ├── code-review.md
+│       ├── todo-ball-machine.md
+│       └── ...
+├── tools/                # Tool implementations (auto-registered)
+│   ├── send_message.py   # Feishu App Bot API / Webhook / Discord
+│   ├── terminal.py       # Shell execution
+│   ├── file.py           # Read / write / search files
+│   ├── web.py            # Web search / extract
+│   ├── subagent.py       # Delegate to child agents
+│   ├── cronjob.py        # Cron job management
+│   ├── job_supervisor.py # Job board CRUD
+│   └── ...
+├── cron/                 # Background scheduler
+│   ├── scheduler.py      # Tick loop
+│   └── jobs.py           # Job definitions
+├── tests/                # pytest suite
+├── design_notes/         # Architecture docs
+├── todo_ball_machine/    # Life task ball-drawing system
+└── templates/            # Skill authoring templates
+```
+
+---
+
 ## Architecture
 
 Worker Bee reuses the Hermes Lite kernel verbatim and adds its own layers on top.

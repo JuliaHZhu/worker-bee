@@ -163,16 +163,65 @@ def ping_model(message: str):
 
 
 def ping_channel(message: str):
-    """Quick channel connectivity test (Feishu/Discord)."""
+    """Quick channel connectivity test (Feishu/Discord).
+
+    Tries multiple send paths in order:
+      1. Feishu App Bot API (if FEISHU_APP_ID + FEISHU_APP_SECRET present)
+      2. Feishu Webhook (if FEISHU_WEBHOOK_URL present)
+      3. Discord Webhook (if DISCORD_WEBHOOK_URL present)
+    """
     from tools.send_message import send_message
+
+    # 1. Try Feishu App Bot (works even on linux if env vars present)
+    app_id = os.environ.get("FEISHU_APP_ID")
+    app_secret = os.environ.get("FEISHU_APP_SECRET")
+    if app_id and app_secret:
+        # Resolve target chat_id / DM
+        target = os.environ.get("FEISHU_HOME_CHANNEL", "")
+        # If running inside Hermes, also try current DM session
+        session_key = os.environ.get("HERMES_SESSION_KEY", "")
+        if not target and session_key:
+            parts = session_key.split(":")
+            if len(parts) >= 2 and parts[-2] in ("dm", "group"):
+                target = parts[-1]
+
+        if target:
+            print(f"→ Sending via Feishu App Bot API to {target[:20]}...")
+            result = send_message(
+                message,
+                platform="feishu",
+                receive_id=target,
+                receive_id_type="chat_id",
+            )
+            print("← Result:", result)
+            return
+        else:
+            print("⚠️  Feishu App Bot credentials found but no target chat_id.")
+            print("   Set FEISHU_HOME_CHANNEL or run inside Hermes Feishu context.")
+            return
+
+    # 2. Try Webhook modes
     infra = InfraToolSet()
     plat = infra.platform
-    if plat == "linux":
-        print("❌ No channel configured. Set FEISHU_WEBHOOK_URL or DISCORD_WEBHOOK_URL.")
-        sys.exit(1)
-    print(f"→ Sending to {plat}...")
-    result = send_message(message)
-    print("← Result:", result)
+
+    if plat == "feishu":
+        print(f"→ Sending via Feishu Webhook...")
+        result = send_message(message)
+        print("← Result:", result)
+        return
+
+    if plat == "discord":
+        print(f"→ Sending via Discord Webhook...")
+        result = send_message(message)
+        print("← Result:", result)
+        return
+
+    # 3. Nothing configured
+    print("❌ No messaging platform configured.")
+    print("   Options:")
+    print("   • App Bot (full):  export FEISHU_APP_ID='xxx' FEISHU_APP_SECRET='yyy'")
+    print("   • Webhook (simple): export FEISHU_WEBHOOK_URL='https://open.feishu.cn/...'")
+    print("   • Discord:          export DISCORD_WEBHOOK_URL='https://discord.com/...'")
 
 
 def run_session():

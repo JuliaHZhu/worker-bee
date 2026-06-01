@@ -205,13 +205,13 @@ def ping_channel(message: str):
     plat = infra.platform
 
     if plat == "feishu":
-        print(f"→ Sending via Feishu Webhook...")
+        print("→ Sending via Feishu Webhook...")
         result = send_message(message)
         print("← Result:", result)
         return
 
     if plat == "discord":
-        print(f"→ Sending via Discord Webhook...")
+        print("→ Sending via Discord Webhook...")
         result = send_message(message)
         print("← Result:", result)
         return

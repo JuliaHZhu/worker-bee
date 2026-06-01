@@ -25,11 +25,6 @@ from pathlib import Path
 from typing import Optional, Dict, Callable
 
 from worker_bee.agent import AIAgent
-from worker_bee.memory import SessionDB
-from worker_bee.skills import SkillManager
-from worker_bee.registry import registry
-from worker_bee.infra_toolsets import InfraToolSet
-from worker_bee.deck import build_deck, Deck
 
 # ── Config ──────────────────────────────────────────────────────────────────
 
@@ -358,7 +353,7 @@ def run_server(port: int = 8080):
     host = os.environ.get("WORKER_BEE_HOST", "<your-host>")
     print(f"🐝 Worker Bee Lark bot listening on :{port}")
     print(f"   Event subscription URL: http://{host}:{port}/webhook")
-    print(f"   Press Ctrl+C to stop.")
+    print("   Press Ctrl+C to stop.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

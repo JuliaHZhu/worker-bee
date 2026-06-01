@@ -222,7 +222,7 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 
 所有 fork 共享同一套核心，只有 skill 和数据格式不同。
 
-设计文档见 `design_notes/`，格式示例见 `examples/` 。
+设计文档见 `design_notes/`。
 
 ---
 

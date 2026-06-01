@@ -256,7 +256,7 @@ Swap skills and exogenous-pheromone formats to turn Worker Bee into domain-speci
 
 All forks share the same core. Only the skill and data format change.
 
-See `design_notes/` for full design docs and `examples/` for sample formats.
+See `design_notes/` for full design docs.
 
 ---
 

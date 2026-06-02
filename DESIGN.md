@@ -346,7 +346,7 @@ Each fork follows the same first-principles:
 - **Drift warning**: Session a1b2c3d4 used for sensory
 ```
 
-**Skill:** `worker_bee/skills/aristotle.md`
+**Skill:** `skills/aristotle.md`
 
 **Why it works:** The dictionary is a **shared mental model** between human and LLM. Both species read the same Markdown. The LLM does not "understand" the term — it looks it up and injects the definition into context. Precision without comprehension.
 
@@ -384,7 +384,7 @@ Combat depth from positional tactics, not stat grinding.
 - **Complexity**: O(n²) for n×n grid, n≤50
 ```
 
-**Skill:** `worker_bee/skills/architect.md`
+**Skill:** `skills/architect.md`
 
 **Why it works:** Architecture is **reduction**, not construction. The B forces the human to strip away ambiguity until only constraints remain. Code comes after structure is agreed upon. The LLM does not design — it interrogates and records.
 
@@ -427,7 +427,7 @@ Combat depth from positional tactics, not stat grinding.
 - [Recruitment slow]: mitigate by online forums
 ```
 
-**Skill:** `worker_bee/skills/project-manager.md`
+**Skill:** `skills/project-manager.md`
 
 **Why it works:** PM Bee treats every project as a **pipeline with a known output format**. The conversation is not "what should I do?" but "what goes in each slot of the template?" Done is better than perfect. The scaffold makes iteration cheap.
 

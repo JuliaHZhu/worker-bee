@@ -95,4 +95,4 @@
 
 ## Skill 契约
 
-见 `worker_bee/skills/project-manager.md`
+见 `skills/project-manager.md`

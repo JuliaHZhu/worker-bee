@@ -151,7 +151,7 @@ T(n, e) < 1000ms（1 秒红线）
 
 ## Skill 契约
 
-见 `worker_bee/skills/worldbee.md`
+见 `skills/worldbee.md`
 
 ## 为什么能用
 

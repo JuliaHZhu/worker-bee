@@ -37,11 +37,8 @@ wiki-worker-bee/
 ├── SCHEMA.md           # Domain conventions, tag taxonomy, thresholds
 ├── index.md            # Sectioned catalog with one-line summaries
 ├── log.md              # Chronological action log (append-only, rotate yearly)
-├── raw/                # Layer 1: Immutable source material
-│   ├── articles/
-│   ├── papers/
-│   ├── transcripts/
-│   └── sessions/       # Session transcripts extracted from state.db
+├── raw/                # Layer 1: Immutable source material (open-ended)
+│   # Create subdirs as needed: articles/, papers/, ideas/, news/, designs/, ...
 ├── entities/           # Layer 2: People, orgs, products, user profile
 ├── concepts/           # Layer 2: Topics, techniques, theories
 ├── comparisons/        # Layer 2: Side-by-side analyses

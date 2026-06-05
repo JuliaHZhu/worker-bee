@@ -22,10 +22,7 @@ def main():
 
     # Create structure
     dirs = [
-        wiki / "raw" / "articles",
-        wiki / "raw" / "papers",
-        wiki / "raw" / "transcripts",
-        wiki / "raw" / "sessions",
+        wiki / "raw",
         wiki / "entities",
         wiki / "concepts",
         wiki / "comparisons",

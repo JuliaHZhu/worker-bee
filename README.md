@@ -8,7 +8,7 @@
 
 **Worker Bee = Hermes Lite kernel + swarm extensions.**
 
-It keeps the same minimal architecture — registry, Deck, protocol abstraction, protocol-agnostic loop — and adds the things a real agent needs: sessions, cron, tags, platform awareness, and skill ecosystems.
+It keeps the same minimal architecture — registry, Deck, protocol abstraction, protocol-agnostic loop — and adds the things a real agent needs: sessions, cron, tags, platform awareness, NATS swarm communication, and skill ecosystems.
 
 ---
 
@@ -84,6 +84,8 @@ worker-bee/
 │   └── skills/           # Markdown skill contracts
 │       ├── code-review.md
 │       ├── todo-ball-machine.md
+│       ├── swarm-send.md
+│       ├── swarm-receive.md
 │       └── ...
 ├── tools/                # Tool implementations (auto-registered)
 │   ├── send_message.py   # Feishu App Bot API / Webhook / Discord
@@ -92,11 +94,15 @@ worker-bee/
 │   ├── web.py            # Web search / extract
 │   ├── subagent.py       # Delegate to child agents
 │   ├── cronjob.py        # Cron job management
+│   ├── swarm.py          # NATS publish + request
 │   └── ...
+├── swarm/                # NATS swarm communication
+│   ├── server.conf       # NATS server config (single-node, cluster-ready)
+│   └── listener.py       # Background listener: NATS → mailbox/inbox/
 ├── cron/                 # Background scheduler
 │   ├── scheduler.py      # Tick loop
 │   └── jobs.py           # Job definitions
-├── tests/                # pytest suite
+├── tests/                # pytest suite (265 tests)
 ├── design_notes/         # Architecture docs
 ├── todo_ball_machine/    # Life task ball-drawing system
 └── templates/            # Skill authoring templates
@@ -117,6 +123,7 @@ Worker Bee reuses the Hermes Lite kernel verbatim and adds its own layers on top
 |  - InfraToolSet (platform detection)     |
 |  - SkillManager (Markdown contracts)     |
 |  - Handoff export / resume               |
+|  - NATS swarm communication              |
 +------------------------------------------+
 |  Agent shell (worker_bee/agent.py)       |
 |  - Config, schema cache, thin wrapper    |
@@ -252,8 +259,39 @@ Existing skills, all using the same Deck architecture:
 |-------|-------------|---------|
 | **todo-ball-machine** | Life task ball-drawing system | draw, session |
 | **code-review** | Code review | code review |
+| **web-research** | Web search and extract | search, research, look up |
+| **swarm-send** | Publish/request to swarm via NATS | notify, broadcast, dispatch |
+| **swarm-receive** | Read swarm messages from mailbox | check inbox, new messages |
 
 Adding a new skill only requires: write a `skills/xxx.md` contract + a `tools/xxx.py` handler. Zero core intrusion.
+
+---
+
+## Swarm Communication (NATS)
+
+Worker Bees on different machines talk through NATS — a lightweight pub/sub message bus. Each bee connects to a local NATS server; servers cluster to route messages across the swarm.
+
+```
+Agent says "notify swarm deck done"
+    |
+    v
+swarm-send skill matched → Deck loads swarm_publish
+    |
+    v
+Agent calls swarm_publish("swarm.event.deck-done", payload)
+    |
+    v
+NATS routes → swarm_listener (background process) writes to mailbox/inbox/
+    |
+    v
+Agent says "check inbox" → swarm-receive skill → reads mailbox → processes
+```
+
+- **Send**: `swarm_publish` (broadcast) or `swarm_request` (query with reply)
+- **Receive**: Background `swarm/listener.py` subscribes NATS → writes `~/.worker-bee/mailbox/inbox/`
+- **CLI**: `wb swarm status`, `wb swarm listen`
+
+Agents never subscribe directly. They read the mailbox — same philosophy as the Job Board: all state in files.
 
 ---
 

@@ -80,6 +80,8 @@ worker-bee/
 │   └── skills/           # Markdown skill 契约
 │       ├── code-review.md
 │       ├── todo-ball-machine.md
+│       ├── swarm-send.md
+│       ├── swarm-receive.md
 │       └── ...
 ├── tools/                # 工具实现（自动注册到 registry）
 │   ├── send_message.py   # 飞书 App Bot API / Webhook / Discord
@@ -88,11 +90,15 @@ worker-bee/
 │   ├── web.py            # 网页搜索/抽取
 │   ├── subagent.py       # 委派子 agent
 │   ├── cronjob.py        # 定时任务管理
+│   ├── swarm.py          # NATS 蜂群发布/请求
 │   └── ...
+├── swarm/                # NATS 蜂群通信
+│   ├── server.conf       # NATS 服务配置（单机/集群）
+│   └── listener.py       # 后台监听：NATS → mailbox/inbox/
 ├── cron/                 # 后台定时器
 │   ├── scheduler.py      # 每 60s tick 循环
 │   └── jobs.py           # Job 定义
-├── tests/                # pytest 测试套件
+├── tests/                # pytest 测试套件（265 个测试）
 ├── design_notes/         # 架构设计文档
 ├── todo_ball_machine/    # 人生任务抽球系统
 └── templates/            # Skill 编写模板
@@ -218,8 +224,39 @@ created → confirmed → planned → executing → self_checked → reviewed �
 |-------|---------|---------|
 | **todo-ball-machine** | 人生任务抽球系统 | 抽球、场次 |
 | **code-review** | 代码审查 | code review |
+| **web-research** | 网页搜索与内容抽取 | search, research, 搜索 |
+| **swarm-send** | 通过 NATS 向蜂群发布/请求 | 通知、广播、发给、派发任务 |
+| **swarm-receive** | 读取蜂群消息（从 mailbox） | 收消息、看邮件、check inbox |
 
 添加新 skill 只需要：写一个 `skills/xxx.md` 契约 + 一个 `tools/xxx.py` handler。零核心侵入。
+
+---
+
+## 蜂群通信（NATS）
+
+不同服务器上的 Worker Bee 通过 NATS 通信——一个轻量的 pub/sub 消息总线。每台 bee 连接本地的 NATS server；多台 server 组成集群，消息自动跨服务器路由。
+
+```
+Agent 说 "通知蜂群 deck 构建完成"
+    │
+    ▼
+匹配 swarm-send skill → Deck 装填 swarm_publish
+    │
+    ▼
+Agent 调用 swarm_publish("swarm.event.deck-done", payload)
+    │
+    ▼
+NATS 路由 → swarm_listener 后台进程写入 mailbox/inbox/
+    │
+    ▼
+Agent 说 "查收件箱" → swarm-receive skill → 读 mailbox → 分类处理
+```
+
+- **发送**：`swarm_publish`（广播，不等回复）或 `swarm_request`（请求回复）
+- **接收**：后台 `swarm/listener.py` 订阅 NATS → 写入 `~/.worker-bee/mailbox/inbox/`
+- **CLI**：`wb swarm status`（检查状态）、`wb swarm listen`（启动监听）
+
+Agent 不直接 subscribe NATS。它读 mailbox——和 Job Board 一样：所有状态在文件里。
 
 ---
 

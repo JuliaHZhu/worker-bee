@@ -1,7 +1,7 @@
 ---
 name: swarm-send
 description: 通过 NATS 向蜂群其他 Worker-bee 发送消息或发起查询
-trigger: 通知, 广播, 发给 bee, 问其他 bee, 蜂群发送, 派发任务, 通知蜂群, swarm publish
+trigger: 通知, 广播, 发给 bee, 问其他 bee, 问一下其他, 蜂群发送, 派发任务, 通知蜂群, swarm publish, 问问别的
 tools:
   - swarm_publish
   - swarm_request

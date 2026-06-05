@@ -354,6 +354,89 @@ def _add_todo_parser(sub):
 
 
 # ---------------------------------------------------------------------------
+# Swarm sub-command
+# ---------------------------------------------------------------------------
+def _swarm_listen(args):
+    """Start the NATS swarm listener (background process)."""
+    import subprocess
+    import os
+    from pathlib import Path
+
+    listener_path = Path(__file__).parent.parent / "swarm" / "listener.py"
+    if not listener_path.exists():
+        print(f"Error: listener not found at {listener_path}")
+        sys.exit(1)
+
+    nats_url = args.url or os.environ.get("SWARM_NATS_URL", "nats://localhost:4222")
+    print(f"[wb swarm listen] Starting listener → {nats_url}")
+    print(f"[wb swarm listen] Writing messages to ~/.worker-bee/mailbox/inbox/")
+    print(f"[wb swarm listen] Press Ctrl+C to stop")
+    sys.stdout.flush()
+
+    try:
+        subprocess.run(
+            [sys.executable, str(listener_path), nats_url],
+            check=True,
+        )
+    except KeyboardInterrupt:
+        print("\n[wb swarm listen] Stopped.")
+
+
+def _swarm_status(args):
+    """Check NATS connection and listener health."""
+    import asyncio
+    import os
+    import nats
+    from pathlib import Path
+
+    nats_url = os.environ.get("SWARM_NATS_URL", "nats://localhost:4222")
+
+    # Check NATS connection
+    try:
+        async def _check():
+            nc = await nats.connect(nats_url, connect_timeout=3)
+            url = nc.connected_url.netloc
+            await nc.drain()
+            return url
+        connected = asyncio.run(_check())
+        print(f"✅ NATS: connected to {connected}")
+    except Exception as e:
+        print(f"❌ NATS: {e}")
+
+    # Check mailbox
+    inbox = Path.home() / ".worker-bee" / "mailbox" / "inbox"
+    read = Path.home() / ".worker-bee" / "mailbox" / "read"
+    if inbox.exists():
+        unread = len(list(inbox.glob("*.json")))
+        print(f"📬 Mailbox: {unread} unread, inbox={inbox}")
+    else:
+        print(f"📭 Mailbox: not initialized (no messages yet)")
+
+    # Check if listener process is running
+    import subprocess
+    result = subprocess.run(
+        ["pgrep", "-f", "swarm/listener.py"],
+        capture_output=True, text=True,
+    )
+    if result.stdout.strip():
+        print(f"🟢 Listener: running (PID {result.stdout.strip().split()[0]})")
+    else:
+        print(f"🔴 Listener: not running (start with: wb swarm listen)")
+
+
+def _add_swarm_parser(sub):
+    swarm = sub.add_parser("swarm", help="NATS swarm communication")
+    swarm_sub = swarm.add_subparsers(dest="swarm_cmd", required=True)
+
+    p = swarm_sub.add_parser("listen", help="Start NATS listener (writes messages to mailbox)")
+    p.add_argument("url", nargs="?", default=None, help="NATS URL (default: nats://localhost:4222)")
+    p.set_defaults(func=_swarm_listen)
+
+    p = swarm_sub.add_parser("status", help="Check NATS connection and listener health")
+    p.set_defaults(func=_swarm_status)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main(argv=None):
@@ -376,6 +459,7 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="cmd", required=True)
     _add_job_parser(sub)
     _add_todo_parser(sub)
+    _add_swarm_parser(sub)
 
     args = parser.parse_args(argv)
     args.func(args)

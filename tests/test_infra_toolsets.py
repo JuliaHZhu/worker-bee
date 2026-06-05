@@ -11,6 +11,8 @@ def clean_infra():
     # Save and clear env vars
     saved_feishu = os.environ.pop("FEISHU_WEBHOOK_URL", None)
     saved_discord = os.environ.pop("DISCORD_WEBHOOK_URL", None)
+    saved_app_id = os.environ.pop("FEISHU_APP_ID", None)
+    saved_app_secret = os.environ.pop("FEISHU_APP_SECRET", None)
 
     infra = InfraToolSet()
     yield infra
@@ -20,6 +22,10 @@ def clean_infra():
         os.environ["FEISHU_WEBHOOK_URL"] = saved_feishu
     if saved_discord:
         os.environ["DISCORD_WEBHOOK_URL"] = saved_discord
+    if saved_app_id:
+        os.environ["FEISHU_APP_ID"] = saved_app_id
+    if saved_app_secret:
+        os.environ["FEISHU_APP_SECRET"] = saved_app_secret
 
 
 class TestPlatformDetection:

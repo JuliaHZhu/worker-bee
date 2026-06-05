@@ -518,7 +518,7 @@ def run_session(temperature_override: float | None = None):
         h = _make_handoff(messages)
         if h:
             db.save_handoff(session_id, h)
-            print(f"[Handoff] saved for next session")
+            print("[Handoff] saved for next session")
     except Exception as e:
         print(f"[Handoff] save failed: {e}", file=sys.stderr)
 

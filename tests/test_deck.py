@@ -9,7 +9,7 @@ def _register_tools(reg):
                 name=name,
                 description=f"Mock {name}",
                 parameters={"type": "object", "properties": {}, "required": []},
-                handler=lambda *a, **kw: "ok",
+                handler=lambda *a, **_kw: "ok",
                 tags=["test"],
                 category="test",
             )
@@ -23,7 +23,7 @@ def _register_net_tools(reg):
                 name=name,
                 description=f"Mock {name}",
                 parameters={"type": "object", "properties": {}, "required": []},
-                handler=lambda *a, **kw: "ok",
+                handler=lambda *a, **_kw: "ok",
                 tags=["test"],
                 category="test",
             )

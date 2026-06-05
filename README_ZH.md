@@ -102,7 +102,7 @@ worker-bee/
 
 ## Text as Model
 
-Job 的真实状态不在内存里，不在数据库里，在 `jobs/JOB-XXX.md` 的 frontmatter 里。
+Job 的真实状态不在内存里，不在数据库里，在 `jobs/JOB-XXX/` 目录的 frontmatter 里。
 
 **人 `cat` 一下就能看懂，LLM 读一遍就能操作，git diff 能追踪变更。**
 

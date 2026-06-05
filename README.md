@@ -139,7 +139,7 @@ Worker Bee reuses the Hermes Lite kernel verbatim and adds its own layers on top
 
 ## Text as Model
 
-The job's true state is not in memory, not in a database — it is in the `jobs/JOB-XXX.md` frontmatter.
+The job's true state is not in memory, not in a database — it is in the `jobs/JOB-XXX/` directory frontmatter.
 
 **Humans `cat` and understand. LLMs read and operate. Git diff tracks changes.**
 

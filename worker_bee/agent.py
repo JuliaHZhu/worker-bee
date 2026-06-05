@@ -10,11 +10,24 @@ Architecture:
     worker_bee/loop.py       ← run_conversation() — protocol-agnostic agent loop
 """
 import json
+import os
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from worker_bee.loop import run_conversation as _run_conversation
 from worker_bee.protocols import AnthropicProtocol, OpenAIProtocol, Protocol
 from worker_bee.registry import registry
+
+
+def _load_prompt_files() -> str:
+    """Load ~/.hermes/worker-bee/{agent.md,soul.md} and return as injection text."""
+    parts = []
+    base = Path.home() / ".hermes" / "worker-bee"
+    for filename in ("agent.md", "soul.md"):
+        path = base / filename
+        if path.exists():
+            parts.append(f"\n\n--- {filename.upper()} ---\n\n{path.read_text(encoding='utf-8')}")
+    return "".join(parts)
 
 
 class AIAgent:
@@ -24,9 +37,11 @@ class AIAgent:
         self.max_iterations = config.get("max_iterations", 30)
         self.max_context_messages = config.get("max_context_messages", 90)
         self.temperature = config.get("temperature", 0.0)
-        self.system_prompt = config.get(
+        base_prompt = config.get(
             "system_prompt", "You are a helpful assistant with tool access."
         )
+        injection = _load_prompt_files()
+        self.system_prompt = f"{base_prompt}{injection}" if injection else base_prompt
         self.enabled_tools = config.get("tools", [])
         self._tool_schema_cache: dict = {}
 

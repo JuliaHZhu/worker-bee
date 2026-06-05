@@ -79,6 +79,142 @@ def _job_tick(args):
     print(out)
 
 
+def _job_run(args):
+    """Execute a job: read meta, infer skill, run tools, write artifacts."""
+    import os
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+
+    from tools.job_probe import _read_meta, _ensure_job_dir, _append_event, _atomic_write
+    from worker_bee.registry import registry
+
+    job_id = args.job_id
+    meta, body = _read_meta(job_id)
+    if meta is None:
+        print(f"Error: {job_id} not found.")
+        sys.exit(1)
+
+    title = meta.get("title", "")
+    # description may be in meta or in body; fallback to title
+    description = meta.get("description", "")
+    if not description and body:
+        # Extract only the ## Description section, ignore Events / other sections
+        import re as _re
+        m = _re.search(r"## Description\s*\n+(.*?)(?=\n## |\Z)", body, _re.DOTALL)
+        if m:
+            description = m.group(1).strip()
+        else:
+            # No Description section — grab first non-heading paragraph
+            lines = [l.strip() for l in body.splitlines() if l.strip() and not l.strip().startswith("#")]
+            description = " ".join(lines[:3]) if lines else title
+
+    # Ensure numeric fields are int
+    meta["current_cycle"] = int(meta.get("current_cycle", 0))
+    meta["estimated_cycles"] = int(meta.get("estimated_cycles", 1))
+
+    # Simple skill inference from title keywords
+    title_lower = title.lower()
+    if any(k in title_lower for k in ("调研", "研究", "research", "search", "调查", "查找")):
+        skill = "research"
+    elif any(k in title_lower for k in ("写", "write", "draft", "生成", "create")):
+        skill = "write"
+    else:
+        skill = "general"
+
+    print(f"[{job_id}] Detected skill: {skill}")
+    print(f"[{job_id}] Title: {title}")
+
+    # --- Research skill execution ---
+    if skill == "research":
+        # Build a clean search query:
+        # 1. Start from title, strip meta verbs
+        # 2. If result is too short, append description nouns
+        meta_verbs = ("调研", "研究", "research", "search", "调查", "查找", "了解", "分析")
+        clean_title = title
+        for verb in meta_verbs:
+            clean_title = clean_title.replace(verb, "")
+        clean_title = clean_title.strip()
+
+        query = clean_title if clean_title else title
+        # NOTE: We intentionally do NOT append description to the search query.
+        # Title already contains the core entity; description is human-readable
+        # context that may confuse search engines with meta-verbs.
+        print(f"[{job_id}] Searching: {query}")
+
+        results = registry.call("net_web_search", {"query": query, "num_results": 5})
+        print(f"[{job_id}] Search returned {len(results)} chars")
+
+        # Extract top URLs
+        import re
+        urls = re.findall(r"https?://[^\s\n]+", results)
+        extracts = []
+        for url in urls[:3]:
+            print(f"[{job_id}] Extracting: {url}")
+            text = registry.call("net_web_extract", {"url": url})
+            extracts.append(f"## Source: {url}\n\n{text[:1500]}\n")
+
+        # Build report
+        report_lines = [
+            f"# 调研报告: {title}",
+            "",
+            f"生成时间: {__import__('datetime').datetime.now().isoformat()}",
+            "",
+            "## 搜索结果",
+            "",
+            results,
+            "",
+            "## 内容摘要",
+            "",
+            "\n".join(extracts),
+            "",
+            "## 结论",
+            "",
+            "（待 AI 总结）",
+            "",
+        ]
+        report = "\n".join(report_lines)
+
+        # Write artifacts with naming: {skill}-{YYYY-MM-DD}-{type}.md
+        from datetime import datetime as _dt
+        today = _dt.now().strftime("%Y-%m-%d")
+
+        job_dir = _ensure_job_dir(job_id)
+        artifacts_dir = job_dir / "artifacts"
+
+        # Save extracts individually
+        for idx, extract in enumerate(extracts, 1):
+            # Extract domain from "## Source: url" line for filename
+            src_line = extract.split("\n")[0]
+            domain = f"source-{idx}"
+            m = __import__("re").search(r"Source: https?://([^/]+)", src_line)
+            if m:
+                domain = m.group(1).replace(".", "_")
+            extract_path = artifacts_dir / f"{skill}-{today}-extract-{domain}.md"
+            _atomic_write(extract_path, extract)
+            print(f"[{job_id}] Extract written: {extract_path.name}")
+
+        # Save main report
+        report_path = artifacts_dir / f"{skill}-{today}-report.md"
+        tmp = report_path.with_suffix(".tmp")
+        tmp.write_text(report, encoding="utf-8")
+        tmp.replace(report_path)
+
+        _append_event(job_id, f"JOB_RUN skill={skill} query='{query}' artifacts={len(extracts)+1}")
+        print(f"[{job_id}] Report written: {report_path.name}")
+
+    else:
+        print(f"[{job_id}] Skill '{skill}' execution not yet implemented.")
+        sys.exit(1)
+
+    # Update meta
+    meta["current_cycle"] = meta.get("current_cycle", 0) + 1
+    from tools.job_probe import _write_meta
+    _write_meta(job_id, meta, body)
+    print(f"[{job_id}] Cycle {meta['current_cycle']}/{meta.get('estimated_cycles', 1)} complete.")
+
+
 def _add_job_parser(sub):
     job = sub.add_parser("job", help="Job probe commands")
     job_sub = job.add_subparsers(dest="job_cmd", required=True)
@@ -106,6 +242,10 @@ def _add_job_parser(sub):
 
     p = job_sub.add_parser("tick", help="Manually trigger probe tick")
     p.set_defaults(func=_job_tick)
+
+    p = job_sub.add_parser("run", help="Execute a job (auto-detect skill and run)")
+    p.add_argument("job_id")
+    p.set_defaults(func=_job_run)
 
 
 # ---------------------------------------------------------------------------

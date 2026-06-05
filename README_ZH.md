@@ -311,6 +311,45 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 
 ---
 
+## 自定义 Agent（agent.md + soul.md）
+
+想改变 Agent 的行为？写两个 Markdown 文件就行——不需要改代码。
+
+```
+~/.hermes/worker-bee/
+├── agent.md    # Agent 行为：规则、偏好、工具使用模式
+└── soul.md     # Agent 人格：语气、风格、身份
+```
+
+启动时，Worker Bee 读取这两个文件，拼接到 system prompt 末尾：
+
+```
+--- AGENT.MD ---
+[agent.md 的内容]
+
+--- SOUL.MD ---
+[soul.md 的内容]
+```
+
+**实现原理**（`worker_bee/agent.py`）：
+
+```python
+def _load_prompt_files() -> str:
+    base = Path.home() / ".hermes" / "worker-bee"
+    for filename in ("agent.md", "soul.md"):
+        path = base / filename
+        if path.exists():
+            parts.append(f"\n\n--- {filename.upper()} ---\n\n{path.read_text()}")
+    return "".join(parts)
+
+# 在 AIAgent.__init__ 里：
+self.system_prompt = f"{base_prompt}{injection}"
+```
+
+**一句话**：改文件 → Agent 行为就变了。不需要重启，不需要改配置，不需要改代码。
+
+---
+
 > 你有一个 Agent。
 >
 > 你有一块板。

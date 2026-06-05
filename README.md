@@ -347,6 +347,45 @@ See `design_notes/` for full design docs.
 
 ---
 
+## Customizing the Agent (agent.md + soul.md)
+
+Want to change how the agent behaves? Write two Markdown files — no code changes needed.
+
+```
+~/.hermes/worker-bee/
+├── agent.md    # Agent behavior: rules, preferences, tool usage patterns
+└── soul.md     # Agent personality: tone, style, identity
+```
+
+On startup, Worker Bee reads both files and appends them to the system prompt. Each file is wrapped with its own header:
+
+```
+--- AGENT.MD ---
+[contents of agent.md]
+
+--- SOUL.MD ---
+[contents of soul.md]
+```
+
+**How it works** (from `worker_bee/agent.py`):
+
+```python
+def _load_prompt_files() -> str:
+    base = Path.home() / ".hermes" / "worker-bee"
+    for filename in ("agent.md", "soul.md"):
+        path = base / filename
+        if path.exists():
+            parts.append(f"\n\n--- {filename.upper()} ---\n\n{path.read_text()}")
+    return "".join(parts)
+
+# In AIAgent.__init__:
+self.system_prompt = f"{base_prompt}{injection}"
+```
+
+**Bottom line**: edit the files → agent behavior changes. No restart, no config, no code.
+
+---
+
 > You have an Agent.
 >
 > You have a Board.

@@ -57,6 +57,7 @@ markers = [
 
 [project.scripts]
 worker-bee = "worker_bee.main:main"
+wb = "worker_bee.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/JuliaHZhu/worker-bee"

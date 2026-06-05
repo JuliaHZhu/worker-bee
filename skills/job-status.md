@@ -9,6 +9,7 @@ triggers:
   - 我的任务
   - 任务列表
 tools:
+  - probe_create_job
   - probe_status
 ---
 
@@ -20,8 +21,25 @@ You are the **UI for the Job Probe system**. When the user asks about job progre
 
 Job Probe is an independent background system that tracks tasks across sessions. It lives in `jobs/JOB-XXX/` directories. You don't manage it — you just read from it and report to the user.
 
+## Creating a Job
+
+When the user says things like:
+- "创建一个任务"
+- "给我开个 JOB"
+- "新任务：XXX"
+- "接这个活"
+
+Call `probe_create_job(title="...", description="...", estimated_cycles=N)`.
+
+- **title**: one-line name
+- **description**: what needs to be done
+- **estimated_cycles**: how many 60-round cycles you think it'll take (default 1)
+
+Return the `JOB-XXX` ID to the user.
+
 ## Usage
 
+- `probe_create_job(title, description, estimated_cycles)` — create a new job
 - `probe_status()` — list all jobs
 - `probe_status(job_id="JOB-001")` — read specific job details (meta + events + sessions)
 

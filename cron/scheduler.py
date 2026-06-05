@@ -482,15 +482,24 @@ def run_job(job: dict, default_config: dict, skill_manager=None) -> None:
 # ---------------------------------------------------------------------------
 
 def tick(default_config: dict, skill_manager=None) -> int:
-    """Check for due jobs and execute them.
+    """Check for due jobs and execute them. Also run job-probe tick.
 
-    Returns the number of jobs executed.
+    Returns the number of agent jobs executed (probe tick is separate).
     """
     if not acquire_tick_lock():
         logger.info("Tick lock held by another process; skipping.")
         return 0
 
     try:
+        # ── Job Probe tick (background monitoring, never fails tick) ──
+        try:
+            from tools.job_probe import probe_tick
+            probe_result = probe_tick()
+            if "no active jobs" not in probe_result.lower():
+                logger.info("Probe tick: %s", probe_result.replace("\n", " | "))
+        except Exception:
+            logger.exception("Probe tick failed")
+
         jobs = get_due_jobs()
         if not jobs:
             return 0

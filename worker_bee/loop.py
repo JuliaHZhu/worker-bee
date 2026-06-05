@@ -42,7 +42,7 @@ def run_conversation(
     """
     protocol = agent.protocol
     max_iters = agent.max_iterations
-    max_ctx = getattr(agent, "max_context_messages", 60)
+    max_ctx = getattr(agent, "max_context_messages", 90)
 
     # ── resolve tools ──────────────────────────────────────────────────
     if deck is not None:

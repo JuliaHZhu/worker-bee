@@ -18,9 +18,9 @@ from typing import List, Optional, Tuple
 
 # ── Config ──────────────────────────────────────────────────────────
 JOBS_DIR = Path(__file__).parent.parent / "jobs"
-WARNING_THRESHOLD = 50      # rounds — append warning to job
-FORCE_THRESHOLD = 55        # rounds — force summary + handoff prep
-MAX_ROUNDS = 60             # hard limit where loop trims
+WARNING_THRESHOLD = 80      # rounds — append warning to job
+FORCE_THRESHOLD   = 85      # rounds — force summary + handoff prep
+MAX_ROUNDS = 90             # hard limit where loop trims
 
 
 def _ensure_dir() -> None:

@@ -21,16 +21,16 @@ Worker Bee 的假设不同：
 > **Agent 自己就是 dispatcher。** Deck 架构已经解决了工具分发——每次任务只暴露相关的工具。Agent 不需要"被调度"，它只需要"被激活"。
 
 ```
-用户说"监工，看看进度"
+用户说 "抽球"
     │
     ▼
-trigger 匹配 job-supervisor skill
+trigger 匹配 todo-ball-machine skill
     │
     ▼
-Deck 装填 board 管理 tools（8 个）
+Deck 加载抽球工具
     │
     ▼
-Agent 读 board → 汇报 → halt
+Agent 抽球 -> 汇报 -> 停止
 ```
 
 Agent 一次只做一件事，但**一件事可以很复杂**——读多个 job、评估质量、生成报告。复杂不等于需要多个 agent。
@@ -78,7 +78,6 @@ worker-bee/
 │   ├── infra_toolsets.py # 平台检测（Linux / 飞书 / Discord）
 │   ├── lark_cli.py       # 独立飞书 Lark Bot（HTTP webhook）
 │   └── skills/           # Markdown skill 契约
-│       ├── job-supervisor.md
 │       ├── code-review.md
 │       ├── todo-ball-machine.md
 │       └── ...
@@ -89,7 +88,6 @@ worker-bee/
 │   ├── web.py            # 网页搜索/抽取
 │   ├── subagent.py       # 委派子 agent
 │   ├── cronjob.py        # 定时任务管理
-│   ├── job_supervisor.py # Job Board 增删查改
 │   └── ...
 ├── cron/                 # 后台定时器
 │   ├── scheduler.py      # 每 60s tick 循环
@@ -218,10 +216,8 @@ created → confirmed → planned → executing → self_checked → reviewed �
 
 | Skill | 做什么 | Trigger |
 |-------|---------|---------|
-| **job-supervisor** | Job board 管理 | 监工、工单 |
 | **todo-ball-machine** | 人生任务抽球系统 | 抽球、场次 |
-| **podcast-agent** | 文档转播客 | 播客 |
-| **code-review** | 代码审查 | 审代码 |
+| **code-review** | 代码审查 | code review |
 
 添加新 skill 只需要：写一个 `skills/xxx.md` 契约 + 一个 `tools/xxx.py` handler。零核心侵入。
 

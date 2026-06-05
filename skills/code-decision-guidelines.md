@@ -194,7 +194,6 @@ tools:
 | 你要判断"这个方案好不好" | **code-decision-guidelines** ← 你在这里 |
 | 你已经决定了，要实现 | 相关的 worker skill（code-review、refactor 等） |
 | 你实现完了，要评估质量 | evaluator skill（design-alignment 等） |
-| 你想跟踪进度 | job-supervisor |
 
 ---
 

@@ -21,16 +21,16 @@ Worker Bee assumes differently:
 > **The agent itself is the dispatcher.** The Deck architecture already solves tool distribution — each task only exposes relevant tools. The agent does not need to be "scheduled"; it only needs to be "activated".
 
 ```
-User says "supervisor, check progress"
+User says "check my todo list"
     |
     v
-Trigger matches job-supervisor skill
+Trigger matches todo-ball-machine skill
     |
     v
-Deck loads board management tools (8)
+Deck loads ball-drawing tools
     |
     v
-Agent reads board -> reports -> halts
+Agent draws -> reports -> halts
 ```
 
 The agent does one thing at a time, but **one thing can be very complex** — reading multiple jobs, evaluating quality, generating reports. Complexity does not imply multiple agents.
@@ -82,7 +82,6 @@ worker-bee/
 │   ├── infra_toolsets.py # Platform detection (Linux / Feishu / Discord)
 │   ├── lark_cli.py       # Standalone Feishu Lark bot (HTTP webhook)
 │   └── skills/           # Markdown skill contracts
-│       ├── job-supervisor.md
 │       ├── code-review.md
 │       ├── todo-ball-machine.md
 │       └── ...
@@ -93,7 +92,6 @@ worker-bee/
 │   ├── web.py            # Web search / extract
 │   ├── subagent.py       # Delegate to child agents
 │   ├── cronjob.py        # Cron job management
-│   ├── job_supervisor.py # Job board CRUD
 │   └── ...
 ├── cron/                 # Background scheduler
 │   ├── scheduler.py      # Tick loop
@@ -252,9 +250,7 @@ Existing skills, all using the same Deck architecture:
 
 | Skill | What It Does | Trigger |
 |-------|-------------|---------|
-| **job-supervisor** | Job board management | supervisor, job board |
 | **todo-ball-machine** | Life task ball-drawing system | draw, session |
-| **podcast-agent** | Document to podcast script | podcast |
 | **code-review** | Code review | code review |
 
 Adding a new skill only requires: write a `skills/xxx.md` contract + a `tools/xxx.py` handler. Zero core intrusion.

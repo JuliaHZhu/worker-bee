@@ -321,6 +321,29 @@ class SessionDB:
             (assigned_to,)
         ).fetchall()
 
+    # ── Handoff (auto session continuation) ──
+    def save_handoff(self, session_id: str, content: str):
+        """Save handoff as a todo with status='handoff'."""
+        conn = self._get_conn()
+        now = datetime.now().isoformat()
+        conn.execute(
+            "INSERT INTO todos (session_id, content, status, created_at, updated_at) VALUES (?, ?, 'handoff', ?, ?)",
+            (session_id, content, now, now)
+        )
+        conn.commit()
+
+    def get_handoff(self) -> str | None:
+        """Get latest handoff and mark it consumed."""
+        conn = self._get_conn()
+        row = conn.execute(
+            "SELECT id, content FROM todos WHERE status='handoff' ORDER BY created_at DESC LIMIT 1"
+        ).fetchone()
+        if row:
+            conn.execute("UPDATE todos SET status='consumed' WHERE id=?", (row[0],))
+            conn.commit()
+            return row[1]
+        return None
+
     # ── Batch Handoff Export ──
     def export_handoff(self, session_id: str, out_path: str | None = None) -> str:
         """Export a batch handoff document for session continuation.

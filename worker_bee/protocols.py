@@ -144,13 +144,15 @@ class AnthropicProtocol(Protocol):
         }
 
     def api_call(self, system_prompt: str, api_msgs: List[Dict],
-                 tools: Optional[List[Dict]], model: str):
+                 tools: Optional[List[Dict]], model: str, temperature: float = 0.0):
         kwargs = {
             "model": model,
             "max_tokens": 4096,
             "messages": api_msgs,
             "system": system_prompt,
         }
+        if temperature is not None:
+            kwargs["temperature"] = temperature
         if tools:
             kwargs["tools"] = tools
         return self.client.messages.create(**kwargs)
@@ -238,11 +240,13 @@ class OpenAIProtocol(Protocol):
         return {"role": "tool", "tool_call_id": tool_call_id, "content": content}
 
     def api_call(self, system_prompt: str, api_msgs: List[Dict],
-                 tools: Optional[List[Dict]], model: str):
+                 tools: Optional[List[Dict]], model: str, temperature: float = 0.0):
         kwargs: dict[str, Any] = {
             "model": model,
             "messages": [{"role": "system", "content": system_prompt}] + api_msgs,
         }
+        if temperature is not None:
+            kwargs["temperature"] = temperature
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"

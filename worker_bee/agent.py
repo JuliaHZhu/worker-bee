@@ -22,6 +22,8 @@ class AIAgent:
         self.config = config
         self.model = config.get("model", "kimi-k2.6")
         self.max_iterations = config.get("max_iterations", 30)
+        self.max_context_messages = config.get("max_context_messages", 60)
+        self.temperature = config.get("temperature", 0.0)
         self.system_prompt = config.get(
             "system_prompt", "You are a helpful assistant with tool access."
         )

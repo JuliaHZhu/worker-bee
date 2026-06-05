@@ -74,13 +74,14 @@ def load_config():
     return None
 
 
-def _make_config(provider, model, api_key, base_url, max_iter=20):
+def _make_config(provider, model, api_key, base_url, max_iter=20, temperature=0.0):
     return {
         "model": model,
         "provider": provider,
         "api_key": api_key,
         "base_url": base_url,
         "max_iterations": max_iter,
+        "temperature": temperature,
         "system_prompt": (
             "You are a helpful coding assistant. You have access to tools:\n"
             "- sys_terminal: run shell commands\n"
@@ -132,8 +133,13 @@ def setup():
     print()
     model = input(f"Model [{default_model}]: ").strip() or default_model
     base = input(f"Base URL [{default_base}]: ").strip() or default_base
+    temp_str = input("Temperature [0.0]: ").strip()
+    try:
+        temperature = float(temp_str) if temp_str else 0.0
+    except ValueError:
+        temperature = 0.0
 
-    config = _make_config(provider, model, key, base)
+    config = _make_config(provider, model, key, base, temperature=temperature)
     path = get_config_path()
     with open(path, "w") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
@@ -141,16 +147,18 @@ def setup():
     os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)  # 0o600
     print()
     print(f"✅ Saved to {path}")
-    print(f"   Provider: {provider} | Model: {model}")
+    print(f"   Provider: {provider} | Model: {model} | Temperature: {temperature}")
 
 
-def ping_model(message: str):
+def ping_model(message: str, temperature: float | None = None):
     """Quick model connectivity test."""
     config = load_config()
     if not config:
         print("❌ No config. Run: worker-bee setup")
         sys.exit(1)
-    print(f"→ Pinging {config['model']} ({config['provider']})...")
+    if temperature is not None:
+        config["temperature"] = temperature
+    print(f"→ Pinging {config['model']} ({config['provider']}) temp={config.get('temperature', 0.0)}...")
     try:
         agent = AIAgent(config)
         msgs = [{"role": "user", "content": message}]
@@ -160,6 +168,60 @@ def ping_model(message: str):
     except Exception as e:
         print(f"❌ Failed: {e}")
         sys.exit(1)
+
+
+def config_cmd(args: list[str]):
+    """Handle 'config' subcommand.
+
+    Usage:
+        worker-bee config              # show current config (api_key masked)
+        worker-bee config temperature 0.5
+        worker-bee config max_iterations 50
+    """
+    path = get_config_path()
+    config = load_config()
+    if not config:
+        print("❌ No config found. Run: worker-bee setup")
+        sys.exit(1)
+
+    if not args:
+        # Show config (mask api_key)
+        display = dict(config)
+        key = display.get("api_key", "")
+        if key:
+            display["api_key"] = key[:6] + "..." + key[-4:]
+        print(json.dumps(display, indent=2, ensure_ascii=False))
+        print(f"\nConfig file: {path}")
+        return
+
+    # Set a key
+    if len(args) != 2:
+        print("Usage: worker-bee config [key value]")
+        print("   or: worker-bee config")
+        sys.exit(1)
+
+    key, value = args[0], args[1]
+    if key not in config:
+        print(f"⚠️ Unknown key '{key}'. Available: {', '.join(config.keys())}")
+        sys.exit(1)
+
+    # Coerce type based on existing value
+    original = config[key]
+    if isinstance(original, bool):
+        config[key] = value.lower() in ("true", "1", "yes")
+    elif isinstance(original, (int, float)):
+        try:
+            config[key] = type(original)(value)
+        except ValueError:
+            print(f"❌ Cannot convert '{value}' to {type(original).__name__}")
+            sys.exit(1)
+    else:
+        config[key] = value
+
+    with open(path, "w") as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+    print(f"✅ Updated {key} = {config[key]}")
+    print(f"   Config file: {path}")
 
 
 def ping_channel(message: str):
@@ -224,13 +286,16 @@ def ping_channel(message: str):
     print("   • Discord:          export DISCORD_WEBHOOK_URL='https://discord.com/...'")
 
 
-def run_session():
+def run_session(temperature_override: float | None = None):
     """Main interactive session."""
     config = load_config()
     if not config:
         print("❌ No config found.")
         print("Run: worker-bee setup")
         sys.exit(1)
+
+    if temperature_override is not None:
+        config["temperature"] = temperature_override
 
     agent = AIAgent(config)
     db = SessionDB()
@@ -282,6 +347,12 @@ def run_session():
     else:
         session_id = db.create_session()
         messages = []
+
+    # ── auto handoff injection ────────────────────────────────────────────────
+    handoff = db.get_handoff()
+    if handoff:
+        messages.insert(0, {"role": "user", "content": f"[Handoff] {handoff}"})
+        print(f"[Handoff loaded] {handoff[:80]}...")
 
     # Session-aware system prompt so the agent knows its session ID for tagged-session tools
     agent.system_prompt = f"{base_system_prompt}\n\nCurrent session ID: {session_id}"
@@ -442,6 +513,15 @@ def run_session():
     except Exception as e:
         print(f"[Handoff] export failed: {e}")
 
+    # Auto-save crude handoff for next session
+    try:
+        h = _make_handoff(messages)
+        if h:
+            db.save_handoff(session_id, h)
+            print(f"[Handoff] saved for next session")
+    except Exception as e:
+        print(f"[Handoff] save failed: {e}", file=sys.stderr)
+
     print(f"\nSession {session_id} saved.")
 
 
@@ -500,6 +580,27 @@ def _extract_tags(text: str):
     return tags, clean
 
 
+def _make_handoff(messages) -> str:
+    """Crude handoff: last user + last assistant text."""
+    if not messages:
+        return ""
+    last_user = ""
+    last_assistant = ""
+    for m in reversed(messages):
+        if m["role"] == "user" and not last_user:
+            last_user = str(m.get("content", ""))[:200]
+        if m["role"] == "assistant" and not last_assistant:
+            last_assistant = str(m.get("content", ""))[:200]
+        if last_user and last_assistant:
+            break
+    parts = []
+    if last_user:
+        parts.append(f"User: {last_user}")
+    if last_assistant:
+        parts.append(f"Agent: {last_assistant}")
+    return " | ".join(parts) if parts else ""
+
+
 def main():
     # Lark subcommand bypasses worker-bee argparse
     if len(sys.argv) > 1 and sys.argv[1] == "lark":
@@ -514,9 +615,11 @@ def main():
         description="Lightweight AI agent with tool access.",
         add_help=False,
     )
-    parser.add_argument("setup", nargs="?", help="Run setup wizard")
+    parser.add_argument("command", nargs="?", choices=["setup", "config"], help="Command")
+    parser.add_argument("config_args", nargs="*", help="Extra args for config command")
     parser.add_argument("-m", "--model-ping", metavar="MSG", help="Quick model ping test")
     parser.add_argument("-c", "--channel-ping", metavar="MSG", help="Quick channel ping test (Feishu/Discord)")
+    parser.add_argument("-t", "--temperature", type=float, default=None, help="Override temperature (0.0–1.0)")
     parser.add_argument("-v", "--version", action="store_true", help="Show version")
     parser.add_argument("-h", "--help", action="store_true", help="Show help")
     args = parser.parse_args()
@@ -529,12 +632,15 @@ def main():
         print("""Worker Bee — Lightweight AI Agent
 
 Usage:
-  worker-bee              Start interactive session
-  worker-bee setup        Configure API key and model
-  worker-bee lark         Start Feishu Lark bot (webhook server)
-  worker-bee -m "hello"   Quick model connectivity test
-  worker-bee -c "hello"   Quick channel connectivity test
-  worker-bee -v           Show version
+  worker-bee                    Start interactive session
+  worker-bee setup              Configure API key and model
+  worker-bee config             Show current config
+  worker-bee config key value   Update a config value
+  worker-bee lark               Start Feishu Lark bot (webhook server)
+  worker-bee -m "hello"         Quick model connectivity test
+  worker-bee -c "hello"         Quick channel connectivity test
+  worker-bee -t 0.5             Start session with temperature override
+  worker-bee -v                 Show version
 
 Config:
   export MOONSHOT_API_KEY=sk-...        # or OPENAI_API_KEY
@@ -560,19 +666,23 @@ Lark bot env:
         return
 
     if args.model_ping:
-        ping_model(args.model_ping)
+        ping_model(args.model_ping, temperature=args.temperature)
         return
 
     if args.channel_ping:
         ping_channel(args.channel_ping)
         return
 
-    if args.setup == "setup":
+    if args.command == "setup":
         setup()
         return
 
+    if args.command == "config":
+        config_cmd(args.config_args)
+        return
+
     # Default: run interactive session
-    run_session()
+    run_session(temperature_override=args.temperature)
 
 
 if __name__ == "__main__":

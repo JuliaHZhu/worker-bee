@@ -352,7 +352,7 @@ See `design_notes/` for full design docs.
 Want to change how the agent behaves? Write two Markdown files — no code changes needed.
 
 ```
-~/.hermes/worker-bee/
+~/.worker-bee/
 ├── agent.md    # Agent behavior: rules, preferences, tool usage patterns
 └── soul.md     # Agent personality: tone, style, identity
 ```
@@ -371,7 +371,7 @@ On startup, Worker Bee reads both files and appends them to the system prompt. E
 
 ```python
 def _load_prompt_files() -> str:
-    base = Path.home() / ".hermes" / "worker-bee"
+    base = Path.home() / ".worker-bee"
     for filename in ("agent.md", "soul.md"):
         path = base / filename
         if path.exists():

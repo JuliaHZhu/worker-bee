@@ -316,7 +316,7 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 想改变 Agent 的行为？写两个 Markdown 文件就行——不需要改代码。
 
 ```
-~/.hermes/worker-bee/
+~/.worker-bee/
 ├── agent.md    # Agent 行为：规则、偏好、工具使用模式
 └── soul.md     # Agent 人格：语气、风格、身份
 ```
@@ -335,7 +335,7 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 
 ```python
 def _load_prompt_files() -> str:
-    base = Path.home() / ".hermes" / "worker-bee"
+    base = Path.home() / ".worker-bee"
     for filename in ("agent.md", "soul.md"):
         path = base / filename
         if path.exists():

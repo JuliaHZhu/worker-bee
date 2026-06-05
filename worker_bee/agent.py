@@ -20,9 +20,9 @@ from worker_bee.registry import registry
 
 
 def _load_prompt_files() -> str:
-    """Load ~/.hermes/worker-bee/{agent.md,soul.md} and return as injection text."""
+    """Load ~/.worker-bee/{agent.md,soul.md} and return as injection text."""
     parts = []
-    base = Path.home() / ".hermes" / "worker-bee"
+    base = Path.home() / ".worker-bee"
     for filename in ("agent.md", "soul.md"):
         path = base / filename
         if path.exists():

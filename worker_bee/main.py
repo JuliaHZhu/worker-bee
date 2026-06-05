@@ -150,7 +150,7 @@ def setup():
     print(f"   Provider: {provider} | Model: {model} | Temperature: {temperature}")
 
     # ── Create agent.md + soul.md ──
-    prompt_dir = Path.home() / ".hermes" / "worker-bee"
+    prompt_dir = _config_dir()
     prompt_dir.mkdir(parents=True, exist_ok=True)
 
     agent_md = prompt_dir / "agent.md"

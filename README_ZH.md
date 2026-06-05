@@ -6,7 +6,9 @@
 
 ## 一句话
 
-**Worker Bee = 一台 Agent + 一块 Job Board。**
+**Worker Bee = Hermes Lite 内核 + 群体扩展层。**
+
+保持相同的极简架构——注册表、Deck、协议抽象、协议无关循环——在此基础上增加了真正需要的东西：session、定时任务、标签、平台感知、NATS 蜂群通信、skill 生态。
 
 不需要 Symphony，不需要多 Agent 编排，不需要 daemon。Agent 自己读板、自己派活、自己留下信息素。人随时打开文件就能看到全貌。
 
@@ -40,25 +42,49 @@ Agent 一次只做一件事，但**一件事可以很复杂**——读多个 job
 ## 快速开始
 
 ```bash
-# 1. 安装
+# 1. 创建虚拟环境（Ubuntu/Debian 必须）
+python3 -m venv venv
+source venv/bin/activate    # Windows: venv\Scripts\activate
+
+# 2. 安装
 pip install git+https://github.com/JuliaHZhu/worker-bee.git
 
-# 2. 初始化 — 配置 API key
+# 3. 初始化 — 配置 API key
 worker-bee setup
 # 或直接编辑 ~/.worker-bee/config.json
 
-# 3. 测试模型连通
+# 4. 测试模型连通
 worker-bee -m "hello"
 
-# 4. 测试渠道（可选）
+# 5. 测试渠道（可选）
 export FEISHU_WEBHOOK_URL=...
 worker-bee -c "hello"
 
-# 5. 启动
+# 6. 启动交互会话
 worker-bee
 ```
 
 没有 daemon，没有 orchestrator。一个 CLI 入口。
+
+**或者用 `wb` 直接执行命令：**
+
+```bash
+# Job 管理
+wb job create "重构支付模块" "把 Stripe 集成抽成独立 service"
+wb job ls
+wb job status JOB-001
+wb job run JOB-001          # 自动检测 skill，搜索/抽取，写入产出物
+wb job tick                 # 手动触发后台 probe
+
+# 抽球机
+wb todo dashboard
+wb todo draw morning
+wb todo complete morning
+
+# 蜂群
+wb swarm status
+wb swarm listen
+```
 
 ---
 
@@ -66,42 +92,49 @@ worker-bee
 
 ```
 worker-bee/
-├── worker_bee/           # 核心 agent + CLI
-│   ├── main.py           # CLI 入口（setup / ping / session / lark）
-│   ├── agent.py          # Agent 外壳（配置、schema 缓存）
-│   ├── loop.py           # 协议无关运行循环（Hermes 内核）
-│   ├── protocols.py      # Anthropic / OpenAI 协议适配（Hermes 内核）
-│   ├── registry.py       # 工具注册表
-│   ├── deck.py           # 工具边界（Deck 装填）
-│   ├── skills.py         # Skill 匹配引擎
-│   ├── memory.py         # Session DB（SQLite，持久化）
-│   ├── infra_toolsets.py # 平台检测（Linux / 飞书 / Discord）
-│   ├── lark_cli.py       # 独立飞书 Lark Bot（HTTP webhook）
-│   └── skills/           # Markdown skill 契约
-│       ├── code-review.md
-│       ├── todo-ball-machine.md
-│       ├── swarm-send.md
-│       ├── swarm-receive.md
-│       └── ...
-├── tools/                # 工具实现（自动注册到 registry）
-│   ├── send_message.py   # 飞书 App Bot API / Webhook / Discord
-│   ├── terminal.py       # 执行 shell 命令
-│   ├── file.py           # 读写/搜索文件
-│   ├── web.py            # 网页搜索/抽取
-│   ├── subagent.py       # 委派子 agent
-│   ├── cronjob.py        # 定时任务管理
-│   ├── swarm.py          # NATS 蜂群发布/请求
-│   └── ...
-├── swarm/                # NATS 蜂群通信
-│   ├── server.conf       # NATS 服务配置（单机/集群）
-│   └── listener.py       # 后台监听：NATS → mailbox/inbox/
-├── cron/                 # 后台定时器
-│   ├── scheduler.py      # 每 60s tick 循环
-│   └── jobs.py           # Job 定义
-├── tests/                # pytest 测试套件（265 个测试）
-├── design_notes/         # 架构设计文档
-├── todo_ball_machine/    # 人生任务抽球系统
-└── templates/            # Skill 编写模板
+├─── worker_bee/           # 核心 agent + CLI
+│   ├─── main.py           # CLI 入口（setup / ping / session / lark）
+│   ├─── cli.py            # wb 命令行接口（job + todo + swarm）
+│   ├─── agent.py          # Agent 外壳（配置、schema 缓存、agent.md/soul.md 注入）
+│   ├─── loop.py           # 协议无关运行循环（Hermes 内核）
+│   ├─── protocols.py      # Anthropic / OpenAI 协议适配（Hermes 内核）
+│   ├─── registry.py       # 工具注册表
+│   ├─── deck.py           # 工具边界（Deck 装填）
+│   ├─── skills.py         # Skill 匹配引擎
+│   ├─── memory.py         # Session DB（SQLite，持久化）
+│   ├─── infra_toolsets.py # 平台检测（Linux / 飞书 / Discord）
+│   ├─── lark_cli.py       # 独立飞书 Lark Bot（HTTP webhook）
+│   └─── skills/           # Markdown skill 契约
+│       ├─── code-review.md
+│       ├─── todo-ball-machine.md
+│       ├─── swarm-send.md
+│       ├─── swarm-receive.md
+│       └─── ...
+├─── tools/                # 工具实现（自动注册到 registry）
+│   ├─── send_message.py   # 飞书 App Bot API / Webhook / Discord
+│   ├─── terminal.py       # 执行 shell 命令
+│   ├─── file.py           # 读写/搜索文件
+│   ├─── web.py            # 网页搜索/抽取
+│   ├─── subagent.py       # 委派子 agent
+│   ├─── cronjob.py        # 定时任务管理
+│   ├─── job_probe.py      # 后台 job 监控 + probe tick
+│   ├─── swarm.py          # NATS 蜂群发布/请求
+│   └─── ...
+├─── swarm/                # NATS 蜂群通信
+│   ├─── server.conf       # NATS 服务配置（单机/集群）
+│   └─── listener.py       # 后台监听：NATS → mailbox/inbox/
+├─── cron/                 # 后台定时器
+│   ├─── scheduler.py      # 每 60s tick 循环（集成 job probe）
+│   └─── jobs.py           # Job 定义
+├─── jobs/                 # Job 存储（Markdown + YAML frontmatter）
+│   └─── JOB-XXX/
+│       ├─── meta.md
+│       ├─── sessions/
+│       └─── artifacts/
+├─── tests/                # pytest 测试套件（265 个测试）
+├─── design_notes/         # 架构设计文档
+├─── todo_ball_machine/    # 人生任务抽球系统
+└─── templates/            # Skill 编写模板 + agent.md/soul.md 示例
 ```
 
 ---
@@ -224,11 +257,72 @@ created → confirmed → planned → executing → self_checked → reviewed �
 |-------|---------|---------|
 | **todo-ball-machine** | 人生任务抽球系统 | 抽球、场次 |
 | **code-review** | 代码审查 | code review |
+| **job-status** | Job board 监控 | job, status |
+| **job-handoff** | 导出 job 状态以保持连续性 | handoff |
+| **job-audit** | 审查交付物 vs 验收标准 | audit |
 | **web-research** | 网页搜索与内容抽取 | search, research, 搜索 |
-| **swarm-send** | 通过 NATS 向蜂群发布/请求 | 通知、广播、发给、派发任务 |
+| **swarm-send** | 通过 NATS 向蜂群发布/请求 | 通知、广播、派发任务 |
 | **swarm-receive** | 读取蜂群消息（从 mailbox） | 收消息、看邮件、check inbox |
+| **wiki** | 本地知识库操作 | wiki, note |
 
 添加新 skill 只需要：写一个 `skills/xxx.md` 契约 + 一个 `tools/xxx.py` handler。零核心侵入。
+
+---
+
+## `wb` CLI
+
+`wb` 是直接命令行接口——不走 agent 循环，不占上下文窗口，直接执行：
+
+```bash
+# Job probe 命令
+wb job create "标题" "描述" --cycles 2
+wb job ls
+wb job status JOB-001
+wb job handoff JOB-001
+wb job audit JOB-001
+wb job run JOB-001          # 自动检测 skill，搜索/抽取，写入产出物
+wb job tick                 # 手动触发后台 probe
+
+# 抽球机命令
+wb todo dashboard
+wb todo today
+wb todo draw morning
+wb todo quick
+wb todo complete morning
+wb todo history [N]
+wb todo stats [N]
+wb todo day [YYYY-MM-DD]
+wb todo box
+wb todo cycle
+wb todo new-cycle [name]
+
+# 蜂群命令
+wb swarm status
+wb swarm listen
+```
+
+`wb` 和交互式 `worker-bee` 共享同一个 `jobs/` 目录和 `state.db`。自动化用 `wb`，开放交流用 `worker-bee`。
+
+---
+
+## Job Probe 系统
+
+后台监控器定期扫描 `jobs/` ，不需要人去轮询：
+
+```
+每 60 秒（cron tick）：
+  ├── 扫描 jobs/ 的活跃 job
+  ├── 检查 cycle 截止日期
+  ├── 提示超期 / 阻塞的 job
+  └── 如果达到上下文阈值，触发 handoff
+```
+
+Probe 阈值可配置（默认：80 rounds 警告，85 rounds handoff）。
+
+Skill 响应 probe 状态：
+- `job-status` → 读取 probe 输出，汇报简洁仪表盘
+- `job-handoff` → 导出 job 状态 + 产出物树，保持连续性
+- `job-audit` → 审查交付物 vs 验收标准
 
 ---
 
@@ -295,7 +389,7 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 
 所有 fork 共享同一套核心，只有 skill 和数据格式不同。
 
-设计文档见 `design_notes/`。
+设计文档见 `design_notes/` 。
 
 ---
 
@@ -303,6 +397,7 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 
 | 原则 | 含义 |
 |------|------|
+| **复用内核** | `protocols.py` + `loop.py` 从 Hermes Lite 原封不动拷贝。不分叉。 |
 | **一个 Agent 就够了** | 不要多 agent，不要 orchestrator，不要 daemon |
 | **Text as Model** | 所有状态在 Markdown 里，人随时可读可改 |
 | **Append-Only** | 事件流不可覆盖，历史不丢 |
@@ -317,8 +412,8 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 
 ```
 ~/.worker-bee/
-├── agent.md    # Agent 行为：规则、偏好、工具使用模式
-└── soul.md     # Agent 人格：语气、风格、身份
+├─── agent.md    # Agent 行为：规则、偏好、工具使用模式
+└─── soul.md     # Agent 人格：语气、风格、身份
 ```
 
 启动时，Worker Bee 读取这两个文件，拼接到 system prompt 末尾：
@@ -347,6 +442,14 @@ self.system_prompt = f"{base_prompt}{injection}"
 ```
 
 **一句话**：改文件 → Agent 行为就变了。不需要重启，不需要改配置，不需要改代码。
+
+---
+
+## 设计笔记
+
+Aristotle Bee、Architecture Bee、Project Manager Bee、WorldBee 等历史 fork 概念，以及完整的 agent 生态系统设计，均存档于 `design_notes/` 。它们说明了同一个内核如何穿上不同的 skill 外衣。
+
+操作规范（信息素格式、mechanism vs task skill 区别）见 `design_notes/exogenous-pheromone-formats.md`。
 
 ---
 

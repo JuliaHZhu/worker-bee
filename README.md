@@ -58,11 +58,31 @@ worker-bee -m "hello"
 export FEISHU_WEBHOOK_URL=...
 worker-bee -c "hello"
 
-# 6. Run
+# 6. Run interactive session
 worker-bee
 ```
 
 No daemon. No orchestrator. One CLI entry point.
+
+**Or use `wb` for direct commands:**
+
+```bash
+# Job management
+wb job create "Refactor auth module" "Split SSO logic into independent service"
+wb job ls
+wb job status JOB-001
+wb job run JOB-001          # Auto-detect skill, search/extract, write artifacts
+wb job tick                 # Manually trigger background probe
+
+# Todo ball machine
+wb todo dashboard
+wb todo draw morning
+wb todo complete morning
+
+# Swarm
+wb swarm status
+wb swarm listen
+```
 
 ---
 
@@ -70,42 +90,49 @@ No daemon. No orchestrator. One CLI entry point.
 
 ```
 worker-bee/
-├── worker_bee/           # Core agent + CLI
-│   ├── main.py           # CLI entry point (setup / ping / session / lark)
-│   ├── agent.py          # Agent shell (config, schema cache)
-│   ├── loop.py           # Protocol-agnostic run loop (Hermes kernel)
-│   ├── protocols.py      # Anthropic / OpenAI protocol adapters (Hermes kernel)
-│   ├── registry.py       # Tool registry
-│   ├── deck.py           # Tool boundary (Deck procurement)
-│   ├── skills.py         # Skill matching engine
-│   ├── memory.py         # Session DB (SQLite, persistent)
-│   ├── infra_toolsets.py # Platform detection (Linux / Feishu / Discord)
-│   ├── lark_cli.py       # Standalone Feishu Lark bot (HTTP webhook)
-│   └── skills/           # Markdown skill contracts
-│       ├── code-review.md
-│       ├── todo-ball-machine.md
-│       ├── swarm-send.md
-│       ├── swarm-receive.md
-│       └── ...
-├── tools/                # Tool implementations (auto-registered)
-│   ├── send_message.py   # Feishu App Bot API / Webhook / Discord
-│   ├── terminal.py       # Shell execution
-│   ├── file.py           # Read / write / search files
-│   ├── web.py            # Web search / extract
-│   ├── subagent.py       # Delegate to child agents
-│   ├── cronjob.py        # Cron job management
-│   ├── swarm.py          # NATS publish + request
-│   └── ...
-├── swarm/                # NATS swarm communication
-│   ├── server.conf       # NATS server config (single-node, cluster-ready)
-│   └── listener.py       # Background listener: NATS → mailbox/inbox/
-├── cron/                 # Background scheduler
-│   ├── scheduler.py      # Tick loop
-│   └── jobs.py           # Job definitions
-├── tests/                # pytest suite (265 tests)
-├── design_notes/         # Architecture docs
-├── todo_ball_machine/    # Life task ball-drawing system
-└── templates/            # Skill authoring templates
+├─── worker_bee/           # Core agent + CLI
+│   ├─── main.py           # CLI entry point (setup / ping / session / lark)
+│   ├─── cli.py            # wb command-line interface (job + todo + swarm)
+│   ├─── agent.py          # Agent shell (config, schema cache, agent.md/soul.md injection)
+│   ├─── loop.py           # Protocol-agnostic run loop (Hermes kernel)
+│   ├─── protocols.py      # Anthropic / OpenAI protocol adapters (Hermes kernel)
+│   ├─── registry.py       # Tool registry
+│   ├─── deck.py           # Tool boundary (Deck procurement)
+│   ├─── skills.py         # Skill matching engine
+│   ├─── memory.py         # Session DB (SQLite, persistent)
+│   ├─── infra_toolsets.py # Platform detection (Linux / Feishu / Discord)
+│   ├─── lark_cli.py       # Standalone Feishu Lark bot (HTTP webhook)
+│   └─── skills/           # Markdown skill contracts
+│       ├─── code-review.md
+│       ├─── todo-ball-machine.md
+│       ├─── swarm-send.md
+│       ├─── swarm-receive.md
+│       └─── ...
+├─── tools/                # Tool implementations (auto-registered)
+│   ├─── send_message.py   # Feishu App Bot API / Webhook / Discord
+│   ├─── terminal.py       # Shell execution
+│   ├─── file.py           # Read / write / search files
+│   ├─── web.py            # Web search / extract
+│   ├─── subagent.py       # Delegate to child agents
+│   ├─── cronjob.py        # Cron job management
+│   ├─── job_probe.py      # Background job monitoring + probe tick
+│   ├─── swarm.py          # NATS publish + request
+│   └─── ...
+├─── swarm/                # NATS swarm communication
+│   ├─── server.conf       # NATS server config (single-node, cluster-ready)
+│   └─── listener.py       # Background listener: NATS → mailbox/inbox/
+├─── cron/                 # Background scheduler
+│   ├─── scheduler.py      # Tick loop (integrated with job probe)
+│   └─── jobs.py           # Job definitions
+├─── jobs/                 # Job storage (Markdown + YAML frontmatter)
+│   └─── JOB-XXX/
+│       ├─── meta.md
+│       ├─── sessions/
+│       └─── artifacts/
+├─── tests/                # pytest suite (265 tests)
+├─── design_notes/         # Architecture docs
+├─── todo_ball_machine/    # Life task ball-drawing system
+└─── templates/            # Skill authoring templates + agent.md/soul.md examples
 ```
 
 ---
@@ -259,11 +286,72 @@ Existing skills, all using the same Deck architecture:
 |-------|-------------|---------|
 | **todo-ball-machine** | Life task ball-drawing system | draw, session |
 | **code-review** | Code review | code review |
+| **job-status** | Job board monitoring | job, status |
+| **job-handoff** | Export job state for continuity | handoff |
+| **job-audit** | Review deliverables against acceptance | audit |
 | **web-research** | Web search and extract | search, research, look up |
 | **swarm-send** | Publish/request to swarm via NATS | notify, broadcast, dispatch |
 | **swarm-receive** | Read swarm messages from mailbox | check inbox, new messages |
+| **wiki** | Local knowledge base operations | wiki, note |
 
 Adding a new skill only requires: write a `skills/xxx.md` contract + a `tools/xxx.py` handler. Zero core intrusion.
+
+---
+
+## `wb` CLI
+
+`wb` is the direct command-line interface — no agent loop, no context window, just do:
+
+```bash
+# Job probe commands
+wb job create "Title" "Description" --cycles 2
+wb job ls
+wb job status JOB-001
+wb job handoff JOB-001
+wb job audit JOB-001
+wb job run JOB-001          # Auto-detect skill from title, search/extract, write artifacts
+wb job tick                 # Manually trigger background probe
+
+# Todo ball machine commands
+wb todo dashboard
+wb todo today
+wb todo draw morning
+wb todo quick
+wb todo complete morning
+wb todo history [N]
+wb todo stats [N]
+wb todo day [YYYY-MM-DD]
+wb todo box
+wb todo cycle
+wb todo new-cycle [name]
+
+# Swarm commands
+wb swarm status
+wb swarm listen
+```
+
+`wb` shares the same `jobs/` directory and `state.db` as the interactive `worker-bee` session. Use `wb` for automation; use `worker-bee` for open-ended conversation.
+
+---
+
+## Job Probe System
+
+The background monitor watches all jobs in `jobs/` and surfaces status without human polling:
+
+```
+Every 60s (cron tick):
+  ├── Scan jobs/ for active jobs
+  ├── Check cycle deadlines
+  ├── Surface overdue / blocked jobs
+  └── Trigger handoff if context threshold reached
+```
+
+Probe thresholds are configurable (default: 80 rounds warn, 85 rounds handoff).
+
+Skills react to probe state:
+- `job-status` → reads probe output, reports concise dashboard
+- `job-handoff` → exports job state + artifact tree for continuity
+- `job-audit` → reviews deliverables against acceptance criteria
 
 ---
 
@@ -318,19 +406,11 @@ A handoff is a work-state snapshot (Purpose, Completed, Todos, Context, Next Ste
 
 ---
 
-## Specialized Forks
+## Design Notes
 
-Swap skills and exogenous-pheromone formats to turn Worker Bee into domain-specific tools:
+Historical fork concepts (Aristotle Bee, Architecture Bee, Project Manager Bee, WorldBee) and the full agent ecosystem design are archived in `design_notes/`. They illustrate how the same kernel can wear different skill skins.
 
-| Fork | Skill | Pheromone | What It Does |
-|------|-------|-----------|-------------|
-| **Aristotle Bee** | aristotle | `dict/*.md` | Terminology guardian — dictionary lookup + drift detection |
-| **Architecture Bee** | architect | `arch/*.md` | Structure reducer — reduce vague goals to irreducible constraints |
-| **Project Manager Bee** | project-manager | `pm/*.md` | Orchestration optimizer — template-first delivery with `[TBD]` blanks |
-
-All forks share the same core. Only the skill and data format change.
-
-See `design_notes/` for full design docs.
+Operational specs (pheromone formats, mechanism vs task skill distinctions) live in `design_notes/exogenous-pheromone-formats.md`.
 
 ---
 

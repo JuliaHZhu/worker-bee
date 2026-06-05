@@ -261,6 +261,3 @@ class SkillManager:
         if not parts:
             return ""
         return "Matched Skills:\n" + "\n\n".join(parts)
-
-    def build_context(self) -> str:
-        return self.build_context_for_skills(list(self._skills.keys()))

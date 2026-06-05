@@ -14,7 +14,7 @@ class InfraToolSet:
     """平台基础设施工具集。不是给 LLM 看的，是给系统看的。"""
 
     def __init__(self):
-        self._available_cache: List[str] = []
+        pass
 
     def detect_platform(self) -> str:
         """检测当前运行平台。"""
@@ -45,7 +45,7 @@ class InfraToolSet:
 
     def invalidate(self) -> None:
         """清空缓存。"""
-        self._available_cache = []
+        pass
 
 
 # 模块级单例

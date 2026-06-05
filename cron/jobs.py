@@ -29,11 +29,6 @@ def _now() -> datetime:
     return datetime.now().astimezone()
 
 
-def _now_utc() -> datetime:
-    """Return current time as timezone-aware datetime (UTC)."""
-    return datetime.now(timezone.utc)
-
-
 # =============================================================================
 # Atomic replace helper (replaces utils.atomic_replace)
 # =============================================================================
@@ -898,73 +893,3 @@ def save_job_output(job_id: str, output: str):
         raise
 
     return output_file
-
-
-# =============================================================================
-# Skill reference rewriting (simplified — no curator integration)
-# =============================================================================
-
-def rewrite_skill_refs(
-    consolidated: Optional[Dict[str, str]] = None,
-    pruned: Optional[List[str]] = None,
-) -> Dict[str, Any]:
-    """Rewrite cron job skill references after a consolidation pass."""
-    consolidated = dict(consolidated or {})
-    pruned_set = set(pruned or [])
-    pruned_set -= set(consolidated.keys())
-
-    if not consolidated and not pruned_set:
-        return {"rewrites": [], "jobs_updated": 0, "jobs_scanned": 0}
-
-    with _jobs_file_lock:
-        jobs = load_jobs()
-        rewrites: List[Dict[str, Any]] = []
-        changed = False
-
-        for job in jobs:
-            skills_before = _normalize_skill_list(job.get("skill"), job.get("skills"))
-            if not skills_before:
-                continue
-
-            mapped: Dict[str, str] = {}
-            dropped: List[str] = []
-            new_skills: List[str] = []
-
-            for name in skills_before:
-                if name in consolidated:
-                    target = consolidated[name]
-                    mapped[name] = target
-                    if target and target not in new_skills:
-                        new_skills.append(target)
-                elif name in pruned_set:
-                    dropped.append(name)
-                elif name not in new_skills:
-                    new_skills.append(name)
-
-            if not mapped and not dropped:
-                continue
-
-            job["skills"] = new_skills
-            job["skill"] = new_skills[0] if new_skills else None
-            changed = True
-
-            rewrites.append({
-                "job_id": job.get("id"),
-                "job_name": job.get("name") or job.get("id"),
-                "before": list(skills_before),
-                "after": list(new_skills),
-                "mapped": mapped,
-                "dropped": dropped,
-            })
-
-        if changed:
-            save_jobs(jobs)
-            logger.info(
-                "Rewrote skill references in %d cron job(s)", len(rewrites)
-            )
-
-        return {
-            "rewrites": rewrites,
-            "jobs_updated": len(rewrites),
-            "jobs_scanned": len(jobs),
-        }

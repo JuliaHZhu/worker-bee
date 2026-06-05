@@ -13,18 +13,6 @@ def temp_dir():
 
 
 @pytest.fixture
-def temp_workspace(temp_dir):
-    """Temp dir + set WORKER_BEE_WORKSPACE env var."""
-    old = os.environ.get("WORKER_BEE_WORKSPACE")
-    os.environ["WORKER_BEE_WORKSPACE"] = str(temp_dir)
-    yield temp_dir
-    if old is None:
-        del os.environ["WORKER_BEE_WORKSPACE"]
-    else:
-        os.environ["WORKER_BEE_WORKSPACE"] = old
-
-
-@pytest.fixture
 def fresh_registry():
     """Return a brand-new ToolRegistry instance."""
     from worker_bee.registry import ToolRegistry
@@ -82,17 +70,3 @@ def skill_manager(skills_dir):
     mgr = SkillManager(str(skills_dir))
     mgr.load_all()
     return mgr
-
-
-@pytest.fixture
-def mock_config():
-    """Return a minimal config dict."""
-    return {
-        "model": "test-model",
-        "provider": "anthropic",
-        "api_key": "test-key",
-        "base_url": "https://api.test.example.com",
-        "max_iterations": 5,
-        "system_prompt": "You are a test assistant.",
-        "tools": ["fs_read_file", "sys_terminal"],
-    }

@@ -432,6 +432,3 @@ class SessionDB:
 
         Path(out_path).write_text(content, encoding="utf-8")
         return out_path
-
-    # Legacy alias — kept for compat but redirects to handoff format
-    export_session_summary = export_handoff

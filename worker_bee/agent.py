@@ -1,8 +1,8 @@
 """Minimal AI Agent — thin shell delegating to protocols + loop.
 
 Backward-compatible: ``from worker_bee.agent import AIAgent`` still works.
-All internal methods (_build_tools, _to_api_messages, _extract_text, etc.)
-are preserved as forwarders so existing tests don't break.
+Internal methods (_build_tools, _to_api_messages) are preserved as forwarders
+so existing tests don't break.
 
 Architecture:
     worker_bee/agent.py      ← this file — AIAgent class, config, tool schema caching
@@ -10,7 +10,6 @@ Architecture:
     worker_bee/loop.py       ← run_conversation() — protocol-agnostic agent loop
 """
 import json
-import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -110,54 +109,6 @@ class AIAgent:
 
     def _to_api_messages(self, messages: List[Dict]) -> List[Dict]:
         return self.protocol.build_messages(messages)
-
-    def _extract_text(self, msg) -> str:
-        """Test-compat: extracts text from raw API response object."""
-        if self._protocol_name == "anthropic":
-            texts = []
-            for block in msg.content:
-                if hasattr(block, "text"):
-                    texts.append(block.text)
-            return "\n".join(texts)
-        return msg.content or ""
-
-    def _extract_reasoning(self, msg) -> Optional[str]:
-        """Test-compat: extracts reasoning from raw API response object."""
-        if self._protocol_name == "anthropic":
-            parts = []
-            for block in msg.content:
-                if getattr(block, "type", None) == "thinking" and hasattr(block, "thinking"):
-                    parts.append(block.thinking)
-            return "\n".join(parts) if parts else None
-        rc = getattr(msg, "reasoning_content", None)
-        if rc:
-            return rc
-        if hasattr(msg, "model_extra") and msg.model_extra:
-            return msg.model_extra.get("reasoning_content")
-        return None
-
-    def _extract_tool_calls(self, msg) -> List[Dict]:
-        """Test-compat: extracts tool_calls from raw API response object."""
-        calls = []
-        if self._protocol_name == "anthropic":
-            for block in msg.content:
-                if getattr(block, "type", None) == "tool_use":
-                    args = block.input
-                    if hasattr(args, "model_dump"):
-                        args = args.model_dump()
-                    calls.append({
-                        "id": block.id,
-                        "name": block.name,
-                        "arguments": args,
-                    })
-        else:
-            for tc in (msg.tool_calls or []):
-                calls.append({
-                    "id": tc.id,
-                    "name": tc.function.name,
-                    "arguments": json.loads(tc.function.arguments),
-                })
-        return calls
 
     # ── public API ─────────────────────────────────────────────────────
 

@@ -81,7 +81,6 @@ def _job_tick(args):
 
 def _job_run(args):
     """Execute a job: read meta, infer skill, run tools, write artifacts."""
-    import os
     import sys
     from pathlib import Path
 
@@ -405,7 +404,6 @@ def _swarm_status(args):
 
     # Check mailbox
     inbox = Path.home() / ".worker-bee" / "mailbox" / "inbox"
-    read = Path.home() / ".worker-bee" / "mailbox" / "read"
     if inbox.exists():
         unread = len(list(inbox.glob("*.json")))
         print(f"📬 Mailbox: {unread} unread, inbox={inbox}")

@@ -149,6 +149,67 @@ def setup():
     print(f"✅ Saved to {path}")
     print(f"   Provider: {provider} | Model: {model} | Temperature: {temperature}")
 
+    # ── Create agent.md + soul.md ──
+    prompt_dir = Path.home() / ".hermes" / "worker-bee"
+    prompt_dir.mkdir(parents=True, exist_ok=True)
+
+    agent_md = prompt_dir / "agent.md"
+    if not agent_md.exists():
+        agent_md.write_text(_AGENT_MD_TEMPLATE, encoding="utf-8")
+        print(f"✅ Created {agent_md}")
+    else:
+        print(f"⏭️  {agent_md} already exists — skipped")
+
+    soul_md = prompt_dir / "soul.md"
+    if not soul_md.exists():
+        soul_md.write_text(_SOUL_MD_TEMPLATE, encoding="utf-8")
+        print(f"✅ Created {soul_md}")
+    else:
+        print(f"⏭️  {soul_md} already exists — skipped")
+
+    print()
+    print("📝  Edit these files to customize the agent's behavior:")
+    print(f"    {agent_md}")
+    print(f"    {soul_md}")
+
+
+_AGENT_MD_TEMPLATE = """\
+# Agent Behavior
+
+## Tool Usage
+- Read files before editing them.
+- Verify before claiming something works.
+- Prefer terminal commands over Python scripts for one-liners.
+
+## Task Handling
+- Break complex tasks into sequential steps.
+- Report progress after each major step.
+- If stuck after 3 attempts, ask for clarification.
+
+## Boundaries
+- Never modify files outside the project workspace.
+- Never run destructive commands (rm -rf, format disk) without confirmation.
+"""
+
+_SOUL_MD_TEMPLATE = """\
+# Agent Personality
+
+## Tone
+- Concise. No fluff.
+- Direct. State what you will do, then do it.
+- Honest. If you don't know, say so.
+
+## Identity
+- You are a Worker Bee — a focused task agent.
+- One task at a time. One board at a time.
+- You are not a chatbot. You are a tool-using worker.
+
+## Style
+- Prefer tables over paragraphs when comparing options.
+- Use Chinese when the user writes in Chinese.
+- Code blocks over descriptions for configuration.
+"""
+
 
 def ping_model(message: str, temperature: float | None = None):
     """Quick model connectivity test."""

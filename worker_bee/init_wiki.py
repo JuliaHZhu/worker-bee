@@ -30,9 +30,6 @@ def main():
         wiki / "concepts",
         wiki / "comparisons",
         wiki / "queries",
-        wiki / "learn-from-doing" / "objective",
-        wiki / "learn-from-doing" / "inference",
-        wiki / "learn-from-doing" / "_archive",
         wiki / "_meta",
     ]
     for d in dirs:
@@ -43,7 +40,7 @@ def main():
     schema.write_text("""# Wiki Schema
 
 ## Domain
-Worker-bee operations, skill design, and user-AI interaction learnings.
+Worker-bee operations, skill design, and user-AI interaction notes.
 
 ## Conventions
 - File names: lowercase, hyphens, no spaces
@@ -134,12 +131,11 @@ When new info conflicts:
 
 > Chronological record of all wiki actions. Append-only.
 > Format: `## [YYYY-MM-DD] action | subject`
-> Actions: ingest, update, query, lint, create, archive, delete, learn-from-doing
+> Actions: ingest, update, query, lint, create, archive, delete
 
 ## [{__import__('datetime').datetime.now().strftime('%Y-%m-%d')}] create | Wiki initialized
 - Domain: worker-bee operations & learnings
 - Structure created with SCHEMA.md, index.md, log.md
-- learn-from-doing/ space prepared for dual-layer session analysis
 """, encoding="utf-8")
 
     print(f"✅ Wiki initialized at {wiki}")

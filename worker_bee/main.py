@@ -354,7 +354,7 @@ def run_session(temperature_override: float | None = None):
         messages.insert(0, {"role": "user", "content": f"[Handoff] {handoff}"})
         print(f"[Handoff loaded] {handoff[:80]}...")
 
-    # Session-aware system prompt so the agent knows its session ID for tagged-session tools
+    # Session-aware system prompt so the agent knows its session ID
     agent.system_prompt = f"{base_system_prompt}\n\nCurrent session ID: {session_id}"
 
     print(f"\n✨ Worker Bee — Session: {session_id}")
@@ -400,7 +400,7 @@ def run_session(temperature_override: float | None = None):
             _handle_todo(user_input, db, session_id)
             continue
         if user_input.lower().startswith("/task"):
-            print("⚠️  /task is deprecated. Use natural language with the tagged-session skill instead.")
+            print("⚠️  /task is deprecated. Use natural language or /todo instead.")
             continue
         if user_input.lower() == "/skills":
             skills = skill_mgr.list_skills()

@@ -46,9 +46,7 @@ wiki-worker-bee/
 ├── concepts/           # Layer 2: Topics, techniques, theories
 ├── comparisons/        # Layer 2: Side-by-side analyses
 ├── queries/            # Layer 2: Filed query results
-└── learn-from-doing/   # Layer 2: Session learning records (see skill: learn-from-doing)
-    ├── objective/
-    └── inference/
+└── _meta/              # Meta: SCHEMA.md, index.md, log.md
 ```
 
 **Layer 1 — Raw:** Immutable. Agent reads but never modifies.

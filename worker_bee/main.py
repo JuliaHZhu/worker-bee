@@ -171,6 +171,13 @@ def setup():
     print("📝  Edit these files to customize the agent's behavior:")
     print(f"    {agent_md}")
     print(f"    {soul_md}")
+    print()
+
+    # ── Verify: confirm files are readable ──
+    agent_size = len(agent_md.read_text())
+    soul_size = len(soul_md.read_text())
+    print(f"✅ Verified: {agent_size} chars loaded from agent.md, {soul_size} chars from soul.md")
+    print(f"   Next worker-bee run will inject them into the system prompt.")
 
 
 _AGENT_MD_TEMPLATE = """\

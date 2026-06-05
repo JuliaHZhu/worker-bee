@@ -26,13 +26,14 @@ requires-python = ">=3.10"
 dependencies = [
     "anthropic>=0.30.0",
     "openai>=1.30.0",
+    "croniter>=1.4",
 ]
 
 [project.optional-dependencies]
+swarm = ["nats-py>=2.0"]
 test = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
-    "croniter>=1.4",
 ]
 
 [tool.setuptools]

@@ -36,13 +36,15 @@ from cron.jobs import (
     CRON_DIR,
 )
 
+from worker_bee.workspace import get_workspace
+
 logger = logging.getLogger(__name__)
 
 SILENT_MARKER = "[SILENT]"
 
 # ── Workspace guard for cron scripts ─────────────────────────────────────────────────────
 
-_CRON_WORKSPACE = os.environ.get("WORKER_BEE_WORKSPACE", os.getcwd())
+_CRON_WORKSPACE = str(get_workspace())
 
 
 def _is_inside_workspace(path: str) -> bool:

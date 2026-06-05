@@ -435,6 +435,19 @@ def _add_swarm_parser(sub):
 
 
 # ---------------------------------------------------------------------------
+# Workspace sub-command
+# ---------------------------------------------------------------------------
+def _workspace_show(args):
+    from worker_bee.workspace import get_workspace
+    print(get_workspace())
+
+
+def _add_workspace_parser(sub):
+    ws = sub.add_parser("workspace", help="Show the current workspace path")
+    ws.set_defaults(func=_workspace_show)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main(argv=None):
@@ -452,12 +465,14 @@ def main(argv=None):
             "  wb todo draw morning\n"
             "  wb todo quick\n"
             "  wb todo stats 14\n"
+            "  wb workspace\n"
         ),
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
     _add_job_parser(sub)
     _add_todo_parser(sub)
     _add_swarm_parser(sub)
+    _add_workspace_parser(sub)
 
     args = parser.parse_args(argv)
     args.func(args)

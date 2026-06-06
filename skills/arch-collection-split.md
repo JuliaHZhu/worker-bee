@@ -20,12 +20,17 @@ category: architecture
 
 ## 存储位置
 
+**Step 0**: 把下载的原始文本放到 `~/.worker-bee/arch/texts/<作品名>/source.md`。
+**Step 1**: 跑 arch-collection-split → 读 source.md → 拆段 → 写每段 `<slug>/source.md` + index.md。
+**Step 2**: 跑 arch-novel-split 逐段 → 读 `<slug>/source.md` → 写 `<slug>/atoms.md`。
+
 ```
 ~/.worker-bee/arch/texts/<作品名>/
-├── index.md              ← 段列表
+├── source.md              ← 原始文本放这里
+├── index.md               ← 段列表（自动生成）
 ├── <段-slug>/
-│   ├── source.md
-│   └── atoms.md          ← arch-novel-split 产出
+│   ├── source.md          ← 该段文本
+│   └── atoms.md           ← arch-novel-split 产出
 ├── <段-slug>/
 │   ├── source.md
 │   └── atoms.md

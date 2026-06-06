@@ -15,10 +15,24 @@ category: architecture
 
 ## 存储位置
 
+arch-novel-split 在**当前目录**跑——读该目录下的 `source.md`，写 `atoms.md`。
+
+**独立长篇**（没跑 arch-collection-split）：
 ```
-~/.worker-bee/arch/texts/<name>/
-├── source.md      ← 原始文本
-└── atoms.md       ← 原子序列
+~/.worker-bee/arch/texts/<作品名>/
+├── source.md      ← 把原始文本放这里
+└── atoms.md       ← 产出
+```
+
+**流水线中**（arch-collection-split 之后，在子目录跑）：
+```
+~/.worker-bee/arch/texts/<作品名>/
+├── source.md              ← 合集原始文本
+├── index.md
+├── <段-slug>/
+│   ├── source.md          ← arch-collection-split 写的
+│   └── atoms.md           ← arch-novel-split 写到这里
+└── ...
 ```
 
 ## 切割规则

@@ -237,4 +237,4 @@ class TestAgentInit:
             "api_key": "test",
         })
         assert agent.model == "kimi-k2.6"
-        assert agent.max_iterations == 30
+        assert agent.max_iterations == 60

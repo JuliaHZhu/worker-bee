@@ -74,7 +74,7 @@ def load_config():
     return None
 
 
-def _make_config(provider, model, api_key, base_url, max_iter=20, temperature=0.0):
+def _make_config(provider, model, api_key, base_url, max_iter=60, temperature=0.0):
     return {
         "model": model,
         "provider": provider,
@@ -82,6 +82,7 @@ def _make_config(provider, model, api_key, base_url, max_iter=20, temperature=0.
         "base_url": base_url,
         "max_iterations": max_iter,
         "temperature": temperature,
+        "auto_confirm": False,
         "system_prompt": (
             "You are a helpful coding assistant. You have access to tools:\n"
             "- sys_terminal: run shell commands\n"
@@ -90,7 +91,14 @@ def _make_config(provider, model, api_key, base_url, max_iter=20, temperature=0.
             "- agent_delegate_task: delegate a single subtask to a child agent\n"
             "- agent_delegate_parallel: delegate multiple subtasks in parallel\n"
             "- agent_cross_validate: run the same task through multiple models for comparison\n"
-            "Think step by step. Prefer reading files before editing."
+            "Think step by step. Prefer reading files before editing.\n\n"
+            "## Terminal Efficiency\n"
+            "- When the user says 'do it', 'just run it', 'batch mode', or similar intent, "
+            "set require_confirmation=false in sys_terminal calls for that turn.\n"
+            "- When running a sequence of related commands, prefer require_confirmation=false "
+            "after the first command succeeds.\n"
+            "- NEVER set require_confirmation=false for: rm -rf, sudo, mkfs, dd, curl | sh, "
+            "or any disk/format operation."
         ),
         "tools": [
             "sys_terminal",
@@ -364,6 +372,11 @@ def run_session(temperature_override: float | None = None):
 
     if temperature_override is not None:
         config["temperature"] = temperature_override
+
+    if config.get("auto_confirm"):
+        os.environ["WORKER_BEE_AUTO_CONFIRM"] = "true"
+    else:
+        os.environ.pop("WORKER_BEE_AUTO_CONFIRM", None)
 
     agent = AIAgent(config)
     db = SessionDB()

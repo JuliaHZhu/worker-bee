@@ -33,7 +33,7 @@ class AIAgent:
     def __init__(self, config: dict):
         self.config = config
         self.model = config.get("model", "kimi-k2.6")
-        self.max_iterations = config.get("max_iterations", 30)
+        self.max_iterations = config.get("max_iterations", 60)
         self.max_context_messages = config.get("max_context_messages", 90)
         self.temperature = config.get("temperature", 0.0)
         base_prompt = config.get(

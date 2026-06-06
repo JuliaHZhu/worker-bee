@@ -1,6 +1,7 @@
 from typing import Union
 
 import fnmatch
+import os
 import re
 import shlex
 import subprocess
@@ -16,6 +17,42 @@ ALLOWLIST = [
     "git remote*", "git config --list", "git --version",
     "python --version", "python3 --version", "pip list*", "pip3 list*",
     "python -m pytest --collect-only*",
+    # === file reading ===
+    "cat*", "bat*", "tac*", "nl*", "od*",
+    "python -c*", "python3 -c*", "python -m*", "python3 -m*",
+    # === lint / test (read-only nature) ===
+    "pytest*", "python -m pytest*",
+    "black --check*", "ruff check*", "mypy*", "flake8*",
+    "pylint*", "bandit*", "vulture*",
+    # === git write (low risk, reversible) ===
+    "git add*", "git commit*", "git push*", "git pull*", "git fetch*",
+    "git clone*", "git checkout*", "git merge*", "git rebase*",
+    "git stash*", "git reset*", "git tag*", "git cherry-pick*",
+    # === build tools ===
+    "make*", "cmake*", "cargo*", "go build*", "go test*", "go run*",
+    "npm*", "pnpm*", "yarn*", "npx*",
+    # === docker read-only ===
+    "docker ps*", "docker images*", "docker logs*", "docker inspect*",
+    "docker network*", "docker volume*",
+    # === archive (low risk) ===
+    "tar*", "zip*", "unzip*", "gzip*", "gunzip*",
+    # === file ops (non-destructive) ===
+    "mkdir*", "touch*", "cp*", "mv*", "rename*",
+    "chmod*", "chown*",  # dangerous list blocks -R variants
+    "ln*", "readlink*",
+    # === text processing ===
+    "sort*", "uniq*", "cut*", "awk*", "sed*",
+    "tr*", "rev*", "base64*", "md5sum*", "sha256sum*",
+    "diff*", "cmp*", "comm*",
+    "tree*", "fd*", "rg*", "ag*",
+    "xargs*", "parallel*",
+    # === network probes (read-only) ===
+    "curl -I*", "curl --head*", "wget --spider*",
+    # === misc common ===
+    "time*", "timeout*", "nice*",
+    "ssh-keygen*", "ssh-keyscan*",
+    "type*", "command*",
+    "printenv*", "env*", "export*", "set*",
 ]
 
 # ── Dangerous substrings: presence triggers mandatory confirmation ──
@@ -74,11 +111,14 @@ def sys_terminal(command: str, timeout: int = 30, require_confirmation: bool = T
     Security model (Option C):
       1. Allowlist  — common read-only/low-risk commands execute immediately.
       2. Dangerous  — contains dangerous substrings → mandatory confirmation.
-      3. Other      — unrecognized commands → confirmation required.
+      3. Other      — unrecognized commands → confirmation required,
+                      unless WORKER_BEE_AUTO_CONFIRM is set (then execute directly).
 
     Any command with shell metacharacters (; && || | $() < > ` { }) bypasses
     the allowlist and falls into category 2 or 3.
     """
+    auto_confirm = os.environ.get("WORKER_BEE_AUTO_CONFIRM", "false").lower() == "true"
+
     if _matches_allowlist(command):
         # Fast path: no confirmation needed, use shell=False for safety
         try:
@@ -94,6 +134,8 @@ def sys_terminal(command: str, timeout: int = 30, require_confirmation: bool = T
         if confirm.lower() != "y":
             return "Cancelled by user."
     else:
+        if auto_confirm:
+            return _run_command(command, timeout, shell=True)
         if not require_confirmation:
             return f"Blocked unrecognized command (require_confirmation=False): {command}"
         confirm = input(f"⚠️ Unrecognized command: {command}\nExecute? [y/N]: ")

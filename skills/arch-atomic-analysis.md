@@ -1,7 +1,7 @@
 ---
 name: arch-atomic-analysis
-description: 将文章切为原子笔记→打标签→看数据。Architecture Bee 的结构分析技能，产出同时喂 PM Bee。
-trigger: 原子分析, 逐段分析, 切原子, 打标签, 文章结构, 看统计, 分析结构, 拆文章, 原子, 生成模板, 切一下
+description: 论文/申论专用——切原子→打标签→看统计→生成模板。Architecture Bee 的结构分析技能。小说请用 arch-novel-split + arch-novel-tag。
+trigger: 原子分析, 逐段分析, 切原子, 打标签, 文章结构, 看统计, 分析结构, 拆文章, 原子, 生成模板
 tools:
   - net_web_extract
   - fs_read_file

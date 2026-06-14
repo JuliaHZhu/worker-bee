@@ -41,6 +41,13 @@ def fs_rollback_file(path: str) -> str:
     return f"Rolled back {path} from snapshot"
 
 
+def fs_git_rollback(path: str) -> str:
+    """Restore the working tree from the most recent auto-stash checkpoint."""
+    from worker_bee.safety import git_rollback
+    repo_dir = str(Path(path).expanduser().parent)
+    return git_rollback(repo_dir)
+
+
 # ── Workspace guard ─────────────────────────────────────────────────
 
 _WORKSPACE = os.environ.get("WORKER_BEE_WORKSPACE", os.getcwd())

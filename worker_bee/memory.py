@@ -156,9 +156,11 @@ class SessionDB:
             sql += " AND archived_at IS NULL"
         if tags:
             # Simple JSON substring match for tags (sqlite3 has no native JSON array contains)
+            # Escape LIKE wildcards and JSON quotes to prevent pattern injection
             for t in tags:
                 sql += " AND tags LIKE ?"
-                params.append(f'%"{t}"%')
+                safe_t = t.replace("\\", "\\\\").replace('"', '\\"').replace("%", "\\%").replace("_", "\\_")
+                params.append(f'%"{safe_t}"%')
         sql += " ORDER BY id"
         rows = conn.execute(sql, params).fetchall()
         messages = []

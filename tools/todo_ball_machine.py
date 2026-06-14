@@ -4,6 +4,7 @@
 """
 import os
 import sys
+import threading
 from datetime import date
 from pathlib import Path
 from typing import Optional
@@ -15,14 +16,17 @@ os.environ["ENTP_BASE_PATH"] = str(_DATA_DIR)
 
 # 动态导入 engine（避免启动时就 import）
 _engine = None
+_engine_lock = threading.Lock()
 
 
 def _eng():
     global _engine
     if _engine is None:
-        sys.path.insert(0, str(_DATA_DIR))
-        from engine import Engine
-        _engine = Engine(_DATA_DIR)
+        with _engine_lock:
+            if _engine is None:  # double-checked locking
+                sys.path.insert(0, str(_DATA_DIR))
+                from engine import Engine
+                _engine = Engine(_DATA_DIR)
     return _engine
 
 

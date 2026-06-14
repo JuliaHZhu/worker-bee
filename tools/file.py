@@ -8,7 +8,7 @@ from worker_bee.registry import registry
 
 # ── Snapshot / Rollback ─────────────────────────────────────────────
 
-_SNAPSHOT_DIR = Path.home() / ".workerbee" / "snapshots"
+_SNAPSHOT_DIR = Path.home() / ".worker-bee" / "snapshots"
 
 
 def _snapshot_path(path: str) -> Path:
@@ -50,7 +50,7 @@ def fs_git_rollback(path: str) -> str:
 
 # ── Workspace guard ─────────────────────────────────────────────────
 
-_WORKSPACE = os.environ.get("WORKER_BEE_WORKSPACE", os.getcwd())
+_WORKSPACE = os.environ.get("WORKER_BEE_WORKSPACE", str(Path.cwd().resolve()))
 
 # Sensitive paths that should never be written, and require confirmation to read.
 _SENSITIVE_PATTERNS = [

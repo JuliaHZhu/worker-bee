@@ -6,6 +6,7 @@ import re
 import shlex
 import subprocess
 from worker_bee.registry import registry
+
 ALLOWLIST = [
     "head*", "tail*", "less*", "more*",
     "ls*", "ll*", "pwd", "id", "uname*", "whoami",
@@ -19,15 +20,12 @@ ALLOWLIST = [
     "python -m pytest --collect-only*",
     # === file reading ===
     "cat*", "bat*", "tac*", "nl*", "od*",
-    "python -c*", "python3 -c*", "python -m*", "python3 -m*",
     # === lint / test (read-only nature) ===
     "pytest*", "python -m pytest*",
     "black --check*", "ruff check*", "mypy*", "flake8*",
     "pylint*", "bandit*", "vulture*",
-    # === git write (low risk, reversible) ===
-    "git add*", "git commit*", "git push*", "git pull*", "git fetch*",
-    "git clone*", "git checkout*", "git merge*", "git rebase*",
-    "git stash*", "git reset*", "git tag*", "git cherry-pick*",
+    # === git (read-only + safe writes only) ===
+    "git add*", "git commit*", "git fetch*",
     # === build tools ===
     "make*", "cmake*", "cargo*", "go build*", "go test*", "go run*",
     "npm*", "pnpm*", "yarn*", "npx*",
@@ -66,6 +64,8 @@ DANGEROUS = [
     "curl *|*sh", "wget *|*sh", "curl *|*bash", "wget *|*bash",
     ":(){ :|:& };:",  # fork bomb
     "eval(", "exec(", "__import__('os').system",
+    "git push", "git reset", "git rebase", "git stash drop",
+    "python -c", "python3 -c", "python -m", "python3 -m",
 ]
 
 # Shell metacharacters that break simple allowlist matching
@@ -86,7 +86,6 @@ def _is_dangerous(command: str) -> bool:
     """True if command contains any dangerous substring."""
     lowered = command.lower()
     for d in DANGEROUS:
-        # fnmatch for patterns with wildcards, substring match for literals
         if "*" in d or "?" in d:
             if fnmatch.fnmatch(lowered, d.lower()):
                 return True
@@ -108,11 +107,15 @@ def _run_command(command: Union[str, list], timeout: int, shell: bool) -> str:
 def sys_terminal(command: str, timeout: int = 30, require_confirmation: bool = True) -> str:
     """Execute a shell command in the workspace.
 
-    Security model (Option C):
+    Security model:
       1. Allowlist  — common read-only/low-risk commands execute immediately.
-      2. Dangerous  — contains dangerous substrings → mandatory confirmation.
-      3. Other      — unrecognized commands → confirmation required,
-                      unless WORKER_BEE_AUTO_CONFIRM is set (then execute directly).
+      2. Dangerous  — blocked with a clear message (no interactive prompts).
+      3. Other      — blocked with a clear message.
+      
+      Set require_confirmation=False to also block dangerous/unrecognized
+      commands (instead of prompting — for headless/automated contexts).
+      Set WORKER_BEE_AUTO_CONFIRM=true to auto-execute unrecognized commands
+      (⚠️ only in fully sandboxed environments).
 
     Any command with shell metacharacters (; && || | $() < > ` { }) bypasses
     the allowlist and falls into category 2 or 3.
@@ -125,25 +128,25 @@ def sys_terminal(command: str, timeout: int = 30, require_confirmation: bool = T
             args = shlex.split(command)
             return _run_command(args, timeout, shell=False)
         except Exception:
-            # Fallback to shell=True if shlex.split fails
-            return _run_command(command, timeout, shell=True)
+            return (
+                f"Error: could not parse command with shlex. "
+                f"Shell metacharacters or complex quoting may be present. "
+                f"Try removing quotes/special characters: {command}"
+            )
     elif _is_dangerous(command):
-        if not require_confirmation:
-            return f"Blocked dangerous command (require_confirmation=False): {command}"
-        confirm = input(f"⚠️ Dangerous command: {command}\nExecute? [y/N]: ")
-        if confirm.lower() != "y":
-            return "Cancelled by user."
+        return (
+            f"Blocked: dangerous command pattern detected in: {command}\n"
+            f"This command is on the deny list. "
+            f"Run it manually in a terminal if you are certain it is safe."
+        )
     else:
         if auto_confirm:
             return _run_command(command, timeout, shell=True)
-        if not require_confirmation:
-            return f"Blocked unrecognized command (require_confirmation=False): {command}"
-        confirm = input(f"⚠️ Unrecognized command: {command}\nExecute? [y/N]: ")
-        if confirm.lower() != "y":
-            return "Cancelled by user."
-
-    # Dangerous / unrecognized commands still use shell=True for compatibility
-    return _run_command(command, timeout, shell=True)
+        return (
+            f"Blocked: unrecognized command (not in allowlist): {command}\n"
+            f"Add it to the allowlist in tools/terminal.py ALLOWLIST, "
+            f"or set WORKER_BEE_AUTO_CONFIRM=true in sandboxed environments."
+        )
 
 
 registry.register(
@@ -151,8 +154,9 @@ registry.register(
     description=(
         "Execute a shell command in the workspace. "
         "Common read-only commands (ls, cat, grep, git status, etc.) run immediately. "
-        "Unrecognized or potentially dangerous commands require user confirmation. "
-        "Set require_confirmation=false only when running in an automated, sandboxed context."
+        "Dangerous or unrecognized commands are blocked with a clear message "
+        "(no interactive prompts — safe for headless/automated use). "
+        "Set WORKER_BEE_AUTO_CONFIRM=true only in fully sandboxed environments."
     ),
     parameters={
         "properties": {

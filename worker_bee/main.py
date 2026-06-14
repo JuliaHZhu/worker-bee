@@ -516,9 +516,9 @@ def run_session(temperature_override: float | None = None):
         deck = build_deck(skill_tools, registry, redundancy=3)
 
         # 4. Merge platform base tools from config
-        base_tools = set(config.get("tools", []))
-        merged_tools = set(deck.tools) | base_tools
-        final_tools = infra.filter_tools(list(merged_tools))
+        base_tools = config.get("tools", [])
+        merged_tools = list(dict.fromkeys(deck.tools + base_tools))
+        final_tools = infra.filter_tools(merged_tools)
         deck = Deck(final_tools, registry)
 
         print(f"  [Deck ready: {deck.size()} tools]")

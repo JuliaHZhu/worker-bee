@@ -13,6 +13,8 @@ import tempfile
 import threading
 import os
 import re
+import fcntl
+import contextlib
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -67,7 +69,29 @@ CRON_DIR = APP_DIR / "cron"
 JOBS_FILE = CRON_DIR / "jobs.json"
 
 # In-process lock protecting load_jobs->modify->save_jobs cycles.
-_jobs_file_lock = threading.Lock()
+_jobs_file_lock = threading.Lock()  # process-local guard for scheduler internals
+
+
+_JOBS_LOCK_FILE = CRON_DIR / ".jobs.lock"
+
+
+@contextlib.contextmanager
+def _cross_process_lock():
+    """Acquire an exclusive cross-process lock for jobs.json modifications.
+
+    Uses fcntl.flock on a separate lock file — works across independent
+    processes on the same host.  Complementing _jobs_file_lock (process-local),
+    this prevents multi-instance data corruption during load-modify-save cycles.
+    """
+    ensure_dirs()
+    # Create lock file if it doesn't exist (touch), then lock it
+    _JOBS_LOCK_FILE.touch(exist_ok=True)
+    with open(_JOBS_LOCK_FILE, 'r+') as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 OUTPUT_DIR = CRON_DIR / "output"
 ONESHOT_GRACE_SECONDS = 120
 
@@ -544,8 +568,10 @@ def create_job(
     }
 
     jobs = load_jobs()
-    jobs.append(job)
-    save_jobs(jobs)
+    with _cross_process_lock():
+        jobs = load_jobs()
+        jobs.append(job)
+        save_jobs(jobs)
 
     return job
 
@@ -601,44 +627,45 @@ def list_jobs(include_disabled: bool = False) -> List[Dict[str, Any]]:
 
 def update_job(job_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Update a job by ID, refreshing derived schedule fields when needed."""
-    jobs = load_jobs()
-    for i, job in enumerate(jobs):
-        if job["id"] != job_id:
-            continue
+    with _cross_process_lock():
+        jobs = load_jobs()
+        for i, job in enumerate(jobs):
+            if job["id"] != job_id:
+                continue
 
-        if "workdir" in updates:
-            _wd = updates["workdir"]
-            if _wd in {None, "", False}:
-                updates["workdir"] = None
-            else:
-                updates["workdir"] = _normalize_workdir(_wd)
+            if "workdir" in updates:
+                _wd = updates["workdir"]
+                if _wd in {None, "", False}:
+                    updates["workdir"] = None
+                else:
+                    updates["workdir"] = _normalize_workdir(_wd)
 
-        updated = _apply_skill_fields({**job, **updates})
-        schedule_changed = "schedule" in updates
+            updated = _apply_skill_fields({**job, **updates})
+            schedule_changed = "schedule" in updates
 
-        if "skills" in updates or "skill" in updates:
-            normalized_skills = _normalize_skill_list(updated.get("skill"), updated.get("skills"))
-            updated["skills"] = normalized_skills
-            updated["skill"] = normalized_skills[0] if normalized_skills else None
+            if "skills" in updates or "skill" in updates:
+                normalized_skills = _normalize_skill_list(updated.get("skill"), updated.get("skills"))
+                updated["skills"] = normalized_skills
+                updated["skill"] = normalized_skills[0] if normalized_skills else None
 
-        if schedule_changed:
-            updated_schedule = updated["schedule"]
-            if isinstance(updated_schedule, str):
-                updated_schedule = parse_schedule(updated_schedule)
-                updated["schedule"] = updated_schedule
-            updated["schedule_display"] = updates.get(
-                "schedule_display",
-                updated_schedule.get("display", updated.get("schedule_display")),
-            )
-            if updated.get("state") != "paused":
-                updated["next_run_at"] = compute_next_run(updated_schedule)
+            if schedule_changed:
+                updated_schedule = updated["schedule"]
+                if isinstance(updated_schedule, str):
+                    updated_schedule = parse_schedule(updated_schedule)
+                    updated["schedule"] = updated_schedule
+                updated["schedule_display"] = updates.get(
+                    "schedule_display",
+                    updated_schedule.get("display", updated.get("schedule_display")),
+                )
+                if updated.get("state") != "paused":
+                    updated["next_run_at"] = compute_next_run(updated_schedule)
 
-        if updated.get("enabled", True) and updated.get("state") != "paused" and not updated.get("next_run_at"):
-            updated["next_run_at"] = compute_next_run(updated["schedule"])
+            if updated.get("enabled", True) and updated.get("state") != "paused" and not updated.get("next_run_at"):
+                updated["next_run_at"] = compute_next_run(updated["schedule"])
 
-        jobs[i] = updated
-        save_jobs(jobs)
-        return _normalize_job_record(jobs[i])
+            jobs[i] = updated
+            save_jobs(jobs)
+            return _normalize_job_record(jobs[i])
     return None
 
 
@@ -696,19 +723,17 @@ def trigger_job(job_id: str) -> Optional[Dict[str, Any]]:
 
 def remove_job(job_id: str) -> bool:
     """Remove a job by ID or name."""
-    job = resolve_job_ref(job_id)
-    if not job:
-        return False
-    canonical_id = job["id"]
-    jobs = load_jobs()
-    original_len = len(jobs)
-    jobs = [j for j in jobs if j["id"] != canonical_id]
-    if len(jobs) < original_len:
-        save_jobs(jobs)
-        job_output_dir = OUTPUT_DIR / canonical_id
-        if job_output_dir.exists():
-            shutil.rmtree(job_output_dir)
-        return True
+    with _cross_process_lock():
+        job = resolve_job_ref(job_id)
+        if not job:
+            return False
+        canonical_id = job["id"]
+        jobs = load_jobs()
+        original_len = len(jobs)
+        jobs = [j for j in jobs if j["id"] != canonical_id]
+        if len(jobs) < original_len:
+            save_jobs(jobs)
+            return True
     return False
 
 

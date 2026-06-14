@@ -10,6 +10,7 @@ Design principles:
 - Job files are the source of truth (Markdown + YAML frontmatter)
 """
 import re
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -19,6 +20,9 @@ JOBS_DIR = Path(__file__).parent.parent / "jobs"
 WARNING_THRESHOLD = 80      # rounds — append warning to job
 FORCE_THRESHOLD   = 85      # rounds — force summary + handoff prep
 MAX_ROUNDS = 90             # hard limit where loop trims
+
+# Lock protecting probe_tick() read-modify-write cycles
+_probe_lock = threading.Lock()
 
 
 def _ensure_dir() -> None:
@@ -290,41 +294,42 @@ def probe_create_job(title: str, description: str = "", estimated_cycles: int = 
 
 def probe_tick() -> str:
     """Run one probe tick: scan all sessions, check thresholds, act."""
-    results = []
+    with _probe_lock:
+        results = []
 
-    for session_id, job_id, msg_count in _scan_sessions_for_jobs():
-        meta, body = _read_meta(job_id)
-        if meta is None:
-            # Auto-create job if not exists
-            probe_create_job(f"Auto-detected {job_id}", estimated_cycles=1)
+        for session_id, job_id, msg_count in _scan_sessions_for_jobs():
             meta, body = _read_meta(job_id)
             if meta is None:
-                results.append(f"{job_id}: ERROR could not create/read job")
-                continue
+                # Auto-create job if not exists
+                probe_create_job(f"Auto-detected {job_id}", estimated_cycles=1)
+                meta, body = _read_meta(job_id)
+                if meta is None:
+                    results.append(f"{job_id}: ERROR could not create/read job")
+                    continue
 
-        # Update session tracking
-        session_ids = meta.get("session_ids", [])
-        if session_id not in session_ids:
-            session_ids.append(session_id)
-            meta["session_ids"] = session_ids
-            meta["updated_at"] = datetime.now().isoformat()
-            _write_meta(job_id, meta, body)
-            _append_event(job_id, f"SESSION_BOUND {session_id}")
+            # Update session tracking
+            session_ids = meta.get("session_ids", [])
+            if session_id not in session_ids:
+                session_ids.append(session_id)
+                meta["session_ids"] = session_ids
+                meta["updated_at"] = datetime.now().isoformat()
+                _write_meta(job_id, meta, body)
+                _append_event(job_id, f"SESSION_BOUND {session_id}")
 
-        # Check thresholds
-        if msg_count >= FORCE_THRESHOLD:
-            path = _write_session_summary(session_id, job_id, trigger="force_threshold")
-            _append_event(job_id, f"FORCE_SUMMARY session={session_id} rounds={msg_count} file={path.name}")
-            results.append(f"{job_id}: force summary for {session_id} ({msg_count} rounds)")
+            # Check thresholds
+            if msg_count >= FORCE_THRESHOLD:
+                path = _write_session_summary(session_id, job_id, trigger="force_threshold")
+                _append_event(job_id, f"FORCE_SUMMARY session={session_id} rounds={msg_count} file={path.name}")
+                results.append(f"{job_id}: force summary for {session_id} ({msg_count} rounds)")
 
-        elif msg_count >= WARNING_THRESHOLD:
-            _append_event(job_id, f"WARNING session={session_id} rounds={msg_count}/{MAX_ROUNDS}")
-            results.append(f"{job_id}: warning for {session_id} ({msg_count} rounds)")
+            elif msg_count >= WARNING_THRESHOLD:
+                _append_event(job_id, f"WARNING session={session_id} rounds={msg_count}/{MAX_ROUNDS}")
+                results.append(f"{job_id}: warning for {session_id} ({msg_count} rounds)")
 
-    if not results:
-        return "Probe tick: no active jobs need attention."
+        if not results:
+            return "Probe tick: no active jobs need attention."
 
-    return "Probe tick:\n" + "\n".join(f"- {r}" for r in results)
+        return "Probe tick:\n" + "\n".join(f"- {r}" for r in results)
 
 
 def probe_status(job_id: str = "") -> str:

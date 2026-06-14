@@ -69,14 +69,11 @@ def _get_feishu_token() -> Optional[str]:
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-    except Exception as e:
-        return json.dumps({"error": f"token request failed: {e}"}, ensure_ascii=False)
+    except Exception:
+        return None
 
     if data.get("code") != 0:
-        return json.dumps(
-            {"error": f"token error {data.get('code')}: {data.get('msg')}"},
-            ensure_ascii=False,
-        )
+        return None
 
     token = data.get("tenant_access_token")
     expire = data.get("expire", 7200)
@@ -96,8 +93,8 @@ def _send_feishu_app(
 ) -> str:
     """Send via Feishu App Bot API (im/v1/messages)."""
     token = _get_feishu_token()
-    if not token or token.startswith('{"error"'):
-        return token or json.dumps({"error": "unable to obtain tenant_access_token"}, ensure_ascii=False)
+    if not token:
+        return json.dumps({"error": "unable to obtain tenant_access_token"}, ensure_ascii=False)
 
     base = _feishu_base_url()
     # text content must be JSON string: {"text": "hello"}

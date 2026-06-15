@@ -445,7 +445,7 @@ def run_job(job: dict, default_config: dict, skill_manager=None) -> None:
 
                 agent = AIAgent(agent_config)
                 messages = [{"role": "user", "content": full_prompt}]
-                output = agent.run(messages, tools=toolsets or None)
+                output = agent.run(messages, tools=toolsets if toolsets is not None else [])
                 success = True
 
     except Exception as e:

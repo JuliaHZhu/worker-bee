@@ -185,7 +185,7 @@ def setup():
     agent_size = len(agent_md.read_text())
     soul_size = len(soul_md.read_text())
     print(f"✅ Verified: {agent_size} chars loaded from agent.md, {soul_size} chars from soul.md")
-    print(f"   Next worker-bee run will inject them into the system prompt.")
+    print("   Next worker-bee run will inject them into the system prompt.")
 
 
 _AGENT_MD_TEMPLATE = """\
@@ -398,6 +398,9 @@ def run_session(temperature_override: float | None = None):
 
     # Start cron scheduler in background
     global _tick_thread
+    if _tick_thread is not None and _tick_thread.is_alive():
+        _tick_stop.set()
+        _tick_thread.join(timeout=2)
     _tick_stop.clear()
     _tick_thread = threading.Thread(
         target=_cron_tick_loop,

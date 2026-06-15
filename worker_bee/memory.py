@@ -6,6 +6,7 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 
 class SessionDB:
@@ -78,24 +79,36 @@ class SessionDB:
         self._migrate_schema()
         conn.commit()
 
+    # Whitelist of columns allowed for schema migration (prevents SQL injection
+    # via ALTER TABLE — SQLite does not support parameterised column names).
+    _SESSION_COLS = {"purpose": "TEXT", "closed_at": "TEXT", "wiki_path": "TEXT"}
+    _MESSAGE_COLS = {"tags": "TEXT", "archived_at": "TEXT"}
+
     def _migrate_schema(self):
         """Add columns that may be missing from older DBs."""
         conn = self._get_conn()
         # Check and add columns to sessions
         cols = {r[1] for r in conn.execute("PRAGMA table_info(sessions)").fetchall()}
-        for col, dtype in [("purpose", "TEXT"), ("closed_at", "TEXT"), ("wiki_path", "TEXT")]:
+        for col, dtype in self._SESSION_COLS.items():
             if col not in cols:
                 conn.execute(f"ALTER TABLE sessions ADD COLUMN {col} {dtype}")
         # Check and add columns to messages
         cols = {r[1] for r in conn.execute("PRAGMA table_info(messages)").fetchall()}
-        for col, dtype in [("tags", "TEXT"), ("archived_at", "TEXT")]:
+        for col, dtype in self._MESSAGE_COLS.items():
             if col not in cols:
                 conn.execute(f"ALTER TABLE messages ADD COLUMN {col} {dtype}")
         conn.commit()
 
     def create_session(self, title="") -> str:
-        sid = str(uuid.uuid4())[:8]
         conn = self._get_conn()
+        # Avoid the (theoretical) collision risk of an 8-char UUID prefix
+        while True:
+            sid = str(uuid.uuid4())[:8]
+            existing = conn.execute(
+                "SELECT 1 FROM sessions WHERE id = ?", (sid,)
+            ).fetchone()
+            if not existing:
+                break
         conn.execute(
             "INSERT INTO sessions VALUES (?, ?, ?, NULL, NULL, NULL)",
             (sid, datetime.now().isoformat(), title)
@@ -139,7 +152,7 @@ class SessionDB:
             }
         return None
 
-    def save_message(self, session_id: str, role: str, content: str, tool_calls=None, tags: list = None):
+    def save_message(self, session_id: str, role: str, content: str, tool_calls: Optional[list] = None, tags: Optional[list] = None):
         conn = self._get_conn()
         tags_json = json.dumps(tags) if tags else None
         conn.execute(
@@ -148,7 +161,7 @@ class SessionDB:
         )
         conn.commit()
 
-    def get_messages(self, session_id: str, include_archived: bool = False, tags: list = None):
+    def get_messages(self, session_id: str, include_archived: bool = False, tags: Optional[list] = None):
         conn = self._get_conn()
         sql = "SELECT id, role, content, tool_calls, tags, archived_at, created_at FROM messages WHERE session_id = ?"
         params = [session_id]
@@ -243,7 +256,7 @@ class SessionDB:
         conn.commit()
         return cur.lastrowid
 
-    def list_todos(self, session_id: str, status: str = None):
+    def list_todos(self, session_id: str, status: Optional[str] = None):
         conn = self._get_conn()
         sql = "SELECT id, content, status, created_at FROM todos WHERE session_id = ?"
         params = [session_id]
@@ -267,7 +280,7 @@ class SessionDB:
         conn.commit()
 
     # ── Tasks ──
-    def add_task(self, session_id: str, content: str, assigned_to: str = None, priority: int = 0) -> int:
+    def add_task(self, session_id: str, content: str, assigned_to: Optional[str] = None, priority: int = 0) -> int:
         conn = self._get_conn()
         now = datetime.now().isoformat()
         cur = conn.execute(
@@ -277,7 +290,7 @@ class SessionDB:
         conn.commit()
         return cur.lastrowid
 
-    def list_tasks(self, session_id: str = None, status: str = None, assigned_to: str = None):
+    def list_tasks(self, session_id: Optional[str] = None, status: Optional[str] = None, assigned_to: Optional[str] = None):
         conn = self._get_conn()
         sql = "SELECT id, session_id, content, status, assigned_to, priority, created_at FROM tasks WHERE 1=1"
         params = []

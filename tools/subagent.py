@@ -63,11 +63,11 @@ def _run_single_agent(config: dict, messages: List[Dict]) -> str:
 def agent_delegate_task(
     goal: str,
     context: str = "",
-    tools: list = None,
-    model: str = None,
-    provider: str = None,
-    api_key: str = None,
-    base_url: str = None,
+    tools: Optional[list] = None,
+    model: Optional[str] = None,
+    provider: Optional[str] = None,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
     max_iterations: int = 10
 ) -> str:
     """Delegate an independent subtask to a child agent.
@@ -146,8 +146,8 @@ def agent_delegate_parallel(
 def agent_cross_validate(
     goal: str,
     context: str = "",
-    models: list = None,
-    tools: list = None,
+    models: Optional[list] = None,
+    tools: Optional[list] = None,
     judge: bool = True,
     max_iterations: int = 10
 ) -> str:

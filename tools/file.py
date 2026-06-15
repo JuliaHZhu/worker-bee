@@ -4,6 +4,10 @@ import re
 import shutil
 from pathlib import Path
 from worker_bee.registry import registry
+from worker_bee.safety import is_write_denied, is_self_modify_target
+
+# Re-export for backward-compat with tests
+_is_sensitive = is_write_denied
 
 
 # ── Snapshot / Rollback ─────────────────────────────────────────────
@@ -52,26 +56,6 @@ def fs_git_rollback(path: str) -> str:
 
 _WORKSPACE = os.environ.get("WORKER_BEE_WORKSPACE", str(Path.cwd().resolve()))
 
-# Sensitive paths that should never be written, and require confirmation to read.
-_SENSITIVE_PATTERNS = [
-    ".ssh/authorized_keys", ".ssh/id_", ".ssh/config",
-    ".env", ".bashrc", ".zshrc", ".profile",
-    "config.json", "state.db",
-    "/etc/passwd", "/etc/shadow", "/etc/sudoers",
-]
-
-
-def _is_sensitive(path: str) -> bool:
-    p = Path(path).as_posix()
-    basename = p.split("/")[-1]
-    for pat in _SENSITIVE_PATTERNS:
-        if pat in p:
-            # 精确文件名例外：短模式必须精确匹配文件名，避免误杀 my.env.py
-            if pat in (".env", ".bashrc", ".zshrc", ".profile") and basename != pat:
-                continue
-            return True
-    return False
-
 
 def _is_inside_workspace(path: str) -> bool:
     """Return True if path resolves inside the configured workspace."""
@@ -97,8 +81,15 @@ def _guard_path(path: str, write: bool = False) -> str:
             f"Target: {p} | Workspace: {_WORKSPACE}"
         )
 
-    if write and _is_sensitive(str(p)):
+    if write and is_write_denied(str(p)):
         return f"Error: writing to sensitive path disallowed: {p}"
+
+    if write and is_self_modify_target(str(p)):
+        return (
+            f"Error: self-modification blocked. "
+            f"Writing to worker-bee source code is disallowed. "
+            f"Set WORKER_BEE_ALLOW_SELF_MODIFY=true to override."
+        )
 
     return ""
 
@@ -147,7 +138,7 @@ def fs_search_files(pattern: str, path: str = ".", file_glob: str = "*") -> str:
             if not fnmatch.fnmatch(f, file_glob):
                 continue
             fp = os.path.join(root, f)
-            if _is_sensitive(fp):
+            if is_write_denied(fp):
                 continue
             try:
                 content = Path(fp).read_text(encoding="utf-8", errors="replace")

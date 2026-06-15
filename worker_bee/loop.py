@@ -10,13 +10,23 @@ from worker_bee.registry import registry
 
 
 def _trim_messages(messages, max_len=60):
-    """Crude context trim: drop oldest full turn(s) from head."""
+    """Drop oldest full turn(s) from head. Never orphan tool_calls."""
     while len(messages) > max_len:
         i = 0
         while i < len(messages) and messages[i].get("role") == "system":
             i += 1
         if i >= len(messages):
             break
+
+        # The first non-system message MUST be a user message to form a
+        # deletable turn. If it's assistant/tool, skip forward to the next
+        # user so we don't split a turn in half.
+        if messages[i].get("role") != "user":
+            while i < len(messages) and messages[i].get("role") != "user":
+                i += 1
+            if i >= len(messages):
+                break
+
         j = i + 1
         while j < len(messages) and messages[j].get("role") != "user":
             j += 1

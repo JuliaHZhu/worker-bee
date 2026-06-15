@@ -87,7 +87,7 @@ class AnthropicProtocol(Protocol):
                         "type": "tool_use",
                         "id": tc.get("id", tc.get("tool_use_id", "")),
                         "name": tc.get("name", tc.get("function", {}).get("name", "")),
-                        "input": tc.get("input") or tc.get("function", {}).get("arguments", {}) or tc.get("arguments", {}),
+                        "input": tc["input"] if tc.get("input") is not None else tc.get("function", {}).get("arguments", {}) or tc.get("arguments", {}),
                     })
                 api_msgs.append({"role": "assistant", "content": blocks})
             else:

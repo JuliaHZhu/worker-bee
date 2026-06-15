@@ -368,8 +368,8 @@ def _swarm_listen(args):
 
     nats_url = args.url or os.environ.get("SWARM_NATS_URL", "nats://localhost:4222")
     print(f"[wb swarm listen] Starting listener → {nats_url}")
-    print(f"[wb swarm listen] Writing messages to ~/.worker-bee/mailbox/inbox/")
-    print(f"[wb swarm listen] Press Ctrl+C to stop")
+    print("[wb swarm listen] Writing messages to ~/.worker-bee/mailbox/inbox/")
+    print("[wb swarm listen] Press Ctrl+C to stop")
     sys.stdout.flush()
 
     try:
@@ -408,7 +408,7 @@ def _swarm_status(args):
         unread = len(list(inbox.glob("*.json")))
         print(f"📬 Mailbox: {unread} unread, inbox={inbox}")
     else:
-        print(f"📭 Mailbox: not initialized (no messages yet)")
+        print("📭 Mailbox: not initialized (no messages yet)")
 
     # Check if listener process is running
     import subprocess
@@ -419,7 +419,7 @@ def _swarm_status(args):
     if result.stdout.strip():
         print(f"🟢 Listener: running (PID {result.stdout.strip().split()[0]})")
     else:
-        print(f"🔴 Listener: not running (start with: wb swarm listen)")
+        print("🔴 Listener: not running (start with: wb swarm listen)")
 
 
 def _add_swarm_parser(sub):

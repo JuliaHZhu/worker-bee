@@ -567,7 +567,6 @@ def create_job(
         "workdir": normalized_workdir,
     }
 
-    jobs = load_jobs()
     with _cross_process_lock():
         jobs = load_jobs()
         jobs.append(job)

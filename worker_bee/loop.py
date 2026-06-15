@@ -98,9 +98,12 @@ def run_conversation(
                 dt = (time.time() - t0) * 1000
                 log_tool_call(tc["name"], tc["arguments"], tool_result, dt, error=False)
             except Exception as e:
-                tool_result = f"Tool error: {e}"
+                # Log detailed error internally; return generic message to LLM
+                # to prevent information leakage via exception strings.
+                _err_detail = f"Tool error: {e}"
                 dt = (time.time() - t0) * 1000
-                log_tool_call(tc["name"], tc["arguments"], tool_result, dt, error=True)
+                log_tool_call(tc["name"], tc["arguments"], _err_detail, dt, error=True)
+                tool_result = "Tool execution failed. Please check your request and try again."
             tool_msg = {
                 "role": "tool",
                 "tool_call_id": tc["id"],

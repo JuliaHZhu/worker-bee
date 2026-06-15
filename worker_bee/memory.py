@@ -101,14 +101,19 @@ class SessionDB:
 
     def create_session(self, title="") -> str:
         conn = self._get_conn()
-        # Avoid the (theoretical) collision risk of an 8-char UUID prefix
-        while True:
+        # Avoid the (theoretical) collision risk of an 8-char UUID prefix.
+        # Max 10 attempts — collisions are vanishingly rare; bounding the loop
+        # prevents a theoretical infinite loop.
+        for _ in range(10):
             sid = str(uuid.uuid4())[:8]
             existing = conn.execute(
                 "SELECT 1 FROM sessions WHERE id = ?", (sid,)
             ).fetchone()
             if not existing:
                 break
+        else:
+            # After 10 collisions, fall back to full UUID
+            sid = str(uuid.uuid4())
         conn.execute(
             "INSERT INTO sessions VALUES (?, ?, ?, NULL, NULL, NULL)",
             (sid, datetime.now().isoformat(), title)

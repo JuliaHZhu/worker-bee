@@ -16,6 +16,9 @@ def _make_agent_config(
     system_prompt: str = "",
 ) -> dict:
     """Build an AIAgent config dict, falling back to environment variables."""
+    # Basic api_key validation when explicitly provided
+    if api_key is not None and (not api_key or not api_key.strip()):
+        raise ValueError("Invalid api_key: must be a non-empty string")
     # Provider resolution
     prov = provider or os.environ.get("LITE_PROVIDER", "anthropic")
     # API key resolution — try provider-specific env vars first

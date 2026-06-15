@@ -5,8 +5,10 @@ All protocol details (message format, API call shape, response extraction)
 are handled by the Protocol object passed in.
 """
 from typing import Dict, List, Optional
+import time
 
 from worker_bee.registry import registry
+from worker_bee.audit import log_tool_call
 
 
 def _trim_messages(messages, max_len=60):
@@ -90,7 +92,15 @@ def run_conversation(
 
         # ── execute tools ───────────────────────────────────────────
         for tc in result["tool_calls"]:
-            tool_result = registry.call(tc["name"], tc["arguments"])
+            t0 = time.time()
+            try:
+                tool_result = registry.call(tc["name"], tc["arguments"])
+                dt = (time.time() - t0) * 1000
+                log_tool_call(tc["name"], tc["arguments"], tool_result, dt, error=False)
+            except Exception as e:
+                tool_result = f"Tool error: {e}"
+                dt = (time.time() - t0) * 1000
+                log_tool_call(tc["name"], tc["arguments"], tool_result, dt, error=True)
             tool_msg = {
                 "role": "tool",
                 "tool_call_id": tc["id"],

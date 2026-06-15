@@ -37,9 +37,6 @@ _BASENAME_EXACT: frozenset[str] = frozenset({
     ".bashrc", ".zshrc", ".profile",
 })
 
-_WRITE_SAFE_ROOT = os.environ.get("WORKER_BEE_WRITE_SAFE_ROOT", "").strip()
-
-
 def is_write_denied(path: str) -> bool:
     """Return True if *path* must never be written to."""
     expanded = Path(path).expanduser().resolve()

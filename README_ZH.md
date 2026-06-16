@@ -6,9 +6,9 @@
 
 ## 一句话
 
-**Worker Bee = Hermes Lite 内核 + 群体扩展层。**
+**Worker Bee = Hermes Lite 内核 + 蜂群扩展层。**
 
-保持相同的极简架构——注册表、Deck、协议抽象、协议无关循环——在此基础上增加了真正需要的东西：session、定时任务、标签、平台感知、NATS 蜂群通信、skill 生态。
+保持相同的极简架构 —— 注册表、Deck、协议抽象、协议无关循环 —— 在此基础上增加了真正需要的东西：session、定时任务、标签、平台感知、NATS 蜂群通信、skill 生态。
 
 不需要 Symphony，不需要多 Agent 编排，不需要 daemon。Agent 自己读板、自己派活、自己留下信息素。人随时打开文件就能看到全貌。
 
@@ -20,7 +20,7 @@
 
 Worker Bee 的假设不同：
 
-> **Agent 自己就是 dispatcher。** Deck 架构已经解决了工具分发——每次任务只暴露相关的工具。Agent 不需要"被调度"，它只需要"被激活"。
+> **Agent 自己就是 dispatcher。** Deck 架构已经解决了工具分发 —— 每次任务只暴露相关的工具。Agent 不需要"被调度"，它只需要"被激活"。
 
 ```
 用户说 "抽球"
@@ -35,7 +35,105 @@ Deck 加载抽球工具
 Agent 抽球 -> 汇报 -> 停止
 ```
 
-Agent 一次只做一件事，但**一件事可以很复杂**——读多个 job、评估质量、生成报告。复杂不等于需要多个 agent。
+Agent 一次只做一件事，但**一件事可以很复杂** —— 读多个 job、评估质量、生成报告。复杂不等于需要多个 agent。
+
+---
+
+## 架构：五层工厂
+
+把 Worker Bee 想象成一座五层工厂。每层只做一件事，原料（数据）从下往上流。Agent 住在顶层，它从不操心地下室发生了什么。
+
+```
++------------------------------------------+
+|  五层：蜂群装备                          |
+|  - NATS 消息总线（跨机器说话）            |
+|  - Cron 调度器（后台探头）                |
+|  - Job Probe（jobs/ 的巡逻兵）            |
+|  - SessionDB（SQLite 持久化）             |
++------------------------------------------+
+|  四层：Agent 外壳                        |
+|  - 配置加载器（~/.worker-bee/）           |
+|  - Schema 缓存 + agent.md/soul.md 注入   |
++------------------------------------------+
+|  三层：协议内核（Hermes Lite）            |
+|  - protocols.py（Anthropic / OpenAI）     |
+|  - loop.py（协议无关对话循环）            |
++------------------------------------------+
+|  二层：工具边界（Deck + Registry）        |
+|  - registry.py（线程安全工具仓库）        |
+|  - deck.py（运行时工具边界）              |
+|  - skills.py（Markdown 技能匹配引擎）     |
++------------------------------------------+
+|  一层：工具实现                          |
+|  - lark.py, file.py, terminal.py, ...    |
+|  - 导入即注册。零配置。                   |
++------------------------------------------+
+```
+
+**这意味着什么**：如果 Hermes Lite 修复了协议 bug 或新增了一个 provider，Worker Bee 只要复制 `protocols.py` 和 `loop.py` 就能白嫖。零合并冲突，零漂移。
+
+---
+
+## 一次请求的生命周期
+
+假设你说：**"发给张三 project 上线了"**
+
+```
+用户输入："发给张三 project 上线了"
+    │
+    ▼
+┌─────────────────┐
+│ skills.py       │  trigger 匹配："发给"命中 lark-messaging skill
+│ （匹配引擎）     │  "张三"也可能命中 lark-contact
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ deck.py         │  采购（Procure）：把 skill 声明的工具压进 Deck
+│ （工具边界）     │  lark-messaging 声明：[feishu_lark]
+│                 │  + 3 个冗余基础工具（读文件、搜文件、执行 shell）
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ loop.py         │  进入对话循环。LLM 只能看到 Deck 里的工具
+│ （对话循环）     │  看不到 cronjob，看不到 swarm_publish
+│                 │  只能看到 feishu_lark + 文件操作
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ registry.py     │  LLM 说："用 feishu_lark 执行 contact +search-user --query 张三"
+│ （工具分发）     │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ tools/lark.py   │  薄执行层：subprocess.run(["lark-cli", ...])
+│ （执行引擎）     │  安全门：lark_allow_write？读操作直接过，写操作要开关
+└────────┬────────┘
+         │
+         ▼
+    返回结果 -> loop 塞回上下文 -> 继续循环或直接结束
+```
+
+**关键洞察**：Deck 是运行时边界。LLM 不可能幻觉出 Deck 里没有的工具。如果一个 skill 没有声明 `swarm_publish`，agent 字面意义上无法调用它 —— 不是因为权限错误，而是因为当前上下文中这个工具根本不存在。
+
+---
+
+## Skill / Tool / CLI：三层，零重叠
+
+Worker Bee 强制职责分离。最近的例子是 Lark（飞书）集成：
+
+| 层级 | 文件 | 职责 | 举例 |
+|------|------|------|------|
+| **Skill** | `skills/lark-*.md` | **WHEN / HOW / WHAT-TO-AVOID** —— 教 agent 决策流、边界、反模式 | "发送前先确认目标。对人名，先搜索再匹配；禁止猜 ID。" |
+| **Tool** | `tools/lark.py` | **薄执行** —— 安全调用 `lark-cli`。一个布尔门 (`lark_allow_write`) | `subprocess.run(["lark-cli", "im", "+messages-send", ...])` |
+| **CLI** | `cli.py` | **人类捷径** —— 绕过 agent 循环直接执行 | `wb lark send "张三" "上线了"` |
+
+**Skill 从不教命令语法**（那是 Tool schema 的事）。**Tool 从不教决策逻辑**（那是 Skill 的事）。**CLI 是给人类用的，不是给 agent 用的**。
+
+核心公理：**Skill = 推理手册。Tool = 执行引擎。零重复。**
 
 ---
 
@@ -84,6 +182,12 @@ wb todo complete morning
 # 蜂群
 wb swarm status
 wb swarm listen
+
+# 飞书 Lark
+wb lark who                 # 显示我的身份
+wb lark chats               # 列出最近会话
+wb lark send "张三" "上线了"  # 按人名发消息
+wb lark inbox --from 张三   # 拉取最近消息
 ```
 
 ---
@@ -94,23 +198,27 @@ wb swarm listen
 worker-bee/
 ├─── worker_bee/           # 核心 agent + CLI
 │   ├─── main.py           # CLI 入口（setup / ping / session / lark）
-│   ├─── cli.py            # wb 命令行接口（job + todo + swarm）
+│   ├─── cli.py            # wb 命令行接口（job + todo + swarm + lark）
 │   ├─── agent.py          # Agent 外壳（配置、schema 缓存、agent.md/soul.md 注入）
 │   ├─── loop.py           # 协议无关运行循环（Hermes 内核）
 │   ├─── protocols.py      # Anthropic / OpenAI 协议适配（Hermes 内核）
-│   ├─── registry.py       # 工具注册表
+│   ├─── registry.py       # 工具注册表（线程安全、LRU 缓存、generation counter）
 │   ├─── deck.py           # 工具边界（Deck 装填）
-│   ├─── skills.py         # Skill 匹配引擎
+│   ├─── skills.py         # Skill 匹配引擎（Markdown 契约、trigger 匹配）
 │   ├─── memory.py         # Session DB（SQLite，持久化）
 │   ├─── infra_toolsets.py # 平台检测（Linux / 飞书 / Discord）
 │   ├─── lark_cli.py       # 独立飞书 Lark Bot（HTTP webhook）
 │   └─── skills/           # Markdown skill 契约
+│       ├─── lark-contact.md
+│       ├─── lark-messaging.md
+│       ├─── lark-drive.md
 │       ├─── code-review.md
 │       ├─── todo-ball-machine.md
 │       ├─── swarm-send.md
 │       ├─── swarm-receive.md
 │       └─── ...
 ├─── tools/                # 工具实现（自动注册到 registry）
+│   ├─── lark.py           # 飞书 Lark CLI 封装（feishu_lark 工具）
 │   ├─── send_message.py   # 飞书 App Bot API / Webhook / Discord
 │   ├─── terminal.py       # 执行 shell 命令
 │   ├─── file.py           # 读写/搜索文件
@@ -206,7 +314,7 @@ updated: 2026-05-24T14:55:00Z
 每个 job 天然包含：
 
 | 要素 | 字段 | 含义 |
-|---------|-------|---------|
+|------|------|------|
 | **What** | `title` + `description` + `skills` | 任务内容和所需能力 |
 | **Who** | `owner` + `reviewer` | 责任链：谁执行，谁确认 |
 | **Deliverables** | `deliverables` checklist | 交付什么产出物 |
@@ -221,7 +329,7 @@ created → confirmed → planned → executing → self_checked → reviewed �
 ```
 
 | Phase | 意思 | 谁确认 | 产出 |
-|-------|------|---------|------|
+|-------|------|--------|------|
 | `created` | 刚创建 | 系统 | job 文件 |
 | `confirmed` | 责任人确认理解 | owner | 理解摘要 |
 | `planned` | 方案提交并通过 | reviewer | 方案批准 |
@@ -254,8 +362,11 @@ created → confirmed → planned → executing → self_checked → reviewed �
 有。这些是现有的 skill，都走同一套 Deck 架构：
 
 | Skill | 做什么 | Trigger |
-|-------|---------|---------|
+|-------|--------|---------|
 | **todo-ball-machine** | 人生任务抽球系统 | 抽球、场次 |
+| **lark-contact** | 人名/群名→ID 解析 | 找人、找群、search user |
+| **lark-messaging** | 收发消息 | 发消息、发送、通知、私信、inbox |
+| **lark-drive** | 上传/下载/分享文件 | 上传、下载、文件、附件 |
 | **code-review** | 代码审查 | code review |
 | **job-status** | Job board 监控 | job, status |
 | **job-handoff** | 导出 job 状态以保持连续性 | handoff |
@@ -271,7 +382,7 @@ created → confirmed → planned → executing → self_checked → reviewed �
 
 ## `wb` CLI
 
-`wb` 是直接命令行接口——不走 agent 循环，不占上下文窗口，直接执行：
+`wb` 是直接命令行接口 —— 不走 agent 循环，不占上下文窗口，直接执行：
 
 ```bash
 # Job probe 命令
@@ -299,6 +410,12 @@ wb todo new-cycle [name]
 # 蜂群命令
 wb swarm status
 wb swarm listen
+
+# 飞书命令
+wb lark who
+wb lark chats
+wb lark send "张三" "上线了"
+wb lark inbox --from 张三 --limit 10
 ```
 
 `wb` 和交互式 `worker-bee` 共享同一个 `jobs/` 目录和 `state.db`。自动化用 `wb`，开放交流用 `worker-bee`。
@@ -328,7 +445,7 @@ Skill 响应 probe 状态：
 
 ## 蜂群通信（NATS）
 
-不同服务器上的 Worker Bee 通过 NATS 通信——一个轻量的 pub/sub 消息总线。每台 bee 连接本地的 NATS server；多台 server 组成集群，消息自动跨服务器路由。
+不同服务器上的 Worker Bee 通过 NATS 通信 —— 一个轻量的 pub/sub 消息总线。每台 bee 连接本地的 NATS server；多台 server 组成集群，消息自动跨服务器路由。
 
 ```
 Agent 说 "通知蜂群 deck 构建完成"
@@ -350,7 +467,7 @@ Agent 说 "查收件箱" → swarm-receive skill → 读 mailbox → 分类处�
 - **接收**：后台 `swarm/listener.py` 订阅 NATS → 写入 `~/.worker-bee/mailbox/inbox/`
 - **CLI**：`wb swarm status`（检查状态）、`wb swarm listen`（启动监听）
 
-Agent 不直接 subscribe NATS。它读 mailbox——和 Job Board 一样：所有状态在文件里。
+Agent 不直接 subscribe NATS。它读 mailbox —— 和 Job Board 一样：所有状态在文件里。
 
 ---
 
@@ -377,19 +494,11 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 
 ---
 
-## 专业化 Fork
+## 设计笔记
 
-换 skill + 外源信息素格式，把 Worker Bee 变成领域专用工具：
+Aristotle Bee、Architecture Bee、Project Manager Bee、WorldBee 等历史 fork 概念，以及完整的 agent 生态系统设计，均存档于 `design_notes/` 。它们说明了同一个内核如何穿上不同的 skill 外衣。
 
-| Fork | Skill | 信息素格式 | 作用 |
-|------|-------|----------|------|
-| **Aristotle Bee** | aristotle | `dict/*.md` | 术语守护 — 查词典、检测漂移 |
-| **Architecture Bee** | architect | `arch/*.md` | 结构规约 — 目标 → 不可再分约束 |
-| **Project Manager Bee** | project-manager | `pm/*.md` | 编排优化 — 模板先行、留白交付 |
-
-所有 fork 共享同一套核心，只有 skill 和数据格式不同。
-
-设计文档见 `design_notes/` 。
+操作规范（信息素格式、mechanism vs task skill 区别）见 `design_notes/exogenous-pheromone-formats.md`。
 
 ---
 
@@ -403,12 +512,13 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 | **Append-Only** | 事件流不可覆盖，历史不丢 |
 | **Deck 裁剪** | 每次任务只暴露相关工具，不越界 |
 | **关卡驱动** | 任务不是"Todo→Done"，是 7 个确认节点 |
+| **Skill ≠ Tool** | Skill = 推理手册（WHEN/HOW/WHAT to avoid）。Tool = 薄执行引擎。零重复。 |
 
 ---
 
 ## 自定义 Agent（agent.md + soul.md）
 
-想改变 Agent 的行为？写两个 Markdown 文件就行——不需要改代码。
+想改变 Agent 的行为？写两个 Markdown 文件就行 —— 不需要改代码。
 
 ```
 ~/.worker-bee/
@@ -442,14 +552,6 @@ self.system_prompt = f"{base_prompt}{injection}"
 ```
 
 **一句话**：改文件 → Agent 行为就变了。不需要重启，不需要改配置，不需要改代码。
-
----
-
-## 设计笔记
-
-Aristotle Bee、Architecture Bee、Project Manager Bee、WorldBee 等历史 fork 概念，以及完整的 agent 生态系统设计，均存档于 `design_notes/` 。它们说明了同一个内核如何穿上不同的 skill 外衣。
-
-操作规范（信息素格式、mechanism vs task skill 区别）见 `design_notes/exogenous-pheromone-formats.md`。
 
 ---
 

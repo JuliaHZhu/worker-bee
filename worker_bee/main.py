@@ -692,14 +692,6 @@ def _make_handoff(messages) -> str:
 
 
 def main():
-    # Lark subcommand bypasses worker-bee argparse
-    if len(sys.argv) > 1 and sys.argv[1] == "lark":
-        from worker_bee.lark_cli import main as lark_main
-        # Strip 'lark' so lark_cli argparse sees only its own flags
-        sys.argv = [sys.argv[0]] + sys.argv[2:]
-        lark_main()
-        return
-
     parser = argparse.ArgumentParser(
         prog="worker-bee",
         description="Lightweight AI agent with tool access.",
@@ -726,7 +718,6 @@ Usage:
   worker-bee setup              Configure API key and model
   worker-bee config             Show current config
   worker-bee config key value   Update a config value
-  worker-bee lark               Start Feishu Lark bot (webhook server)
   worker-bee -m "hello"         Quick model connectivity test
   worker-bee -c "hello"         Quick channel connectivity test
   worker-bee -t 0.5             Start session with temperature override
@@ -746,12 +737,6 @@ Interactive commands:
   /todo     Manage todos
   /history  Show recent messages
   /export   Export session summary to markdown
-
-Lark bot env:
-  export FEISHU_APP_ID=cli_xxx
-  export FEISHU_APP_SECRET=xxx
-  export FEISHU_VERIFICATION_TOKEN=xxx
-  worker-bee lark --port 8080
 """)
         return
 

@@ -651,6 +651,16 @@ def _add_lark_parser(sub):
     p.add_argument("--limit", type=int, default=20, help="Max messages (default: 20)")
     p.set_defaults(func=_lark_inbox)
 
+    p = lark_sub.add_parser("serve", help="Start Feishu Lark webhook bot server")
+    p.add_argument("--port", type=int, default=8080, help="Webhook server port (default: 8080)")
+    p.set_defaults(func=_lark_serve)
+
+
+def _lark_serve(args):
+    """Start the Feishu Lark webhook server."""
+    from worker_bee.lark_cli import run_server
+    run_server(port=args.port)
+
 
 # ---------------------------------------------------------------------------
 # Main
@@ -671,6 +681,8 @@ def main(argv=None):
             "  wb todo quick\n"
             "  wb todo stats 14\n"
             "  wb workspace\n"
+            "  wb swarm listen\n"
+            "  wb lark serve --port 8080\n"
             "  wb lark who 张三\n"
             "  wb lark chats\n"
             "  wb lark send --to 张三 hello\n"

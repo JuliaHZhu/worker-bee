@@ -36,7 +36,7 @@ _REPO_ROOT = Path(__file__).parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-_LARK_CLI = shutil.which("lark-cli") or "lark-cli"
+_LARK_CLI = shutil.which("lark-cli") or str(Path.home() / ".local" / "bin" / "lark-cli")
 
 
 # ---------------------------------------------------------------------------
@@ -502,7 +502,18 @@ def _lark_chats(args):
 
 def _lark_send(args):
     """Send a message — resolves name to ID automatically."""
-    import subprocess, json
+    import json, subprocess
+
+    # Check write permission (same gate as tools/lark.py)
+    config_path = Path.home() / ".worker-bee" / "config.json"
+    try:
+        cfg = json.loads(config_path.read_text())
+        if not cfg.get("lark_allow_write", False):
+            print("Write operations are disabled. Enable with: wb setup → lark_allow_write: true")
+            return
+    except (FileNotFoundError, json.JSONDecodeError):
+        print("Write operations are disabled (no config or invalid). Run: wb setup")
+        return
 
     if args.group:
         # Resolve group name

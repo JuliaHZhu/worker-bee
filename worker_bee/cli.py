@@ -27,6 +27,7 @@ Usage:
 """
 
 import argparse
+import shutil
 import sys
 from pathlib import Path
 
@@ -34,6 +35,8 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
+
+_LARK_CLI = shutil.which("lark-cli") or "lark-cli"
 
 
 # ---------------------------------------------------------------------------
@@ -454,7 +457,7 @@ def _lark_who(args):
     """Resolve a contact name to open_id."""
     import subprocess, json
     result = subprocess.run(
-        ["lark-cli", "contact", "+search-user", "--query", args.name],
+        [_LARK_CLI, "contact", "+search-user", "--query", args.name],
         capture_output=True, text=True, timeout=10,
     )
     try:
@@ -477,9 +480,9 @@ def _lark_who(args):
 def _lark_chats(args):
     """List or search group chats."""
     import subprocess, json
-    cmd = ["lark-cli", "im", "+chat-list"]
+    cmd = [_LARK_CLI, "im", "+chat-list"]
     if args.query:
-        cmd = ["lark-cli", "im", "+chat-search", "--query", args.query]
+        cmd = [_LARK_CLI, "im", "+chat-search", "--query", args.query]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
     try:
         data = json.loads(result.stdout)
@@ -504,7 +507,7 @@ def _lark_send(args):
     if args.group:
         # Resolve group name
         r = subprocess.run(
-            ["lark-cli", "im", "+chat-search", "--query", args.group],
+            [_LARK_CLI, "im", "+chat-search", "--query", args.group],
             capture_output=True, text=True, timeout=10,
         )
         try:
@@ -527,11 +530,14 @@ def _lark_send(args):
         cid = chat["chat_id"]
         name = chat.get("name", args.group)
         text = " ".join(args.msg) if isinstance(args.msg, list) else (args.msg or "")
-        cmd = ["lark-cli", "im", "+messages-send", "--chat-id", cid, "--text", text]
+        if not text.strip():
+            print("Message is empty. Usage: wb lark send --group <name> <message text>")
+            return
+        cmd = [_LARK_CLI, "im", "+messages-send", "--chat-id", cid, "--text", text]
     elif args.to:
         # Resolve user name
         r = subprocess.run(
-            ["lark-cli", "contact", "+search-user", "--query", args.to],
+            [_LARK_CLI, "contact", "+search-user", "--query", args.to],
             capture_output=True, text=True, timeout=10,
         )
         try:
@@ -554,7 +560,10 @@ def _lark_send(args):
         uid = user.get("open_id", user.get("user_id"))
         uname = user.get("name", args.to)
         text = " ".join(args.msg) if isinstance(args.msg, list) else (args.msg or "")
-        cmd = ["lark-cli", "im", "+messages-send", "--user-id", uid, "--text", text]
+        if not text.strip():
+            print("Message is empty. Usage: wb lark send --to <name> <message text>")
+            return
+        cmd = [_LARK_CLI, "im", "+messages-send", "--user-id", uid, "--text", text]
         name = uname
     else:
         print("Specify --to <name> or --group <name>")
@@ -579,7 +588,7 @@ def _lark_inbox(args):
 
     if args.group:
         r = subprocess.run(
-            ["lark-cli", "im", "+chat-search", "--query", args.group],
+            [_LARK_CLI, "im", "+chat-search", "--query", args.group],
             capture_output=True, text=True, timeout=10,
         )
         try:
@@ -601,10 +610,10 @@ def _lark_inbox(args):
             return
         cid = chat["chat_id"]
         label = chat.get("name", args.group)
-        cmd = ["lark-cli", "im", "+chat-messages-list", "--chat-id", cid, "--limit", str(args.limit)]
+        cmd = [_LARK_CLI, "im", "+chat-messages-list", "--chat-id", cid, "--limit", str(args.limit)]
     elif args.from_user:
         r = subprocess.run(
-            ["lark-cli", "contact", "+search-user", "--query", args.from_user],
+            [_LARK_CLI, "contact", "+search-user", "--query", args.from_user],
             capture_output=True, text=True, timeout=10,
         )
         try:
@@ -626,7 +635,7 @@ def _lark_inbox(args):
             return
         uid = user.get("open_id", user.get("user_id"))
         label = user.get("name", args.from_user)
-        cmd = ["lark-cli", "im", "+chat-messages-list", "--user-id", uid, "--limit", str(args.limit)]
+        cmd = [_LARK_CLI, "im", "+chat-messages-list", "--user-id", uid, "--limit", str(args.limit)]
     else:
         print("Specify --from <name> or --group <name>")
         return

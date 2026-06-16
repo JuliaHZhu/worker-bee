@@ -8,12 +8,11 @@ from __future__ import annotations
 
 import json
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 
 from worker_bee.registry import registry
-
-import shutil
 
 _LARK_CLI = shutil.which("lark-cli") or str(Path.home() / ".local" / "bin" / "lark-cli")
 _CONFIG = Path.home() / ".worker-bee" / "config.json"

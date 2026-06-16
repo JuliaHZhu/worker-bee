@@ -147,7 +147,13 @@ def setup():
     except ValueError:
         temperature = 0.0
 
+    # Lark / Feishu write permission
+    print()
+    lark_write = input("Allow lark-cli write operations? (send messages, upload files, edit docs) [y/N]: ").strip().lower()
+    lark_allow_write = lark_write == "y"
+
     config = _make_config(provider, model, key, base, temperature=temperature)
+    config["lark_allow_write"] = lark_allow_write
     path = get_config_path()
     with open(path, "w") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)

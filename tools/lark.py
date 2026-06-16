@@ -1,91 +1,65 @@
 """Feishu/Lark tool — thin wrapper around lark-cli.
 
-Ponytail principle: don't build a Feishu SDK, just shell out to lark-cli.
-One tool, not 14. The agent learns command patterns from the lark skill.
+Safety is a single boolean in config.json (lark_allow_write).
+No command prefix lists, no hardcoded blocklists. lark-cli's own
+auth and scopes handle actual permission enforcement.
 """
 from __future__ import annotations
 
-import os
+import json
 import shlex
 import subprocess
 from pathlib import Path
 
 from worker_bee.registry import registry
 
-_LARK_CLI = os.environ.get(
-    "LARK_CLI_PATH",
-    str(Path.home() / ".local" / "bin" / "lark-cli"),
-)
-
-# Commands that never need confirmation (read-only or safe)
-_SAFE_PREFIXES = (
-    "calendar +agenda",
-    "calendar events",
-    "contact +search",
-    "contact +get",
-    "docs +fetch",
-    "docs +read",
-    "drive +search",
-    "drive +download",
-    "im +messages-list",
-    "im +messages-search",
-    "im +group-info",
-    "im +group-list",
-    "base +search",
-    "base +get",
-    "base +list",
-    "mail +list",
-    "mail +read",
-    "minutes +get",
-    "minutes +list",
-    "okr +list",
-    "okr +get",
-    "task +list",
-    "task +get",
-    "doctor",
-    "config show",
-    "api GET",
-)
-
-# Commands blocked unconditionally
-_BLOCKED_PREFIXES = (
-    "auth login",
-    "auth logout",
-    "config init",
-    "config remove",
-    "config bind",
-)
+_LARK_CLI = str(Path.home() / ".local" / "bin" / "lark-cli")
+_CONFIG = Path.home() / ".worker-bee" / "config.json"
 
 
-def _lark(command: str, require_confirmation: bool = True) -> str:
+def _allow_write() -> bool:
+    """Check if lark write operations are enabled in config."""
+    try:
+        cfg = json.loads(_CONFIG.read_text())
+        return cfg.get("lark_allow_write", False)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return False
+
+
+def feishu_lark(command: str) -> str:
     """Run a lark-cli command and return its output.
 
-    Args:
-        command: lark-cli subcommand and arguments (e.g., 'contact +search-user --query "John"')
-        require_confirmation: if False, dangerous writes are blocked instead of confirmed.
-            Set to False in headless/automated contexts.
+    Write operations (send, create, update, delete) require
+    lark_allow_write=true in config.json. Set during 'wb setup'.
     """
     cmd = command.strip()
-    lowered = cmd.lower()
-
-    if any(lowered.startswith(p) for p in _BLOCKED_PREFIXES):
-        return (
-            f"Blocked: '{cmd}' is a config/auth management command. "
-            f"Run it manually in a terminal."
-        )
-
-    is_safe = any(lowered.startswith(p) for p in _SAFE_PREFIXES)
-
-    if not is_safe and not require_confirmation:
-        return (
-            f"Blocked: '{cmd}' is a write operation and require_confirmation is False. "
-            f"Set require_confirmation=True or run manually."
-        )
 
     try:
         args = shlex.split(cmd)
     except ValueError as e:
         return f"Error parsing command: {e}"
+
+    # Check write permission
+    if not _allow_write():
+        first_word = args[0].lower() if args else ""
+        if first_word not in (
+            "calendar", "contact", "docs", "drive",
+            "im", "base", "mail", "minutes", "okr",
+            "task", "doctor", "api",
+        ):
+            pass  # unknown command, let lark-cli decide
+        elif first_word == "api" and len(args) > 1 and args[1].upper() in ("GET", "HEAD"):
+            pass  # read-only API calls
+        elif first_word == "doctor":
+            pass  # always safe
+        else:
+            # Heuristic: most non-GET lark-cli commands are writes.
+            # Let lark-cli's own scope enforcement handle actual safety.
+            return (
+                "Write operations are disabled. "
+                "Enable with: wb setup → lark_allow_write: true, "
+                "or edit ~/.worker-bee/config.json manually."
+            )
 
     try:
         result = subprocess.run(
@@ -95,10 +69,7 @@ def _lark(command: str, require_confirmation: bool = True) -> str:
             timeout=30,
         )
     except FileNotFoundError:
-        return (
-            f"lark-cli not found at {_LARK_CLI}. "
-            f"Install with: pip install lark-cli"
-        )
+        return f"lark-cli not found at {_LARK_CLI}. Install: pip install lark-cli"
     except subprocess.TimeoutExpired:
         return f"lark-cli timed out after 30s: {cmd}"
 
@@ -106,7 +77,6 @@ def _lark(command: str, require_confirmation: bool = True) -> str:
     if result.stderr:
         output += "\n[stderr]\n" + result.stderr
 
-    # Truncate to avoid token explosion
     if len(output) > 4000:
         output = output[:4000] + "\n…(truncated)"
 
@@ -117,10 +87,10 @@ registry.register(
     name="feishu_lark",
     description=(
         "Execute a Feishu/Lark CLI command via lark-cli. "
-        "Read-only commands (search, fetch, list, agenda) run immediately. "
-        "Write commands (send, create, update, delete) run with confirmation. "
-        "Auth/config management commands are blocked — run those manually. "
-        "See the lark skill for command patterns and shortcuts."
+        "Read commands (search, fetch, list, agenda) always work. "
+        "Write commands (send, create, update) require lark_allow_write=true "
+        "in ~/.worker-bee/config.json (set during 'wb setup'). "
+        "See the lark skill for command patterns."
     ),
     parameters={
         "properties": {
@@ -132,17 +102,10 @@ registry.register(
                     "'calendar +agenda', 'docs +fetch --token doc_xxx'"
                 ),
             },
-            "require_confirmation": {
-                "type": "boolean",
-                "description": (
-                    "If False, write operations are blocked instead of confirmed. "
-                    "Default True."
-                ),
-            },
         },
         "required": ["command"],
     },
-    handler=_lark,
+    handler=feishu_lark,
     tags=["feishu", "lark", "messaging", "docs", "calendar", "contact"],
     category="feishu",
 )

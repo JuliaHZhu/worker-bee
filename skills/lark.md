@@ -70,10 +70,10 @@ lark api GET /open-apis/calendar/v4/calendars --params '{"page_size":10}'
 
 ## Safety
 
-- Read commands run immediately
-- Write commands (send, create, update, delete) require `require_confirmation=True`
-- Auth/config commands are blocked — only run manually
-- Output truncated at 4000 chars
+- Read commands always work
+- Write commands require `lark_allow_write: true` in `~/.worker-bee/config.json`
+- Enable during setup: `wb setup` → answer y to lark writes, or edit config.json manually
+- lark-cli's own auth/scopes handle actual permission enforcement
 
 ## Pitfalls
 

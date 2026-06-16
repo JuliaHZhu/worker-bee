@@ -1,5 +1,8 @@
 """Tests for skill loading, YAML parsing, trigger matching, and caching."""
 
+import os
+import pytest
+
 from worker_bee.skills import SkillManager, _parse_yamlish
 
 
@@ -103,7 +106,6 @@ class TestTriggerMatching:
 
     def test_partial_trigger_match(self, skill_manager):
         """Trigger substring in user input matches."""
-        # "debugging" is a trigger, so "debugging" in input should match
         matched = skill_manager.match_skills("I need to do some debugging today")
         assert "test-skill" in matched
 
@@ -216,3 +218,69 @@ class TestSkillDiskCache:
         assert not cache_path.exists()
         assert mgr._skills == {}
         assert mgr._parse_cache == {}
+
+
+class TestLarkSkillTriggerMatching:
+    """Trigger matching for the 3 scenario-driven lark skills (contact, messaging, drive)."""
+
+    @pytest.fixture
+    def lark_manager(self):
+        """SkillManager loaded from the real skills/ directory."""
+        skills_path = os.path.join(os.path.dirname(__file__), "..", "skills")
+        mgr = SkillManager(skills_path)
+        mgr.load_all()
+        return mgr
+
+    # ── lark-contact ──
+
+    def test_contact_search_user(self, lark_manager):
+        matched = lark_manager.match_skills("帮我在通讯录里找人")
+        assert "lark-contact" in matched
+
+    def test_contact_find_group(self, lark_manager):
+        matched = lark_manager.match_skills("帮我搜群找技术讨论组")
+        assert "lark-contact" in matched
+
+    def test_contact_open_id_lookup(self, lark_manager):
+        matched = lark_manager.match_skills("这个人的 open_id 是什么")
+        assert "lark-contact" in matched
+
+    # ── lark-messaging ──
+
+    def test_messaging_send_dm(self, lark_manager):
+        matched = lark_manager.match_skills("发消息给张三告诉他项目上线了")
+        assert "lark-messaging" in matched
+
+    def test_messaging_send_to_group(self, lark_manager):
+        matched = lark_manager.match_skills("通知团队明天开会")
+        assert "lark-messaging" in matched
+
+    def test_messaging_read_inbox(self, lark_manager):
+        matched = lark_manager.match_skills("看看群里最近说了什么")
+        assert "lark-messaging" in matched
+
+    def test_messaging_chat_history(self, lark_manager):
+        matched = lark_manager.match_skills("拉一下聊天记录")
+        assert "lark-messaging" in matched
+
+    # ── lark-drive ──
+
+    def test_drive_upload(self, lark_manager):
+        matched = lark_manager.match_skills("帮我把这个上传文件到云空间")
+        assert "lark-drive" in matched
+
+    def test_drive_download(self, lark_manager):
+        matched = lark_manager.match_skills("从群里下载文件保存到本地")
+        assert "lark-drive" in matched
+
+    def test_drive_share(self, lark_manager):
+        matched = lark_manager.match_skills("把这个分享文档发给团队")
+        assert "lark-drive" in matched
+
+    # ── No false matches ──
+
+    def test_no_false_lark_match(self, lark_manager):
+        """Generic text should not trigger lark skills."""
+        matched = lark_manager.match_skills("写一个 Python 脚本处理数据")
+        lark_names = {s for s in matched if s.startswith("lark-")}
+        assert lark_names == set()

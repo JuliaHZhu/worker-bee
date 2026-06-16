@@ -13,7 +13,9 @@ from pathlib import Path
 
 from worker_bee.registry import registry
 
-_LARK_CLI = str(Path.home() / ".local" / "bin" / "lark-cli")
+import shutil
+
+_LARK_CLI = shutil.which("lark-cli") or str(Path.home() / ".local" / "bin" / "lark-cli")
 _CONFIG = Path.home() / ".worker-bee" / "config.json"
 
 # ponytail: explicit allowlist of read-only lark-cli subcommands.
@@ -26,14 +28,9 @@ _READ_SUBCOMMANDS = frozenset({
     "+chat-list", "+chat-search", "+chat-messages-list",
     "+messages-list", "+messages-search",
     "+group-info", "+group-list",
-    # docs
+    # docs / drive / calendar / base / mail / minutes / okr / task
     "+fetch", "+search", "+list", "+get",
-    # drive
-    "+download", "+search", "+list", "+get",
-    # calendar
-    "+agenda", "+event-get", "+list",
-    # base / mail / minutes / okr / task
-    "+list", "+get", "+search",
+    "+download", "+agenda", "+event-get",
     # misc
     "help", "version", "--help", "-h",
 })

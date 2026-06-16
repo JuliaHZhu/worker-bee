@@ -1,4 +1,7 @@
+import datetime
 import fnmatch
+import hashlib
+import json
 import os
 import re
 import shutil
@@ -13,15 +16,46 @@ _is_sensitive = is_write_denied
 # ── Snapshot / Rollback ─────────────────────────────────────────────
 
 _SNAPSHOT_DIR = Path.home() / ".worker-bee" / "snapshots"
+_SNAPSHOT_MAX = 5  # ponytail: keep last 5 versions. Ceiling: O(N) rotation, N small.
 
 
-def _snapshot_path(path: str) -> Path:
-    """Return the snapshot file path for a given target file."""
-    # Use a hash of the absolute path to avoid collisions and path issues
+def _snapshot_path(path: str, idx: int = 0) -> Path:
+    """Return the snapshot file path for a given target file.
+
+    idx=0      -> most recent (.bak.0)
+    idx>0      -> older versions (.bak.1, .bak.2, ...)
+    idx=-1     -> legacy flat .bak (backward compat)
+    """
     key = Path(path).expanduser().resolve().as_posix()
-    import hashlib
     h = hashlib.sha256(key.encode()).hexdigest()[:16]
-    return _SNAPSHOT_DIR / f"{h}.bak"
+    if idx < 0:
+        return _SNAPSHOT_DIR / f"{h}.bak"
+    return _SNAPSHOT_DIR / f"{h}.bak.{idx}"
+
+
+def _update_meta(path: str, h: str) -> None:
+    """Update the metadata JSON describing all snapshots for a file."""
+    meta_path = _SNAPSHOT_DIR / f"{h}.meta"
+    abs_path = str(Path(path).expanduser().resolve())
+    snapshots = []
+
+    for i in range(_SNAPSHOT_MAX):
+        snap = _SNAPSHOT_DIR / f"{h}.bak.{i}"
+        if snap.exists():
+            stat = snap.stat()
+            snapshots.append({
+                "idx": i,
+                "timestamp": datetime.datetime.fromtimestamp(
+                    stat.st_mtime, tz=datetime.timezone.utc
+                ).isoformat(),
+                "size": stat.st_size,
+            })
+
+    data = {
+        "path": abs_path,
+        "snapshots": snapshots,
+    }
+    meta_path.write_text(json.dumps(data, indent=2))
 
 
 def save_snapshot(path: str) -> None:
@@ -30,19 +64,46 @@ def save_snapshot(path: str) -> None:
     if not src.exists():
         return
     _SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
-    dst = _snapshot_path(path)
+
+    h = hashlib.sha256(
+        Path(path).expanduser().resolve().as_posix().encode()
+    ).hexdigest()[:16]
+
+    # Rotate existing indexed snapshots: .bak.3 -> .bak.4, ..., .bak.0 -> .bak.1
+    for i in range(_SNAPSHOT_MAX - 2, -1, -1):
+        old = _SNAPSHOT_DIR / f"{h}.bak.{i}"
+        if old.exists():
+            old.rename(_SNAPSHOT_DIR / f"{h}.bak.{i + 1}")
+
+    # Migrate legacy flat .bak into the rotation chain if present
+    legacy = _SNAPSHOT_DIR / f"{h}.bak"
+    if legacy.exists():
+        legacy.rename(_SNAPSHOT_DIR / f"{h}.bak.{_SNAPSHOT_MAX - 1}")
+
+    # Save newest snapshot
+    dst = _SNAPSHOT_DIR / f"{h}.bak.0"
     shutil.copy2(src, dst)
+    _update_meta(path, h)
 
 
-def fs_rollback_file(path: str) -> str:
-    """Rollback a file to its last snapshot."""
-    src = _snapshot_path(path)
+def fs_rollback_file(path: str, steps: int = 1) -> str:
+    """Rollback a file to a previous snapshot. steps=1 = most recent."""
+    idx = steps - 1
+    src = _snapshot_path(path, idx)
     if not src.exists():
-        return f"No snapshot found for {path}"
+        # Fallback to legacy .bak for steps=1
+        if idx == 0:
+            legacy = _snapshot_path(path, -1)
+            if legacy.exists():
+                src = legacy
+            else:
+                return f"No snapshot found for {path}"
+        else:
+            return f"No snapshot found for {path} (steps={steps})"
     dst = Path(path).expanduser()
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dst)
-    return f"Rolled back {path} from snapshot"
+    return f"Rolled back {path} from snapshot [{idx}]"
 
 
 def fs_git_rollback(path: str) -> str:
@@ -50,6 +111,101 @@ def fs_git_rollback(path: str) -> str:
     from worker_bee.safety import git_rollback
     repo_dir = str(Path(path).expanduser().parent)
     return git_rollback(repo_dir)
+
+
+def fs_snapshot_list(path: str | None = None) -> str:
+    """List snapshot history for a file, or all files with snapshots."""
+    if path:
+        h = hashlib.sha256(
+            Path(path).expanduser().resolve().as_posix().encode()
+        ).hexdigest()[:16]
+        lines = [f"Snapshot history for {Path(path).expanduser().resolve()}:"]
+
+        for i in range(_SNAPSHOT_MAX):
+            snap = _SNAPSHOT_DIR / f"{h}.bak.{i}"
+            if snap.exists():
+                stat = snap.stat()
+                ts = datetime.datetime.fromtimestamp(
+                    stat.st_mtime, tz=datetime.timezone.utc
+                ).strftime("%Y-%m-%d %H:%M:%S")
+                marker = "  <- latest" if i == 0 else ""
+                lines.append(f"  [{i}] {ts}  {stat.st_size:>8} bytes{marker}")
+
+        legacy = _SNAPSHOT_DIR / f"{h}.bak"
+        if legacy.exists() and not (_SNAPSHOT_DIR / f"{h}.bak.0").exists():
+            stat = legacy.stat()
+            ts = datetime.datetime.fromtimestamp(
+                stat.st_mtime, tz=datetime.timezone.utc
+            ).strftime("%Y-%m-%d %H:%M:%S")
+            lines.append(f"  [legacy] {ts}  {stat.st_size:>8} bytes  <- latest")
+
+        if len(lines) == 1:
+            return f"No snapshots found for {path}"
+        return "\n".join(lines)
+
+    if not _SNAPSHOT_DIR.exists():
+        return "No snapshots yet."
+    metas = sorted(_SNAPSHOT_DIR.glob("*.meta"))
+    if not metas:
+        return "No snapshots yet."
+
+    lines = ["All snapshot histories:"]
+    for meta in metas:
+        try:
+            data = json.loads(meta.read_text())
+            snapshots = data.get("snapshots", [])
+            p = data.get("path", "?")
+            if snapshots:
+                latest = snapshots[0]
+                lines.append(
+                    f"  {p} \u2014 {len(snapshots)} version(s), latest {latest['timestamp'][:19]}"
+                )
+            else:
+                lines.append(f"  {p} \u2014 (empty)")
+        except Exception:
+            pass
+    return "\n".join(lines)
+
+
+def fs_snapshot_diff(path: str, steps: int = 1) -> str:
+    """Show unified diff between current file and a snapshot."""
+    idx = steps - 1
+    src = _snapshot_path(path, idx)
+    if not src.exists():
+        if idx == 0:
+            legacy = _snapshot_path(path, -1)
+            if legacy.exists():
+                src = legacy
+            else:
+                return f"No snapshot found for {path}"
+        else:
+            return f"No snapshot found for {path} (steps={steps})"
+
+    dst = Path(path).expanduser()
+    if not dst.exists():
+        return f"File not found: {path}"
+
+    try:
+        import difflib
+        old_lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
+        new_lines = dst.read_text(encoding="utf-8", errors="replace").splitlines()
+        diff = list(
+            difflib.unified_diff(
+                old_lines,
+                new_lines,
+                fromfile=f"snapshot[{idx}]",
+                tofile="current",
+                lineterm="",
+            )
+        )
+        if not diff:
+            return "No differences between snapshot and current file."
+        out = "\n".join(diff)
+        if len(out) > 8000:
+            out = out[:8000] + "\n...(truncated)"
+        return out
+    except Exception as e:
+        return f"Error generating diff: {e}"
 
 
 # ── Workspace guard ─────────────────────────────────────────────────
@@ -201,14 +357,44 @@ registry.register(
 
 registry.register(
     name="fs_rollback_file",
-    description="Rollback a file to its last snapshot taken before the most recent write.",
+    description="Rollback a file to a previous snapshot. steps=1 = most recent, steps=2 = the one before that, etc.",
     parameters={
         "properties": {
-            "path": {"type": "string", "description": "File path to rollback"}
+            "path": {"type": "string", "description": "File path to rollback"},
+            "steps": {"type": "integer", "description": "How many versions back (1=most recent)", "default": 1}
         },
         "required": ["path"]
     },
     handler=fs_rollback_file,
     tags=["filesystem", "rollback"],
+    category="filesystem"
+)
+
+registry.register(
+    name="fs_snapshot_list",
+    description="List snapshot history for a file (pass path) or all files with snapshots (omit path).",
+    parameters={
+        "properties": {
+            "path": {"type": "string", "description": "File path to inspect (omit for all)", "default": None}
+        },
+        "required": []
+    },
+    handler=fs_snapshot_list,
+    tags=["filesystem", "snapshot", "list"],
+    category="filesystem"
+)
+
+registry.register(
+    name="fs_snapshot_diff",
+    description="Show unified diff between current file and a snapshot.",
+    parameters={
+        "properties": {
+            "path": {"type": "string", "description": "File path"},
+            "steps": {"type": "integer", "description": "How many versions back (1=most recent)", "default": 1}
+        },
+        "required": ["path"]
+    },
+    handler=fs_snapshot_diff,
+    tags=["filesystem", "snapshot", "diff"],
     category="filesystem"
 )

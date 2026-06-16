@@ -526,7 +526,8 @@ def _lark_send(args):
             return
         cid = chat["chat_id"]
         name = chat.get("name", args.group)
-        cmd = ["lark-cli", "im", "+messages-send", "--chat-id", cid, "--text", args.msg]
+        text = " ".join(args.msg) if isinstance(args.msg, list) else (args.msg or "")
+        cmd = ["lark-cli", "im", "+messages-send", "--chat-id", cid, "--text", text]
     elif args.to:
         # Resolve user name
         r = subprocess.run(
@@ -552,7 +553,8 @@ def _lark_send(args):
             return
         uid = user.get("open_id", user.get("user_id"))
         uname = user.get("name", args.to)
-        cmd = ["lark-cli", "im", "+messages-send", "--user-id", uid, "--text", args.msg]
+        text = " ".join(args.msg) if isinstance(args.msg, list) else (args.msg or "")
+        cmd = ["lark-cli", "im", "+messages-send", "--user-id", uid, "--text", text]
         name = uname
     else:
         print("Specify --to <name> or --group <name>")
@@ -666,7 +668,7 @@ def _add_lark_parser(sub):
     p = lark_sub.add_parser("send", help="Send a message (resolves name → ID)")
     p.add_argument("--to", default="", help="User name to DM")
     p.add_argument("--group", default="", help="Group name")
-    p.add_argument("msg", nargs="?", default="", help="Message text")
+    p.add_argument("msg", nargs="*", default=[], help="Message text")
     p.set_defaults(func=_lark_send)
 
     p = lark_sub.add_parser("inbox", help="Pull recent messages from a user or group")

@@ -1,6 +1,6 @@
 # AEvo: Harnessing Agentic Evolution
 
-> 论文: [arxiv.org/abs/2605.13821](https://arxiv.org/abs/2605.13821)
+> **arXiv: 2605.13821** — [arxiv.org/abs/2605.13821](https://arxiv.org/abs/2605.13821)
 > 作者: Jiayi Zhang et al. (DeepWisdom + HKUST(GZ) + 多校)
 > 日期: 2026-05-13
 > 分析日期: 2026-06-05

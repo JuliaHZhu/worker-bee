@@ -280,19 +280,21 @@ registry.register(
 
 registry.register(
     name="agent_cross_validate",
-    description=(
-        "Run the same task through multiple LLMs and compare their answers. "
-        "Use when you want to filter hallucinations or get a second opinion. "
-        "Optionally enables a judge agent that summarises agreement and disagreement. "
-        "Returns JSON with per-model results and a judge summary."
-    ),
+    description="Run the same task through multiple LLMs and compare their answers.",
     parameters={
         "properties": {
             "goal": {"type": "string", "description": "The task to validate"},
             "context": {"type": "string", "description": "Additional context", "default": ""},
             "models": {"type": "array", "items": {"type": "string"}, "description": "List of model names to compare", "default": []},
             "tools": {"type": "array", "items": {"type": "string"}, "description": "Tool names available to sub-agents", "default": []},
-            "judge": {"type": "boolean", "description": "Enable judge summary", "default": True},
+            "judge": {
+                "type": "boolean",
+                "description": (
+                    "If true, a judge agent summarises agreement and disagreement across outputs. "
+                    "Useful for filtering hallucinations or getting a second opinion."
+                ),
+                "default": True
+            },
             "max_iterations": {"type": "integer", "description": "Max iterations per sub-agent", "default": 10}
         },
         "required": ["goal"]

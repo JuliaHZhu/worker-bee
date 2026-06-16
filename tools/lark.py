@@ -101,25 +101,18 @@ def feishu_lark(command: str) -> str:
 
 registry.register(
     name="feishu_lark",
-    description=(
-        "Execute a Feishu/Lark CLI command via lark-cli. "
-        "Read commands (search, fetch, list, agenda) always work. "
-        "Write commands (send, create, update) require lark_allow_write=true "
-        "in ~/.worker-bee/config.json (set during 'wb setup'). "
-        "See the lark skill for command patterns."
-    ),
+    description="Execute a Feishu/Lark CLI command via lark-cli.",
     parameters={
         "properties": {
             "command": {
                 "type": "string",
                 "description": (
-                    "lark-cli subcommand, e.g. 'contact +search-user --query John', "
-                    "'im +messages-send --chat-id oc_xxx --content Hello', "
-                    "'calendar +agenda', 'docs +fetch --token doc_xxx'"
-                ),
-            },
+                    "lark-cli subcommand. Read commands always work; "
+                    "write commands need lark_allow_write=true."
+                )
+            }
         },
-        "required": ["command"],
+        "required": ["command"]
     },
     handler=feishu_lark,
     tags=["feishu", "lark", "messaging", "docs", "calendar", "contact"],

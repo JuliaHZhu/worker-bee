@@ -80,20 +80,14 @@ def sys_terminal(command: str, timeout: int = 30, require_confirmation: bool = T
 
 registry.register(
     name="sys_terminal",
-    description=(
-        "Execute a shell command in the workspace. "
-        "Common read-only commands (ls, cat, grep, git status, etc.) run immediately. "
-        "Dangerous or unrecognized commands are blocked with a clear message "
-        "(no interactive prompts — safe for headless/automated use). "
-        "Set WORKER_BEE_AUTO_CONFIRM=true only in fully sandboxed environments."
-    ),
+    description="Execute a shell command in the workspace. Dangerous or unrecognized commands are blocked.",
     parameters={
         "properties": {
             "command": {"type": "string", "description": "Shell command to execute"},
             "timeout": {"type": "integer", "description": "Timeout in seconds", "default": 30},
             "require_confirmation": {
                 "type": "boolean",
-                "description": "If false, unrecognized/dangerous commands are blocked instead of prompting",
+                "description": "If false, block unrecognized/dangerous commands without prompting.",
                 "default": True
             }
         },

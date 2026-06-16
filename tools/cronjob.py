@@ -334,10 +334,7 @@ def cronjob(
 
 registry.register(
     name="cronjob",
-    description=(
-        "Manage cron jobs — create, list, update, pause, resume, run, or remove. "
-        "Cron jobs let you schedule recurring or one-shot tasks that run autonomously."
-    ),
+    description="Manage cron jobs (create, list, update, pause, resume, run, remove).",
     parameters={
         "properties": {
             "action": {

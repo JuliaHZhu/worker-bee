@@ -264,13 +264,7 @@ def send_message(
 
 registry.register(
     name="send_message",
-    description=(
-        "Send a text message to the configured messaging platform. "
-        "Feishu App Bot (recommended): set FEISHU_APP_ID + FEISHU_APP_SECRET, "
-        "supports chat_id / open_id / user_id / thread_id. "
-        "Feishu Webhook fallback: set FEISHU_WEBHOOK_URL. "
-        "Discord: set DISCORD_WEBHOOK_URL."
-    ),
+    description="Send a text message to the configured messaging platform.",
     parameters={
         "properties": {
             "content": {
@@ -279,7 +273,12 @@ registry.register(
             },
             "platform": {
                 "type": "string",
-                "description": "Optional override: 'feishu' or 'discord'. If omitted, auto-detect.",
+                "description": (
+                    "Optional override: 'feishu' or 'discord'. "
+                    "If omitted, auto-detects from env vars. "
+                    "Feishu: FEISHU_APP_ID+FEISHU_APP_SECRET (App Bot) or FEISHU_WEBHOOK_URL. "
+                    "Discord: DISCORD_WEBHOOK_URL."
+                ),
                 "enum": ["feishu", "discord"],
             },
             "receive_id": {

@@ -48,13 +48,15 @@ ID 特征：
 
 同一轮对话里，已经解析过的名字→ID 可以记住，不用重复 search。但不要跨 session 假设 ID 还有效。
 
-## 和别的 skill 的协作
+## 常见组合流程
 
-| 场景 | 你先做什么 | 然后交给谁 |
-|------|-----------|-----------|
-| "发给张三 hello" | search-user 拿 open_id | `lark-messaging` |
-| "看看技术群最近说了什么" | chat-search 拿 chat_id | `lark-messaging` |
-| "把文件传给设计组" | chat-search 拿 chat_id | `lark-drive` + `lark-messaging` |
+这些场景本 skill 只负责 ID 解析部分，后续操作由 Deck 根据用户完整意图加载对应 skill：
+
+| 场景 | 你做什么 | 下一步（Deck 决定） |
+|------|---------|-------------------|
+| "发给张三 hello" | `contact +search-user` 拿 open_id | messaging skill 接手发消息 |
+| "看看技术群最近说了什么" | `im +chat-search` 拿 chat_id | messaging skill 接手拉历史 |
+| "把文件传给设计组" | `im +chat-search` 拿 chat_id | drive + messaging skill 协作 |
 
 ## 约束
 

@@ -23,17 +23,17 @@ category: feishu
 
 | 用户表达 | 目标类型 | 你需要先做什么 |
 |---------|---------|--------------|
-| "发给张三" | 私聊 | `lark-contact` 搜 open_id |
-| "发到技术群" | 群聊 | `lark-contact` 搜 chat_id |
+| "发给张三" | 私聊 | `feishu_lark` 执行 `contact +search-user` 拿 open_id |
+| "发到技术群" | 群聊 | `feishu_lark` 执行 `im +chat-search` 拿 chat_id |
 | "回复这条消息" | 同一会话 | 拿原消息的 chat_id / user_id |
 
 **不知道私聊还是群聊 → 问用户。**
 
 ### 第 2 步：选择发送方式
 
-- 普通文字 → `im +messages-send --text "内容"`
-- 富文本/卡片 → `im +messages-send --content '{"text":"..."}'`（用户明确要格式时才用）
-- 带文件 → 先 `lark-drive` 上传拿到 token，再发消息带文件
+- 普通文字 → `feishu_lark` 执行 `im +messages-send --text "内容"`
+- 富文本/卡片 → `feishu_lark` 执行 `im +messages-send --content '{"text":"..."}'`（用户明确要格式时才用）
+- 带文件 → 先 `feishu_lark` 执行 `drive +upload` 拿到 token，再发消息带文件
 
 ### 第 3 步：内容检查
 
@@ -47,7 +47,7 @@ category: feishu
 → `im +messages-list --chat-id oc_xxx --limit N`
 
 ### 用户只有名字
-→ 用 `wb lark inbox` CLI（它内部做了名字解析），或先 `lark-contact` 再拉消息。
+→ 优先用 `wb lark inbox` CLI（它内部做了名字解析），或先 `feishu_lark` 执行 `contact +search-user` 拿 ID 再拉消息。
 
 **优先用 CLI：** `wb lark inbox --from 张三 --limit 10`，因为它已经封装了名字→ID 的解析，比 agent 分两步更稳。
 
@@ -58,17 +58,17 @@ category: feishu
 2. 每条显示：`[时间] 发送者: 内容前 200 字`
 3. 超过 20 条 → 问用户要摘要还是看全部
 
-## 组合模式
+## 组合流程
 
-**"通知团队项目上线了"**
-1. `lark-contact` → 搜"项目群"拿 chat_id
-2. 确认："发到【项目群】对吗？"
-3. `im +messages-send --chat-id xxx --text "项目已上线"`
+**“通知团队项目上线了”**
+1. `feishu_lark` 执行 `im +chat-search` → 搜“项目群”拿 chat_id
+2. 确认：“发到【项目群】对吗？”
+3. `feishu_lark` 执行 `im +messages-send --chat-id xxx --text "项目已上线"`
 
-**"把会议纪要发给参会的人"**
+**“把会议纪要发给参会的人”**
 1. 问用户：纪要内容是什么 / 文件在哪
-2. 如果是文字 → 直接发；如果是文件 → `lark-drive` 上传后再发
-3. `lark-contact` 确认收件人名单
+2. 如果是文字 → 直接发；如果是文件 → `feishu_lark` 执行 `drive +upload` 上传后再发
+3. `feishu_lark` 执行 `contact +search-user` 确认收件人名单
 
 ## 约束
 

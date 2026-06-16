@@ -38,8 +38,8 @@ category: feishu
 
 | 用户要做什么 | 下一步 |
 |-------------|--------|
-| "发给张三" | `lark-messaging` → `im +messages-send --file-token xxx` |
-| "分享到群里" | `lark-messaging` → 发消息带 file-token |
+| "发给张三" | `feishu_lark` 执行 `im +messages-send --file-token xxx` |
+| "分享到群里" | `feishu_lark` 执行 `im +messages-send` 带 file-token |
 | "只上传，不分享" | 告诉用户上传完成，token 是什么 |
 
 **ponytail:** 当前版本 file_token 的透传方式依赖 lark-cli 具体实现，如果消息发文件失败，退化为发文件链接。
@@ -50,7 +50,7 @@ category: feishu
 → `drive +download --token file_xxx --path /local/dest.pdf`
 
 ### 用户在消息里提到文件
-→ 先 `lark-messaging` 拉消息历史，从消息体里提取 file_token，再下载。
+→ `feishu_lark` 执行 `im +messages-list` 拉消息历史，从消息体里提取 file_token，再下载。
 
 ### 路径确认
 
@@ -63,19 +63,19 @@ category: feishu
 - `drive +share --token file_xxx`（如果 lark-cli 支持）
 - 否则下载后由用户自行处理
 
-## 组合模式
+## 组合流程
 
-**"把 report.pdf 传给张三"**
+**“把 report.pdf 传给张三”**
 1. 确认本地文件存在：`report.pdf`
-2. `drive +upload --path report.pdf` → 拿 `file_token`
-3. `lark-contact` → 搜"张三"拿 `open_id`
-4. `im +messages-send --user-id ou_xxx --file-token xxx`（或带链接的文本消息）
+2. `feishu_lark` 执行 `drive +upload --path report.pdf` → 拿 `file_token`
+3. `feishu_lark` 执行 `contact +search-user` → 搜“张三”拿 `open_id`
+4. `feishu_lark` 执行 `im +messages-send --user-id ou_xxx --file-token xxx`（或带链接的文本消息）
 
-**"把群里那个 Excel 下载下来"**
-1. `lark-contact` → 搜群名拿 `chat_id`
-2. `im +messages-list --chat-id xxx --limit 20` → 找含文件的消息
+**“把群里那个 Excel 下载下来”**
+1. `feishu_lark` 执行 `im +chat-search` → 搜群名拿 `chat_id`
+2. `feishu_lark` 执行 `im +messages-list --chat-id xxx --limit 20` → 找含文件的消息
 3. 提取 `file_token`
-4. `drive +download --token xxx --path ./download/`
+4. `feishu_lark` 执行 `drive +download --token xxx --path ./download/`
 
 ## 约束
 

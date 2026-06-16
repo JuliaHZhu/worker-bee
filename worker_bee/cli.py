@@ -559,6 +559,74 @@ def _lark_send(args):
         print(result.stdout[:500])
 
 
+def _lark_inbox(args):
+    """Pull recent messages from a user or group — resolves name to ID."""
+    import subprocess, json
+
+    if args.group:
+        r = subprocess.run(
+            ["lark-cli", "im", "+chat-search", "--query", args.group],
+            capture_output=True, text=True, timeout=10,
+        )
+        try:
+            data = json.loads(r.stdout)
+            chats = data.get("items", data.get("data", {}).get("items", []))
+        except json.JSONDecodeError:
+            print(f"Error: {r.stdout[:200]}")
+            return
+        exact = [c for c in chats if c.get("name", "").lower() == args.group.lower()]
+        chat = exact[0] if exact else (chats[0] if chats else None)
+        if not chat:
+            print(f"Group not found: {args.group}")
+            return
+        cid = chat["chat_id"]
+        label = chat.get("name", args.group)
+        cmd = ["lark-cli", "im", "+chat-messages-list", "--chat-id", cid, "--limit", str(args.limit)]
+    elif args.from_user:
+        r = subprocess.run(
+            ["lark-cli", "contact", "+search-user", "--query", args.from_user],
+            capture_output=True, text=True, timeout=10,
+        )
+        try:
+            data = json.loads(r.stdout)
+            users = data.get("items", data.get("data", {}).get("items", []))
+        except json.JSONDecodeError:
+            print(f"Error: {r.stdout[:200]}")
+            return
+        exact = [u for u in users if u.get("name", "").lower() == args.from_user.lower()]
+        user = exact[0] if exact else (users[0] if users else None)
+        if not user:
+            print(f"User not found: {args.from_user}")
+            return
+        uid = user.get("open_id", user.get("user_id"))
+        label = user.get("name", args.from_user)
+        cmd = ["lark-cli", "im", "+chat-messages-list", "--user-id", uid, "--limit", str(args.limit)]
+    else:
+        print("Specify --from <name> or --group <name>")
+        return
+
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    try:
+        data = json.loads(result.stdout)
+        msgs = data.get("items", data.get("data", {}).get("items", []))
+    except json.JSONDecodeError:
+        print(result.stdout[:500])
+        return
+
+    print(f"📬 {label} — last {len(msgs)} messages:\n")
+    for m in reversed(msgs):
+        sender = m.get("sender", {}).get("name", m.get("sender_name", "?"))
+        body = m.get("body", {}).get("content", "")
+        # Try to get plain text from various message formats
+        if not body:
+            body = m.get("content", "")
+        # Truncate long messages
+        if len(body) > 200:
+            body = body[:200] + "…"
+        ts = m.get("create_time", "")
+        print(f"[{ts}] {sender}: {body}")
+
+
 def _add_lark_parser(sub):
     lark = sub.add_parser("lark", help="Feishu/Lark operations — resolve names to IDs")
     lark_sub = lark.add_subparsers(dest="lark_cmd", required=True)
@@ -576,6 +644,12 @@ def _add_lark_parser(sub):
     p.add_argument("--group", default="", help="Group name")
     p.add_argument("msg", nargs="?", default="", help="Message text")
     p.set_defaults(func=_lark_send)
+
+    p = lark_sub.add_parser("inbox", help="Pull recent messages from a user or group")
+    p.add_argument("--from", dest="from_user", default="", help="User name")
+    p.add_argument("--group", default="", help="Group name")
+    p.add_argument("--limit", type=int, default=20, help="Max messages (default: 20)")
+    p.set_defaults(func=_lark_inbox)
 
 
 # ---------------------------------------------------------------------------

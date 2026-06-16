@@ -1,7 +1,8 @@
 # AEvo: Harnessing Agentic Evolution
 
 > **arXiv: 2605.13821** — [arxiv.org/abs/2605.13821](https://arxiv.org/abs/2605.13821)
-> 作者: Jiayi Zhang et al. (DeepWisdom + HKUST(GZ) + 多校)
+> 作者: Jiayi Zhang, Yongfeng Gu, Jianhao Ruan, Maojia Song, Yiran Peng, Zhiguang Han, Jinyu Xiang, Zhitao Wang, Caiyin Yang, Yixi Ouyang, Bang Liu, Chenglin Wu†, Yuyu Luo†
+> 机构: DeepWisdom, HKUST(GZ), SUTD, NTU, SJTU, Tsinghua, UdeM & Mila
 > 日期: 2026-05-13
 > 分析日期: 2026-06-05
 

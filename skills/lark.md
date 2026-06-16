@@ -3,13 +3,13 @@ name: lark
 description: Feishu/Lark operations via lark-cli — messaging, docs, calendar, contacts, drive, base, mail, tasks, OKR
 trigger: feishu, lark, 飞书, 发消息, 查文档, 日程, 通讯录, 云空间, 多维表格, 邮箱, 任务, OKR, 发送, send message, calendar, contact
 tools:
-  - _lark
+  - feishu_lark
 category: feishu
 ---
 
 # Lark — 飞书操作
 
-All Feishu operations go through `_lark` → `lark-cli`. No direct API calls.
+All Feishu operations go through `feishu_lark` → `lark-cli`. No direct API calls.
 
 ## Command Patterns
 

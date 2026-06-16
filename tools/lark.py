@@ -114,7 +114,7 @@ def _lark(command: str, require_confirmation: bool = True) -> str:
 
 
 registry.register(
-    name="_lark",
+    name="feishu_lark",
     description=(
         "Execute a Feishu/Lark CLI command via lark-cli. "
         "Read-only commands (search, fetch, list, agenda) run immediately. "

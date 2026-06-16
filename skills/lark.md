@@ -16,56 +16,56 @@ All Feishu operations go through `feishu_lark` → `lark-cli`. No direct API cal
 ### Messaging (IM)
 ```
 # Send a message
-lark im +messages-send --chat-id oc_xxx --content "text"
+im +messages-send --chat-id oc_xxx --content "text"
 
 # Search chat history
-lark im +messages-search --query "keyword"
+im +messages-search --query "keyword"
 
 # List recent messages in a group
-lark im +messages-list --chat-id oc_xxx --limit 20
+im +messages-list --chat-id oc_xxx --limit 20
 ```
 
 ### Contacts
 ```
-lark contact +search-user --query "name"
-lark contact +get-user --user-id ou_xxx
+contact +search-user --query "name"
+contact +get-user --user-id ou_xxx
 ```
 
 ### Calendar
 ```
-lark calendar +agenda                          # today's schedule
-lark calendar +agenda --date 2026-06-15        # specific date
-lark calendar events instance_view --params '{"calendar_id":"primary","start_time":"1700000000","end_time":"1700086400"}'
+calendar +agenda                          # today's schedule
+calendar +agenda --date 2026-06-15        # specific date
+calendar events instance_view --params '{"calendar_id":"primary","start_time":"1700000000","end_time":"1700086400"}'
 ```
 
 ### Docs
 ```
-lark docs +fetch --token doc_xxx               # read a doc
-lark docs +search --query "keyword"             # search docs
+docs +fetch --token doc_xxx               # read a doc
+docs +search --query "keyword"             # search docs
 ```
 
 ### Drive (files)
 ```
-lark drive +search --query "filename"
-lark drive +upload --path /local/file.pdf --parent token_xxx
-lark drive +download --token file_xxx --path /local/dest.pdf
+drive +search --query "filename"
+drive +upload --path /local/file.pdf --parent token_xxx
+drive +download --token file_xxx --path /local/dest.pdf
 ```
 
 ### Base (multidimensional tables)
 ```
-lark base +search --query "table name"
-lark base +get-records --base-token xxx --table-id xxx
+base +search --query "table name"
+base +get-records --base-token xxx --table-id xxx
 ```
 
 ### Tasks
 ```
-lark task +list
-lark task +create --summary "task name"
+task +list
+task +create --summary "task name"
 ```
 
 ### Generic API
 ```
-lark api GET /open-apis/calendar/v4/calendars --params '{"page_size":10}'
+api GET /open-apis/calendar/v4/calendars --params '{"page_size":10}'
 ```
 
 ## Safety

@@ -10,6 +10,14 @@
 | [04-worldbee.md](04-worldbee.md) | 环境引擎 — 现实检查、数据验证 |
 | [exogenous-pheromone-formats.md](exogenous-pheromone-formats.md) | 每个 fork 的外部状态 Markdown 格式 |
 
+## 外部架构研究
+
+[architecture-study/](architecture-study/) — 外部架构论文与系统的对比拆解，用于参考设计和定位 Worker-Bee 的差异化。
+
+| 文件 | 说明 |
+|------|------|
+| [aevo-harnessing-agentic-evolution.md](architecture-study/aevo-harnessing-agentic-evolution.md) | AEvo: 把进化建模成交互式环境，meta-agent 编辑搜索机制而非产生候选 |
+
 ## 核心架构
 
 见仓库根目录的 [DESIGN.md](../DESIGN.md) — Deck、Registry、Skill 系统、Batch Handoff。

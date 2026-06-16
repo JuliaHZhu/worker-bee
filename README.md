@@ -185,9 +185,9 @@ wb swarm status
 wb swarm listen
 
 # Lark / Feishu
-wb lark who                 # Show my identity
+wb lark who 张三             # Search user by name → open_id
 wb lark chats               # List recent chats
-wb lark send "Bob" "hello"  # Send message by name
+wb lark send --to Bob hello # Send DM by name
 wb lark inbox --from Bob    # Pull recent messages
 ```
 
@@ -410,9 +410,9 @@ wb swarm status
 wb swarm listen
 
 # Lark commands
-wb lark who
+wb lark who 张三
 wb lark chats
-wb lark send "Bob" "hello"
+wb lark send --to Bob hello
 wb lark inbox --from Bob --limit 10
 ```
 

@@ -16,6 +16,28 @@ from worker_bee.registry import registry
 _LARK_CLI = str(Path.home() / ".local" / "bin" / "lark-cli")
 _CONFIG = Path.home() / ".worker-bee" / "config.json"
 
+# ponytail: explicit allowlist of read-only lark-cli subcommands.
+# Ceiling: any read-only subcommand not listed here will be blocked when
+# lark_allow_write=false. Add new ones as they are discovered.
+_READ_SUBCOMMANDS = frozenset({
+    # contact
+    "+search-user", "+get-user", "+list-user",
+    # im
+    "+chat-list", "+chat-search", "+chat-messages-list",
+    "+messages-list", "+messages-search",
+    "+group-info", "+group-list",
+    # docs
+    "+fetch", "+search", "+list", "+get",
+    # drive
+    "+download", "+search", "+list", "+get",
+    # calendar
+    "+agenda", "+event-get", "+list",
+    # base / mail / minutes / okr / task
+    "+list", "+get", "+search",
+    # misc
+    "help", "version", "--help", "-h",
+})
+
 
 def _allow_write() -> bool:
     """Check if lark write operations are enabled in config."""
@@ -42,19 +64,17 @@ def feishu_lark(command: str) -> str:
     # Check write permission
     if not _allow_write():
         first_word = args[0].lower() if args else ""
-        if first_word not in (
-            "calendar", "contact", "docs", "drive",
-            "im", "base", "mail", "minutes", "okr",
-            "task", "doctor", "api",
-        ):
-            pass  # unknown command, let lark-cli decide
-        elif first_word == "api" and len(args) > 1 and args[1].upper() in ("GET", "HEAD"):
-            pass  # read-only API calls
-        elif first_word == "doctor":
-            pass  # always safe
-        else:
-            # Heuristic: most non-GET lark-cli commands are writes.
-            # Let lark-cli's own scope enforcement handle actual safety.
+        sub = args[1].lower() if len(args) > 1 else ""
+        is_read = (
+            first_word == "doctor"
+            or (first_word == "api" and sub in ("get", "head"))
+            or sub in _READ_SUBCOMMANDS
+            or first_word not in (
+                "calendar", "contact", "docs", "drive", "im", "base",
+                "mail", "minutes", "okr", "task", "doctor", "api",
+            )
+        )
+        if not is_read:
             return (
                 "Write operations are disabled. "
                 "Enable with: wb setup → lark_allow_write: true, "

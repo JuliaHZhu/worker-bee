@@ -1,7 +1,7 @@
 ---
 name: lark-messaging
 description: 飞书收发消息 — 私聊、群聊、历史消息拉取与摘要
-trigger: 发消息, 发送, 通知, 私信, 群聊, 聊天记录, 最近消息, 看看群里, 回复, messaging, send message, inbox
+trigger: 发消息, 发给, 发送, 通知, 私信, 群聊, 聊天记录, 最近消息, 看看群里, 回复, messaging, send message, inbox
 tools:
   - feishu_lark
 category: feishu

@@ -514,8 +514,14 @@ def _lark_send(args):
             print(f"Error searching groups: {r.stdout[:200]}")
             return
         exact = [c for c in chats if c.get("name", "").lower() == args.group.lower()]
-        chat = exact[0] if exact else (chats[0] if chats else None)
-        if not chat:
+        if exact:
+            chat = exact[0]
+        elif chats:
+            print(f"Group '{args.group}' not found exactly. Did you mean:")
+            for c in chats[:5]:
+                print(f"  - {c.get('name', '?')}")
+            return
+        else:
             print(f"Group not found: {args.group}")
             return
         cid = chat["chat_id"]
@@ -534,8 +540,14 @@ def _lark_send(args):
             print(f"Error searching users: {r.stdout[:200]}")
             return
         exact = [u for u in users if u.get("name", "").lower() == args.to.lower()]
-        user = exact[0] if exact else (users[0] if users else None)
-        if not user:
+        if exact:
+            user = exact[0]
+        elif users:
+            print(f"User '{args.to}' not found exactly. Did you mean:")
+            for u in users[:5]:
+                print(f"  - {u.get('name', '?')}")
+            return
+        else:
             print(f"User not found: {args.to}")
             return
         uid = user.get("open_id", user.get("user_id"))
@@ -575,8 +587,14 @@ def _lark_inbox(args):
             print(f"Error: {r.stdout[:200]}")
             return
         exact = [c for c in chats if c.get("name", "").lower() == args.group.lower()]
-        chat = exact[0] if exact else (chats[0] if chats else None)
-        if not chat:
+        if exact:
+            chat = exact[0]
+        elif chats:
+            print(f"Group '{args.group}' not found exactly. Did you mean:")
+            for c in chats[:5]:
+                print(f"  - {c.get('name', '?')}")
+            return
+        else:
             print(f"Group not found: {args.group}")
             return
         cid = chat["chat_id"]
@@ -594,8 +612,14 @@ def _lark_inbox(args):
             print(f"Error: {r.stdout[:200]}")
             return
         exact = [u for u in users if u.get("name", "").lower() == args.from_user.lower()]
-        user = exact[0] if exact else (users[0] if users else None)
-        if not user:
+        if exact:
+            user = exact[0]
+        elif users:
+            print(f"User '{args.from_user}' not found exactly. Did you mean:")
+            for u in users[:5]:
+                print(f"  - {u.get('name', '?')}")
+            return
+        else:
             print(f"User not found: {args.from_user}")
             return
         uid = user.get("open_id", user.get("user_id"))

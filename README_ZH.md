@@ -184,9 +184,9 @@ wb swarm status
 wb swarm listen
 
 # 飞书 Lark
-wb lark who                 # 显示我的身份
+wb lark who 张三             # 按名字搜索用户 → open_id
 wb lark chats               # 列出最近会话
-wb lark send "张三" "上线了"  # 按人名发消息
+wb lark send --to 张三 hello # 按人名发消息
 wb lark inbox --from 张三   # 拉取最近消息
 ```
 
@@ -412,9 +412,9 @@ wb swarm status
 wb swarm listen
 
 # 飞书命令
-wb lark who
+wb lark who 张三
 wb lark chats
-wb lark send "张三" "上线了"
+wb lark send --to 张三 hello
 wb lark inbox --from 张三 --limit 10
 ```
 

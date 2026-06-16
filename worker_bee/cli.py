@@ -448,6 +448,137 @@ def _add_workspace_parser(sub):
 
 
 # ---------------------------------------------------------------------------
+# Lark / Feishu sub-command
+# ---------------------------------------------------------------------------
+def _lark_who(args):
+    """Resolve a contact name to open_id."""
+    import subprocess, json
+    result = subprocess.run(
+        ["lark-cli", "contact", "+search-user", "--query", args.name],
+        capture_output=True, text=True, timeout=10,
+    )
+    try:
+        data = json.loads(result.stdout)
+        users = data.get("items", data.get("data", {}).get("items", []))
+    except json.JSONDecodeError:
+        print(result.stdout[:500])
+        return
+    if not users:
+        print(f"No results for '{args.name}'")
+        return
+    for u in users[:5]:
+        name = u.get("name", "?")
+        uid = u.get("open_id", u.get("user_id", "?"))
+        email = u.get("email", "")
+        dept = ", ".join(u.get("department_names", []))
+        print(f"{name:20s}  {uid}  {email}  {dept}")
+
+
+def _lark_chats(args):
+    """List or search group chats."""
+    import subprocess, json
+    cmd = ["lark-cli", "im", "+chat-list"]
+    if args.query:
+        cmd = ["lark-cli", "im", "+chat-search", "--query", args.query]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    try:
+        data = json.loads(result.stdout)
+        chats = data.get("items", data.get("data", {}).get("items", []))
+    except json.JSONDecodeError:
+        print(result.stdout[:500])
+        return
+    if not chats:
+        print(f"No chats found" + (f" for '{args.query}'" if args.query else ""))
+        return
+    for c in chats[:20]:
+        name = c.get("name", "?")
+        cid = c.get("chat_id", "?")
+        members = c.get("member_count", "?")
+        print(f"{name:30s}  {cid}  ({members} members)")
+
+
+def _lark_send(args):
+    """Send a message — resolves name to ID automatically."""
+    import subprocess, json
+
+    if args.group:
+        # Resolve group name
+        r = subprocess.run(
+            ["lark-cli", "im", "+chat-search", "--query", args.group],
+            capture_output=True, text=True, timeout=10,
+        )
+        try:
+            data = json.loads(r.stdout)
+            chats = data.get("items", data.get("data", {}).get("items", []))
+        except json.JSONDecodeError:
+            print(f"Error searching groups: {r.stdout[:200]}")
+            return
+        exact = [c for c in chats if c.get("name", "").lower() == args.group.lower()]
+        chat = exact[0] if exact else (chats[0] if chats else None)
+        if not chat:
+            print(f"Group not found: {args.group}")
+            return
+        cid = chat["chat_id"]
+        name = chat.get("name", args.group)
+        cmd = ["lark-cli", "im", "+messages-send", "--chat-id", cid, "--text", args.msg]
+    elif args.to:
+        # Resolve user name
+        r = subprocess.run(
+            ["lark-cli", "contact", "+search-user", "--query", args.to],
+            capture_output=True, text=True, timeout=10,
+        )
+        try:
+            data = json.loads(r.stdout)
+            users = data.get("items", data.get("data", {}).get("items", []))
+        except json.JSONDecodeError:
+            print(f"Error searching users: {r.stdout[:200]}")
+            return
+        exact = [u for u in users if u.get("name", "").lower() == args.to.lower()]
+        user = exact[0] if exact else (users[0] if users else None)
+        if not user:
+            print(f"User not found: {args.to}")
+            return
+        uid = user.get("open_id", user.get("user_id"))
+        uname = user.get("name", args.to)
+        cmd = ["lark-cli", "im", "+messages-send", "--user-id", uid, "--text", args.msg]
+        name = uname
+    else:
+        print("Specify --to <name> or --group <name>")
+        return
+
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    try:
+        data = json.loads(result.stdout)
+        if data.get("ok"):
+            msg_id = data.get("data", {}).get("message_id", "?")
+            print(f"✅ Sent to {name} (msg_id: {msg_id})")
+        else:
+            err = data.get("error", {}).get("message", result.stdout[:200])
+            print(f"❌ {err}")
+    except json.JSONDecodeError:
+        print(result.stdout[:500])
+
+
+def _add_lark_parser(sub):
+    lark = sub.add_parser("lark", help="Feishu/Lark operations — resolve names to IDs")
+    lark_sub = lark.add_subparsers(dest="lark_cmd", required=True)
+
+    p = lark_sub.add_parser("who", help="Find a user by name → open_id")
+    p.add_argument("name", help="Name or partial name")
+    p.set_defaults(func=_lark_who)
+
+    p = lark_sub.add_parser("chats", help="List/search group chats")
+    p.add_argument("query", nargs="?", default="", help="Optional search keyword")
+    p.set_defaults(func=_lark_chats)
+
+    p = lark_sub.add_parser("send", help="Send a message (resolves name → ID)")
+    p.add_argument("--to", default="", help="User name to DM")
+    p.add_argument("--group", default="", help="Group name")
+    p.add_argument("msg", nargs="?", default="", help="Message text")
+    p.set_defaults(func=_lark_send)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main(argv=None):
@@ -466,6 +597,9 @@ def main(argv=None):
             "  wb todo quick\n"
             "  wb todo stats 14\n"
             "  wb workspace\n"
+            "  wb lark who 张三\n"
+            "  wb lark chats\n"
+            "  wb lark send --to 张三 hello\n"
         ),
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -473,6 +607,7 @@ def main(argv=None):
     _add_todo_parser(sub)
     _add_swarm_parser(sub)
     _add_workspace_parser(sub)
+    _add_lark_parser(sub)
 
     args = parser.parse_args(argv)
     args.func(args)

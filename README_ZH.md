@@ -8,7 +8,7 @@
 
 **Worker Bee = Hermes Lite 内核 + 蜂群扩展层。**
 
-保持相同的极简架构 —— 注册表、Deck、协议抽象、协议无关循环 —— 在此基础上增加了真正需要的东西：session、定时任务、标签、平台感知、NATS 蜂群通信、skill 生态。
+保持相同的极简架构 — 注册表、Deck、协议抽象、协议无关循环 — 在此基础上增加了真正需要的东西：session、定时任务、标签、平台感知、NATS 蜂群通信、skill 生态。
 
 不需要 Symphony，不需要多 Agent 编排，不需要 daemon。Agent 自己读板、自己派活、自己留下信息素。人随时打开文件就能看到全貌。
 
@@ -20,7 +20,7 @@
 
 Worker Bee 的假设不同：
 
-> **Agent 自己就是 dispatcher。** Deck 架构已经解决了工具分发 —— 每次任务只暴露相关的工具。Agent 不需要"被调度"，它只需要"被激活"。
+> **Agent 自己就是 dispatcher。** Deck 架构已经解决了工具分发 — 每次任务只暴露相关的工具。Agent 不需要"被调度"，它只需要"被激活"。
 
 ```
 用户说 "抽球"
@@ -35,7 +35,7 @@ Deck 加载抽球工具
 Agent 抽球 -> 汇报 -> 停止
 ```
 
-Agent 一次只做一件事，但**一件事可以很复杂** —— 读多个 job、评估质量、生成报告。复杂不等于需要多个 agent。
+Agent 一次只做一件事，但**一件事可以很复杂** — 读多个 job、评估质量、生成报告。复杂不等于需要多个 agent。
 
 ---
 
@@ -44,39 +44,39 @@ Agent 一次只做一件事，但**一件事可以很复杂** —— 读多个 j
 把 Worker Bee 想象成一座五层工厂。每层只做一件事，原料（数据）从下往上流。Agent 住在顶层，它从不操心地下室发生了什么。
 
 ```
-+------------------------------------------+
-|  五层：蜂群装备                          |
-|  - NATS 消息总线（跨机器说话）            |
-|  - Cron 调度器（后台探头）                |
-|  - Job Probe（jobs/ 的巡逻兵）            |
-|  - SessionDB（SQLite 持久化）             |
-+------------------------------------------+
-|  四层：Agent 外壳                        |
-|  - 配置加载器（~/.worker-bee/）           |
-|  - Schema 缓存 + agent.md/soul.md 注入   |
-+------------------------------------------+
-|  三层：协议内核（Hermes Lite）            |
-|  - protocols.py（Anthropic / OpenAI）     |
-|  - loop.py（协议无关对话循环）            |
-+------------------------------------------+
-|  二层：工具边界（Deck + Registry）        |
-|  - registry.py（线程安全工具仓库）        |
-|  - deck.py（运行时工具边界）              |
-|  - skills.py（Markdown 技能匹配引擎）     |
-+------------------------------------------+
-|  一层：工具实现                          |
-|  - lark.py, file.py, terminal.py, ...    |
-|  - 导入即注册。零配置。                   |
-+------------------------------------------+
++────────────────────────────────────────────────┐
+│  五层：蜂群装备                          │
+│  - NATS 消息总线（跨机器说话）            │
+│  - Cron 调度器（后台探头）                │
+│  - Job Probe（jobs/ 的巡逻兵）            │
+│  - SessionDB（SQLite 持久化）             │
++────────────────────────────────────────────────┘
+│  四层：Agent 外壳                        │
+│  - 配置加载器（~/.worker-bee/）           │
+│  - Schema 缓存 + agent.md/soul.md 注入   │
++────────────────────────────────────────────────┘
+│  三层：协议内核（Hermes Lite）            │
+│  - protocols.py（Anthropic / OpenAI）     │
+│  - loop.py（协议无关对话循环）            │
++────────────────────────────────────────────────┘
+│  二层：工具边界（Deck + Registry）        │
+│  - registry.py（线程安全工具仓库）        │
+│  - deck.py（运行时工具边界）              │
+│  - skills.py（Markdown 技能匹配引擎）     │
++────────────────────────────────────────────────┘
+│  一层：工具实现                          │
+│  - lark.py, file.py, terminal.py, ...    │
+│  - 导入即注册。零配置。                   │
++────────────────────────────────────────────────┘
 ```
 
-**这意味着什么**：如果 Hermes Lite 修复了协议 bug 或新增了一个 provider，Worker Bee 只要复制 `protocols.py` 和 `loop.py` 就能白嫖。零合并冲突，零漂移。
+**这意味着什么**：如果 Hermes Lite 修复了协议 bug 或新增了一个 provider，Worker Bee 只要复制 `protocols.py` 和 `loop.py` 就能白劫。零合并冲突，零漂移。
 
 ---
 
 ## 一次请求的生命周期
 
-假设你说：**"发给张三 project 上线了"**
+假设你说：**“发给张三 project 上线了”**
 
 ```
 用户输入："发给张三 project 上线了"
@@ -117,7 +117,7 @@ Agent 一次只做一件事，但**一件事可以很复杂** —— 读多个 j
     返回结果 -> loop 塞回上下文 -> 继续循环或直接结束
 ```
 
-**关键洞察**：Deck 是运行时边界。LLM 不可能幻觉出 Deck 里没有的工具。如果一个 skill 没有声明 `swarm_publish`，agent 字面意义上无法调用它 —— 不是因为权限错误，而是因为当前上下文中这个工具根本不存在。
+**关键洞察**：Deck 是运行时边界。LLM 不可能幻觉出 Deck 里没有的工具。如果一个 skill 没有声明 `swarm_publish`，agent 字面意义上无法调用它 — 不是因为权限错误，而是因为当前上下文中这个工具根本不存在。
 
 ---
 
@@ -127,9 +127,9 @@ Worker Bee 强制职责分离。最近的例子是 Lark（飞书）集成：
 
 | 层级 | 文件 | 职责 | 举例 |
 |------|------|------|------|
-| **Skill** | `skills/lark-*.md` | **WHEN / HOW / WHAT-TO-AVOID** —— 教 agent 决策流、边界、反模式 | "发送前先确认目标。对人名，先搜索再匹配；禁止猜 ID。" |
-| **Tool** | `tools/lark.py` | **薄执行** —— 安全调用 `lark-cli`。一个布尔门 (`lark_allow_write`) | `subprocess.run(["lark-cli", "im", "+messages-send", ...])` |
-| **CLI** | `cli.py` | **人类捷径** —— 绕过 agent 循环直接执行 | `wb lark send "张三" "上线了"` |
+| **Skill** | `skills/lark-*.md` | **WHEN / HOW / WHAT-TO-AVOID** — 教 agent 决策流、边界、反模式 | "发送前先确认目标。对人名，先搜索再匹配；禁止猜 ID。" |
+| **Tool** | `tools/lark.py` | **薄执行** — 安全调用 `lark-cli`。一个布尔门 (`lark_allow_write`) | `subprocess.run(["lark-cli", "im", "+messages-send", ...])` |
+| **CLI** | `cli.py` | **人类捷径** — 绕过 agent 循环直接执行 | `wb lark send "张三" "上线了"` |
 
 **Skill 从不教命令语法**（那是 Tool schema 的事）。**Tool 从不教决策逻辑**（那是 Skill 的事）。**CLI 是给人类用的，不是给 agent 用的**。
 
@@ -239,7 +239,7 @@ worker-bee/
 │       ├─── meta.md
 │       ├─── sessions/
 │       └─── artifacts/
-├─── tests/                # pytest 测试套件（265 个测试）
+├─── tests/                # pytest 测试套件（326 个测试）
 ├─── design_notes/         # 架构设计文档
 ├─── todo_ball_machine/    # 人生任务抽球系统
 └─── templates/            # Skill 编写模板 + agent.md/soul.md 示例
@@ -375,6 +375,9 @@ created → confirmed → planned → executing → self_checked → reviewed �
 | **swarm-send** | 通过 NATS 向蜂群发布/请求 | 通知、广播、派发任务 |
 | **swarm-receive** | 读取蜂群消息（从 mailbox） | 收消息、看邮件、check inbox |
 | **wiki** | 本地知识库操作 | wiki, note |
+| **pm-bee** | 项目管理助手 | plan, schedule, milestone |
+| **skill-creator-is-you** | Skill 创作教练 | write skill, create skill |
+| **code-decision-guidelines** | 编码决策辅助 | tech decision, stack choice |
 
 添加新 skill 只需要：写一个 `skills/xxx.md` 契约 + 一个 `tools/xxx.py` handler。零核心侵入。
 
@@ -382,7 +385,7 @@ created → confirmed → planned → executing → self_checked → reviewed �
 
 ## `wb` CLI
 
-`wb` 是直接命令行接口 —— 不走 agent 循环，不占上下文窗口，直接执行：
+`wb` 是直接命令行接口 — 不走 agent 循环，不占上下文窗口，直接执行：
 
 ```bash
 # Job probe 命令
@@ -445,7 +448,7 @@ Skill 响应 probe 状态：
 
 ## 蜂群通信（NATS）
 
-不同服务器上的 Worker Bee 通过 NATS 通信 —— 一个轻量的 pub/sub 消息总线。每台 bee 连接本地的 NATS server；多台 server 组成集群，消息自动跨服务器路由。
+不同服务器上的 Worker Bee 通过 NATS 通信 — 一个轻量的 pub/sub 消息总线。每台 bee 连接本地的 NATS server；多台 server 组成集群，消息自动跨服务器路由。
 
 ```
 Agent 说 "通知蜂群 deck 构建完成"
@@ -467,7 +470,7 @@ Agent 说 "查收件箱" → swarm-receive skill → 读 mailbox → 分类处�
 - **接收**：后台 `swarm/listener.py` 订阅 NATS → 写入 `~/.worker-bee/mailbox/inbox/`
 - **CLI**：`wb swarm status`（检查状态）、`wb swarm listen`（启动监听）
 
-Agent 不直接 subscribe NATS。它读 mailbox —— 和 Job Board 一样：所有状态在文件里。
+Agent 不直接 subscribe NATS。它读 mailbox — 和 Job Board 一样：所有状态在文件里。
 
 ---
 
@@ -498,45 +501,50 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 
 Aristotle Bee、Architecture Bee、Project Manager Bee、WorldBee 等历史 fork 概念，以及完整的 agent 生态系统设计，均存档于 `design_notes/` 。它们说明了同一个内核如何穿上不同的 skill 外衣。
 
-操作规范（信息素格式、mechanism vs task skill 区别）见 `design_notes/exogenous-pheromone-formats.md`。
+运营规范（信息素格式、mechanism vs task skill 区别）见 `design_notes/exogenous-pheromone-formats.md`。
+
+最近的架构研究：
+- **BeeBox**（`design_notes/beebox.md`） — 三个收紧约束，探索 agentic 硬件
+- **AEvo**（`design_notes/architecture-study/aevo-harnessing-agentic-evolution.md`） — 利用 agentic 进化
+- **Autogenesis**（`design_notes/architecture-study/autogenesis-self-evolving-agent-protocol.md`） — 自我进化的 agent 协议
 
 ---
 
 ## 设计原则
 
 | 原则 | 含义 |
-|------|------|
-| **复用内核** | `protocols.py` + `loop.py` 从 Hermes Lite 原封不动拷贝。不分叉。 |
-| **一个 Agent 就够了** | 不要多 agent，不要 orchestrator，不要 daemon |
-| **Text as Model** | 所有状态在 Markdown 里，人随时可读可改 |
-| **Append-Only** | 事件流不可覆盖，历史不丢 |
-| **Deck 裁剪** | 每次任务只暴露相关工具，不越界 |
-| **关卡驱动** | 任务不是"Todo→Done"，是 7 个确认节点 |
-| **Skill ≠ Tool** | Skill = 推理手册（WHEN/HOW/WHAT to avoid）。Tool = 薄执行引擎。零重复。 |
+|-----------|---------|
+| **复用内核** | `protocols.py` + `loop.py` 从 Hermes Lite 原样复用。零漂移。 |
+| **一个 Agent 就够** | 不要多 Agent，不要 orchestrator，不要 daemon |
+| **Text as Model** | 所有状态都在 Markdown 里，人可读、可直接编辑 |
+| **Append-Only** | 事件流永不覆盖，历史永不丢失 |
+| **Deck 修剪** | 每个任务只暴露相关工具，不越界 |
+| **Checkpoint 驱动** | 任务不是 "Todo->Done"；它们是 7 个确认节点 |
+| **Skill != Tool** | Skill = 推理手册 (WHEN/HOW/WHAT to avoid)。Tool = 薄执行引擎。零重复。 |
 
 ---
 
 ## 自定义 Agent（agent.md + soul.md）
 
-想改变 Agent 的行为？写两个 Markdown 文件就行 —— 不需要改代码。
+想改变 agent 的行为？写两个 Markdown 文件 — 不需要改代码。
 
 ```
 ~/.worker-bee/
-├─── agent.md    # Agent 行为：规则、偏好、工具使用模式
-└─── soul.md     # Agent 人格：语气、风格、身份
+├── agent.md    # Agent 行为：规则、偏好、工具使用模式
+└── soul.md     # Agent 人设：语气、风格、身份
 ```
 
-启动时，Worker Bee 读取这两个文件，拼接到 system prompt 末尾：
+启动时，Worker Bee 读取这两个文件并追加到系统提示词。每个文件都包裹在自己的标题下：
 
 ```
 --- AGENT.MD ---
-[agent.md 的内容]
+[contents of agent.md]
 
 --- SOUL.MD ---
-[soul.md 的内容]
+[contents of soul.md]
 ```
 
-**实现原理**（`worker_bee/agent.py`）：
+**原理**（来自 `worker_bee/agent.py`）：
 
 ```python
 def _load_prompt_files() -> str:
@@ -547,11 +555,11 @@ def _load_prompt_files() -> str:
             parts.append(f"\n\n--- {filename.upper()} ---\n\n{path.read_text()}")
     return "".join(parts)
 
-# 在 AIAgent.__init__ 里：
+# In AIAgent.__init__:
 self.system_prompt = f"{base_prompt}{injection}"
 ```
 
-**一句话**：改文件 → Agent 行为就变了。不需要重启，不需要改配置，不需要改代码。
+**结论**：编辑文件 -> agent 行为改变。不需要重启，不需要配置，不需要代码。
 
 ---
 
@@ -559,10 +567,10 @@ self.system_prompt = f"{base_prompt}{injection}"
 >
 > 你有一块板。
 >
-> 这两个东西一直在对话。
+> 这两个东西始终在对话。
 >
-> 你随时可以拍拍它的肩膀问："这个怎么样了？"
+> 你可以随时拍它肩膀问："这个进度怎么样？"
 >
-> 它会指给你看板上的记录。
+> 它会指着板子上的记录给你看。
 >
-> 够了。
+> 这就够了。

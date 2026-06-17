@@ -185,7 +185,7 @@ wb swarm status
 wb swarm listen
 
 # Lark / Feishu
-wb lark who 张三             # Search user by name → open_id
+wb lark who Bob             # Search user by name -> open_id
 wb lark chats               # List recent chats
 wb lark send --to Bob hello # Send DM by name
 wb lark inbox --from Bob    # Pull recent messages
@@ -240,7 +240,7 @@ worker-bee/
 │       ├─── meta.md
 │       ├─── sessions/
 │       └─── artifacts/
-├─── tests/                # pytest suite (265 tests)
+├─── tests/                # pytest suite (326 tests)
 ├─── design_notes/         # Architecture docs
 ├─── todo_ball_machine/    # Life task ball-drawing system
 └─── templates/            # Skill authoring templates + agent.md/soul.md examples
@@ -373,6 +373,9 @@ Existing skills, all using the same Deck architecture:
 | **swarm-send** | Publish/request to swarm via NATS | notify, broadcast, dispatch |
 | **swarm-receive** | Read swarm messages from mailbox | check inbox, new messages |
 | **wiki** | Local knowledge base operations | wiki, note |
+| **pm-bee** | Project management helper | plan, schedule, milestone |
+| **skill-creator-is-you** | Skill authoring coach | write skill, create skill |
+| **code-decision-guidelines** | Coding decision assistant | tech decision, stack choice |
 
 Adding a new skill only requires: write a `skills/xxx.md` contract + a `tools/xxx.py` handler. Zero core intrusion.
 
@@ -410,7 +413,7 @@ wb swarm status
 wb swarm listen
 
 # Lark commands
-wb lark who 张三
+wb lark who Bob
 wb lark chats
 wb lark send --to Bob hello
 wb lark inbox --from Bob --limit 10
@@ -426,10 +429,10 @@ The background monitor watches all jobs in `jobs/` and surfaces status without h
 
 ```
 Every 60s (cron tick):
-  ├── Scan jobs/ for active jobs
-  ├── Check cycle deadlines
-  ├── Surface overdue / blocked jobs
-  └── Trigger handoff if context threshold reached
+  |-- Scan jobs/ for active jobs
+  |-- Check cycle deadlines
+  |-- Surface overdue / blocked jobs
+  |-- Trigger handoff if context threshold reached
 ```
 
 Probe thresholds are configurable (default: 80 rounds warn, 85 rounds handoff).
@@ -497,6 +500,11 @@ A handoff is a work-state snapshot (Purpose, Completed, Todos, Context, Next Ste
 Historical fork concepts (Aristotle Bee, Architecture Bee, Project Manager Bee, WorldBee) and the full agent ecosystem design are archived in `design_notes/`. They illustrate how the same kernel can wear different skill skins.
 
 Operational specs (pheromone formats, mechanism vs task skill distinctions) live in `design_notes/exogenous-pheromone-formats.md`.
+
+Recent architecture studies:
+- **BeeBox** (`design_notes/beebox.md`) — three tightening constraints for agentic hardware
+- **AEvo** (`design_notes/architecture-study/aevo-harnessing-agentic-evolution.md`) — harnessing agentic evolution
+- **Autogenesis** (`design_notes/architecture-study/autogenesis-self-evolving-agent-protocol.md`) — self-evolving agent protocol
 
 ---
 

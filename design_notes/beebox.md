@@ -66,3 +66,53 @@ AGP 和 AEvo 都假定"越可进化越好"。Worker-Bee 刻意在多个层级写
 | 知识 | — | ✅ Deck atom + tag | 知识是唯一该持续进化的层 |
 
 这和 AGP 的"所有五类资源都该可版本化"是对立的设计哲学。不是谁对谁错——是两条路。
+
+---
+
+## 2026-06-05: 专机专用 × 一体一机 × ToolCall Loop（三个递进约束）
+
+**触发**: 把 AGP/AEvo 的启发放进 worker-bee 实际架构里走了一遍，发现三个约束层层收紧，恰好解释了为什么我们不需要 AGP 的大部分重量。
+
+### 约束 1: 专机专用
+
+写作 Agent 就只干写作。它不需要复杂的 Memory 版本管理——一个 Writer Bee 的"历史"不是记忆版本，而是**Procedure 的迭代轨迹**：上次用的什么 prompt 模板、选了哪些 atom、产出被 Julia 怎么改的。
+
+→ Memory 版本化不适用。适用的是 Procedure 版本化——每个 Writing Bee 的 procedure 就是它的进化对象。
+
+### 约束 2: 一体一机
+
+一个 Agent = 一台 Computer。十几台 Computer 在跑，但大家都跑在同一个 Ubuntu 上。不需要 environment 抽象层去适配异构环境——没有异构。
+
+→ AGP 的 Environment 资源类型不适用。Worker-Bee 的"环境"就是 Ubuntu + NATS，写死在基础设施层。
+
+### 约束 3: ToolCall Loop
+
+黄超的判断：agent 就是个 tool-calling loop。Loop 的核心是**连续的 tool-call 动作序列**——不是"规划-执行-反思"的重型循环，是 call tool → 收结果 → call next tool。
+
+结合前面两篇论文：
+- **WorldBee** 跟踪的是整个 BeeBox 的进化过程——哪台机产出了什么、哪些 skill 被更新了、Deck 变化轨迹
+- **Strategic Bee** 做的是进化决策——什么时候该启动一次进化任务
+
+### 进化的正确打开方式
+
+进化**不是自发的**。不是说 agent 跑着跑着自己就进化了。进化是一个**特定时刻显式启动的任务**：
+
+```
+Julia 或 Strategic Bee 启动进化任务
+  → WorldBee 把最近干的活理一遍（产出和反馈）
+  → Strategic Bee 判断：Writer Bee 的 procedure 哪里该改
+  → 改完 → 新的 procedure 版本 → Writer Bee 下次用新版
+```
+
+**Writer Bee 的进化方向是"更好的 Writer Bee"**。它不会变成 Director Bee，不会变成 Architect Bee。专机专用 = 进化有方向约束，不是 open-ended。
+
+### 为什么这三个约束恰好消解了 AGP 的重量
+
+| AGP 需要的 | Worker-Bee 为什么不需要 |
+|-----------|----------------------|
+| 五类资源统一管理 | 只有 Skill 和 Procedure 需要版本化，其他写死 |
+| Environment 资源类型 | 一体一机，统一 Ubuntu |
+| Memory 版本化 | 专机专用——"历史"是 Procedure 迭代轨迹，不是通用记忆 |
+| 中心化注册表 | 蜂群去中心化——每台机的 procedure 版本存在自己的 Deck 里 |
+| SEPL 算子代数 | 进化是显式任务，不是持续闭环——WorldBee + Strategic Bee 联合决策即可 |
+| 持续自进化 | 进化是事件驱动 + 人工启动，不是后台常驻进程 |

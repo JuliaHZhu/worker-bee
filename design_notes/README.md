@@ -17,6 +17,7 @@
 | 文件 | 说明 |
 |------|------|
 | [aevo-harnessing-agentic-evolution.md](architecture-study/aevo-harnessing-agentic-evolution.md) | AEvo: 把进化建模成交互式环境，meta-agent 编辑搜索机制而非产生候选 |
+| [autogenesis-self-evolving-agent-protocol.md](architecture-study/autogenesis-self-evolving-agent-protocol.md) | AGP: 双层自进化协议——RSPL 资源注册层 + SEPL 闭环算子层，填补 MCP/A2A 的资源管理空白 |
 
 ## 核心架构
 

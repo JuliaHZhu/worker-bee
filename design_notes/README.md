@@ -8,6 +8,9 @@
 | [02-architecture-bee.md](02-architecture-bee.md) | 结构规约器 — 从模糊想法到不可再分约束 |
 | [03-project-manager-bee.md](03-project-manager-bee.md) | 编排优化器 — 现实材料分解与排期 |
 | [04-worldbee.md](04-worldbee.md) | 环境引擎 — 现实检查、数据验证 |
+| [05-commander-worker-io.md](05-commander-worker-io.md) | CommanderBee + WorkerBee：代理店长与日结工 |
+| [06-worldbee-pheromone.md](06-worldbee-pheromone.md) | WorldBee：信息素与全局感知 |
+| [07-full-agent-ecosystem.md](07-full-agent-ecosystem.md) | 全 Agent 蜂群：分层架构与双仓库 |
 | [exogenous-pheromone-formats.md](exogenous-pheromone-formats.md) | 每个 fork 的外部状态 Markdown 格式 |
 | [beebox.md](beebox.md) | 蜂群架构认知轨迹——随分析积累，每次追记 |
 

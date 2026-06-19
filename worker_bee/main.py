@@ -34,7 +34,7 @@ from worker_bee.registry import registry
 from worker_bee.infra_toolsets import InfraToolSet
 from worker_bee.deck import build_deck, Deck
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 _tick_stop = threading.Event()
 _tick_thread = None

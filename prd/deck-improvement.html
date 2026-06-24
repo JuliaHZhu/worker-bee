@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deck 改进方案</title>
+<style>
+:root{--bg:#fdfbf7;--text:#2c2416;--accent:#8b4513;--border:#c4a882;--code-bg:#f5f0e8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Noto Serif SC","STSong",serif;line-height:1.85;color:var(--text);background:var(--bg);max-width:760px;margin:0 auto;padding:40px 24px}
+h1{font-size:1.5rem;text-align:center;margin-bottom:4px;color:#6b3410}
+.subtitle{text-align:center;font-size:.9rem;color:#8b7355;margin-bottom:32px}
+.back{text-align:center;font-size:.85rem;margin-bottom:16px}
+.back a{color:var(--accent);text-decoration:none}
+h2{font-size:1.2rem;color:#6b3410;border-bottom:1px solid var(--border);padding-bottom:4px;margin:40px 0 16px}
+h3{font-size:1rem;color:var(--accent);margin:24px 0 8px}
+p{margin:10px 0;font-size:.93rem}
+strong{color:#6b3410}
+code{background:var(--code-bg);padding:1px 5px;border-radius:3px;font-size:.88em}
+pre{background:var(--code-bg);padding:14px 18px;border-radius:6px;border:1px solid var(--border);overflow-x:auto;margin:12px 0;font-size:.83rem;line-height:1.55}
+pre code{padding:0;background:none}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.9rem}
+th{background:#f0e8d8;text-align:left;padding:8px 12px;border:1px solid var(--border);font-weight:bold}
+td{padding:8px 12px;border:1px solid var(--border)}
+tr:nth-child(even) td{background:#fdfaf5}
+.tag{display:inline-block;background:#f0e8d8;color:#8b7355;padding:1px 8px;border-radius:10px;font-size:.78em;margin-left:6px}
+.takeaway{background:#faf3e4;border-left:3px solid var(--accent);padding:12px 16px;margin:16px 0;border-radius:0 6px 6px 0;font-size:.9rem}
+.symptom{color:#b55a3c}
+.fix{color:#5a8a5a}
+ul,ol{margin:8px 0 8px 20px;font-size:.9rem}
+li{margin:4px 0}
+.footer{text-align:center;margin-top:48px;padding-top:16px;border-top:1px solid var(--border);font-size:.82rem;color:#c4a882}
+</style>
+</head>
+<body>
+<p class="back"><a href="../worker-bee.html">← Worker Bee</a></p>
+<h1>Deck 改进方案</h1>
+<p class="subtitle">让 Deck 真正成为物理隔离,而非半透膜</p>
+
+<div style="text-align:center;font-size:.85rem;margin:16px 0;padding:12px;background:#faf3e4;border-radius:6px">
+  <strong>相关文档:</strong>
+  <a href="deck-improvement-prd.html">Deck 改进方案 PRD</a>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>一、当前问题</h2>
+
+<p><strong class="symptom">症状：</strong>Deck 声称"物理隔离"，但实际每次请求 Agent 都能看到全部 <code>config.tools</code>（terminal、file read/write/search、web、delegate × 3），无论匹配了什么 Skill。</p>
+
+<p><strong class="symptom">根因：</strong><code>main.py</code> 第 528 行无条件合并了 config.tools：</p>
+
+<pre><code># 第 528 行 — 罪魁祸首
+base_tools = config.get("tools", [])
+merged_tools = list(dict.fromkeys(deck.tools + base_tools))
+deck = Deck(merged_tools, registry)</code></pre>
+
+<p>这导致：</p>
+<ul>
+  <li>Skill 声明 <code>[feishu_lark]</code> → Deck 实际包含 feishu_lark <strong>+ 全部 9 个 config tools</strong></li>
+  <li><code>BASELINE_POOL</code> 的 3 冗余槽形同虚设——config.tools 已经全量注入</li>
+  <li>Agent 永远能调 terminal、读写文件、搜索网页，无论 Skill 声明了什么</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>二、双模式设计</h2>
+
+<table>
+  <tr><th></th><th>全工具模式 <span class="tag">默认</span></th><th>Deck 专注模式</th></tr>
+  <tr><td>Deck 内容</td><td>config.tools 全量</td><td>trigger 匹配的 skill_tools + 基础冗余</td></tr>
+  <tr><td>trigger 匹配</td><td>不触发</td><td>每次输入重新匹配 → 锁定</td></tr>
+  <tr><td>自动重匹配</td><td>—</td><td>不自动。手动 <code>wb deck reset</code></td></tr>
+  <tr><td>适用场景</td><td>探索、闲聊、多任务切换</td><td>专注执行一个工种</td></tr>
+</table>
+
+<p class="takeaway"><strong>默认全工具模式。</strong>新用户进来就能用所有东西。需要专注执行某个工种时主动切 Deck 专注模式。</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>三、代码改动</h2>
+
+<h3>main.py — Deck procurement 段</h3>
+
+<pre><code># === 改前 ===
+deck = build_deck(skill_tools, registry, redundancy=3)
+base_tools = config.get("tools", [])
+merged_tools = list(dict.fromkeys(deck.tools + base_tools))
+final_tools = infra.filter_tools(merged_tools)
+deck = Deck(final_tools, registry)
+
+# === 改后 ===
+if deck_mode == "full":
+    # 全工具模式：config.tools 全量
+    deck = Deck(config.get("tools", []), registry)
+else:
+    # Deck 专注模式：
+    # 1. 首次 trigger 匹配后锁定，不自动重匹配
+    # 2. 无 skill 匹配 → fallback 最小集
+    if not skill_tools:
+        fallback = ["fs_read_file", "fs_search_files", "sys_terminal"]
+        deck = Deck(fallback, registry)
+    else:
+        deck = build_deck(skill_tools, registry, redundancy=3)
+
+final_tools = infra.filter_tools(deck.tools)
+deck = Deck(final_tools, registry)</code></pre>
+
+<h3>效果对比</h3>
+
+<table>
+  <tr><th>场景</th><th>全工具模式</th><th>Deck 专注模式</th></tr>
+  <tr>
+    <td>匹配 lark-messaging</td>
+    <td>全部 9 个 config tools</td>
+    <td class="fix">feishu_lark + fs_read + fs_search + terminal</td>
+  </tr>
+  <tr>
+    <td>无 skill 匹配</td>
+    <td>全部 9 个 config tools</td>
+    <td class="fix">fs_read + fs_search + terminal</td>
+  </tr>
+</table>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>四、Agent "做不到" 时的回复规范</h2>
+
+<p>Deck 专注模式下 Agent 可能因工具不足而无法完成任务。回复格式：</p>
+
+<pre><code>我做不到：[原因]
+可行做法：用 wb deck add &lt;tool&gt; 加工具，或 wb deck full 切回全工具模式。</code></pre>
+
+<p>这个行为写入 meta skill（deck-control），由 Skill 教给 Agent，不是硬编码。</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>五、wb deck CLI</h2>
+
+<p>唯一入口——人在终端敲，Agent 在飞书里通过 <code>sys_terminal</code> 调。</p>
+
+<pre><code>wb deck mode          # 查看当前模式
+wb deck full           # 切全工具模式
+wb deck focus          # 切 Deck 专注模式，trigger 匹配当前输入或下次输入
+wb deck add &lt;tool&gt;     # 往当前 Deck 加工具
+wb deck drop &lt;tool&gt;    # 从当前 Deck 移除工具
+wb deck reset          # 清空 Deck，重新 trigger 匹配
+wb deck list           # 列出当前 Deck 里的工具
+wb deck log            # 查看 Deck 使用统计</code></pre>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>六、Deck Log</h2>
+
+<p>JSON 文件：<code>~/.worker-bee/deck_log.json</code></p>
+
+<pre><code>{
+  "combos": {
+    "feishu_lark+fs_read_file+fs_search_files+sys_terminal": {
+      "count": 47, "last_used": "2026-06-23"
+    },
+    "net_web_search+net_web_extract+fs_read_file+fs_search_files+sys_terminal": {
+      "count": 23, "last_used": "2026-06-22"
+    }
+  },
+  "mode_switches": 12,
+  "focus_sessions": 8
+}</code></pre>
+
+<p>目的：积累数据看最常用的工种模式，长期可以自动推荐 Deck 组合。</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>七、Tool / Skill 封装</h2>
+
+<p>Deck 操作按 Worker Bee 哲学封装：</p>
+
+<table>
+  <tr><th>层级</th><th>名称</th><th>职责</th></tr>
+  <tr><td><strong>CLI</strong></td><td><code>wb deck</code></td><td>人类快捷键——终端直接操作</td></tr>
+  <tr><td><strong>Tool</strong></td><td><code>deck_manage</code></td><td>薄执行——mode/switch/add/drop/reset/list/log</td></tr>
+  <tr><td><strong>Skill</strong></td><td><code>deck-control</code></td><td>推理手册——什么时候该切换模式、"做不到"时的回复模板</td></tr>
+</table>
+
+<p>不用 Deck 功能时关掉 <code>deck-control</code> skill → Deck 不再装填 <code>deck_manage</code> tool → 物理隔离。</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>八、飞书菜单 UI（远期）</h2>
+
+<p>飞书渠道上可以有一个交互式菜单 Tool，把 <code>wb deck</code> 的操作用卡片/按钮暴露出来——模式切换、工具增减、log 查看。人和 Agent 都能通过飞书界面操作 Deck，不依赖终端。</p>
+
+<table>
+  <tr><th></th><th>终端</th><th>飞书</th></tr>
+  <tr><td>人类</td><td><code>wb deck focus</code></td><td>飞书卡片菜单按钮</td></tr>
+  <tr><td>Agent</td><td><code>sys_terminal wb deck add</code></td><td>飞书菜单 UI Tool</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>九、config.tools 的新角色</h2>
+
+<p><code>config.tools</code> 保留，角色调整：</p>
+<ol>
+  <li><strong>全工具模式的 Deck 来源</strong></li>
+  <li><strong>注册表查询</strong>：<code>/tools</code> 命令列出可用工具</li>
+  <li><strong>Skill 声明校验</strong>：加载时检查声明的 tool 名是否在注册表中存在</li>
+  <li><strong>不再注入 Deck 专注模式的 Deck</strong></li>
+</ol>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>十、待办</h2>
+
+<table>
+  <tr><th>#</th><th>项</th><th>文件</th></tr>
+  <tr><td>1</td><td>删除 config.tools 无条件合并逻辑，改为双模式分支</td><td><code>main.py</code></td></tr>
+  <tr><td>2</td><td>实现 <code>wb deck</code> CLI（mode/full/focus/add/drop/reset/list/log）</td><td><code>cli.py</code></td></tr>
+  <tr><td>3</td><td>注册 <code>deck_manage</code> Tool</td><td><code>tools/deck_manage.py</code></td></tr>
+  <tr><td>4</td><td>编写 <code>deck-control</code> Skill（trigger + 做不到回复模板）</td><td><code>skills/deck-control.md</code></td></tr>
+  <tr><td>5</td><td>实现 deck_log.json 统计</td><td><code>worker_bee/deck.py</code> 或独立文件</td></tr>
+  <tr><td>6</td><td>更新 wiki 页面中的 Deck 描述</td><td><code>wiki/.../agent.html</code></td></tr>
+  <tr><td>7</td><td>跑测试</td><td><code>pytest tests/</code></td></tr>
+</table>
+
+<p class="takeaway"><strong>一句话：</strong>全工具模式做日常，Deck 专注模式做工种。config.tools 是注册表，不再是底牌。Tool/Skill/CLI 三层封装，不用就关掉。</p>
+
+<div class="footer">
+  <p>2026-06-23 · 更新于 grilling session 后</p>
+</div>
+</body>
+</html>

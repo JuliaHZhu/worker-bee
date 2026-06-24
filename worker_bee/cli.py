@@ -709,6 +709,116 @@ def _lark_serve(args):
 
 
 # ---------------------------------------------------------------------------
+# Deck sub-command
+# ---------------------------------------------------------------------------
+def _deck_mode(args):
+    from worker_bee.main import load_config
+    from worker_bee.deck import DeckManager
+    from worker_bee.registry import registry
+    cfg = load_config() or {}
+    dm = DeckManager(cfg.get("tools", []), registry)
+    print(f"Mode: {dm.mode}")
+    tools = dm.list_tools()
+    print(f"Tools ({len(tools)}): {', '.join(tools) if tools else '(none)'}")
+
+
+def _deck_full(args):
+    from worker_bee.main import load_config
+    from worker_bee.deck import DeckManager
+    from worker_bee.registry import registry
+    cfg = load_config() or {}
+    dm = DeckManager(cfg.get("tools", []), registry)
+    print(dm.set_mode("full"))
+
+
+def _deck_focus(args):
+    from worker_bee.main import load_config
+    from worker_bee.deck import DeckManager
+    from worker_bee.registry import registry
+    cfg = load_config() or {}
+    dm = DeckManager(cfg.get("tools", []), registry)
+    print(dm.set_mode("focus"))
+
+
+def _deck_add(args):
+    from worker_bee.main import load_config
+    from worker_bee.deck import DeckManager
+    from worker_bee.registry import registry
+    cfg = load_config() or {}
+    dm = DeckManager(cfg.get("tools", []), registry)
+    print(dm.add_tool(args.tool))
+
+
+def _deck_drop(args):
+    from worker_bee.main import load_config
+    from worker_bee.deck import DeckManager
+    from worker_bee.registry import registry
+    cfg = load_config() or {}
+    dm = DeckManager(cfg.get("tools", []), registry)
+    print(dm.drop_tool(args.tool))
+
+
+def _deck_reset(args):
+    from worker_bee.main import load_config
+    from worker_bee.deck import DeckManager
+    from worker_bee.registry import registry
+    cfg = load_config() or {}
+    dm = DeckManager(cfg.get("tools", []), registry)
+    print(dm.reset())
+
+
+def _deck_list(args):
+    from worker_bee.main import load_config
+    from worker_bee.deck import DeckManager
+    from worker_bee.registry import registry
+    cfg = load_config() or {}
+    dm = DeckManager(cfg.get("tools", []), registry)
+    tools = dm.list_tools()
+    print(f"Tools ({len(tools)}): {', '.join(tools) if tools else '(none)'}")
+
+
+def _deck_log(args):
+    import json
+    from worker_bee.main import load_config
+    from worker_bee.deck import DeckManager
+    from worker_bee.registry import registry
+    cfg = load_config() or {}
+    dm = DeckManager(cfg.get("tools", []), registry)
+    print(json.dumps(dm.get_log(), ensure_ascii=False, indent=2))
+
+
+def _add_deck_parser(sub):
+    deck = sub.add_parser("deck", help="Deck management — tool boundary control")
+    deck_sub = deck.add_subparsers(dest="deck_cmd", required=True)
+
+    p = deck_sub.add_parser("mode", help="Show current deck mode and tools")
+    p.set_defaults(func=_deck_mode)
+
+    p = deck_sub.add_parser("full", help="Switch to full-tool mode")
+    p.set_defaults(func=_deck_full)
+
+    p = deck_sub.add_parser("focus", help="Switch to focus mode")
+    p.set_defaults(func=_deck_focus)
+
+    p = deck_sub.add_parser("add", help="Add a tool to current deck")
+    p.add_argument("tool")
+    p.set_defaults(func=_deck_add)
+
+    p = deck_sub.add_parser("drop", help="Remove a tool from current deck")
+    p.add_argument("tool")
+    p.set_defaults(func=_deck_drop)
+
+    p = deck_sub.add_parser("reset", help="Reset deck and re-match skills")
+    p.set_defaults(func=_deck_reset)
+
+    p = deck_sub.add_parser("list", help="List tools in current deck")
+    p.set_defaults(func=_deck_list)
+
+    p = deck_sub.add_parser("log", help="Show deck usage statistics")
+    p.set_defaults(func=_deck_log)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main(argv=None):
@@ -732,6 +842,9 @@ def main(argv=None):
             "  wb lark who 张三\n"
             "  wb lark chats\n"
             "  wb lark send --to 张三 hello\n"
+            "  wb deck mode\n"
+            "  wb deck focus\n"
+            "  wb deck add fs_write_file\n"
         ),
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -740,6 +853,7 @@ def main(argv=None):
     _add_swarm_parser(sub)
     _add_workspace_parser(sub)
     _add_lark_parser(sub)
+    _add_deck_parser(sub)
 
     args = parser.parse_args(argv)
     args.func(args)

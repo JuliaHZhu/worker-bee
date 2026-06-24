@@ -32,7 +32,7 @@ from worker_bee.memory import SessionDB
 from worker_bee.skills import SkillManager
 from worker_bee.registry import registry
 from worker_bee.infra_toolsets import InfraToolSet
-from worker_bee.deck import build_deck, Deck
+from worker_bee.deck import build_deck, Deck, DeckManager
 
 VERSION = "0.1.1"
 
@@ -388,6 +388,7 @@ def run_session(temperature_override: float | None = None):
     db = SessionDB()
     skill_mgr = SkillManager()
     infra = InfraToolSet()
+    deck_mgr = DeckManager(config.get("tools", []), registry)
 
     base_system_prompt = agent.system_prompt
 
@@ -400,6 +401,8 @@ def run_session(temperature_override: float | None = None):
     if plat != "linux":
         available = infra.get_available_tools()
         print(f"Infra tools: {', '.join(available) if available else 'none'}")
+    print()
+    print(f"Deck mode: {deck_mgr.mode}  (use /deck to manage)")
     print()
 
     # Start cron scheduler in background
@@ -509,6 +512,9 @@ def run_session(temperature_override: float | None = None):
             print(f"Handoff exported to: {path}")
             print("  Start a new session with: worker-bee --continue <path>")
             continue
+        if user_input.lower().startswith("/deck"):
+            _handle_deck(user_input, deck_mgr)
+            continue
 
         # --- Deck procurement: gather tools BEFORE execution ---
         print("  [Procuring deck...]", flush=True)
@@ -521,16 +527,10 @@ def run_session(temperature_override: float | None = None):
         # 2. Collect tools from matched skills
         skill_tools = skill_mgr.get_tools_for_skills(matched_skills)
 
-        # 3. Build deck with redundancy slots (+3 baseline)
-        deck = build_deck(skill_tools, registry, redundancy=3)
+        # 3. Build deck via DeckManager (dual-mode: full / focus)
+        deck = deck_mgr.procure(skill_tools, infra.filter_tools)
 
-        # 4. Merge platform base tools from config
-        base_tools = config.get("tools", [])
-        merged_tools = list(dict.fromkeys(deck.tools + base_tools))
-        final_tools = infra.filter_tools(merged_tools)
-        deck = Deck(final_tools, registry)
-
-        print(f"  [Deck ready: {deck.size()} tools]")
+        print(f"  [Deck ready: {deck.size()} tools]  (mode: {deck_mgr.mode})")
 
         # --- Dynamic context injection for skill-authoring skills ---
         skill_context = skill_mgr.build_context_for_skills(matched_skills)
@@ -689,6 +689,38 @@ def _make_handoff(messages) -> str:
     if last_assistant:
         parts.append(f"Agent: {last_assistant}")
     return " | ".join(parts) if parts else ""
+
+
+def _handle_deck(cmd: str, deck_mgr: DeckManager):
+    """Handle /deck subcommands in interactive session."""
+    parts = cmd.split()
+    if len(parts) == 1:
+        # /deck alone — show status
+        tools = deck_mgr.list_tools()
+        print(f"Mode: {deck_mgr.mode}")
+        print(f"Tools ({len(tools)}): {', '.join(tools) if tools else '(none)'}")
+        return
+    sub = parts[1].lower()
+    if sub == "mode":
+        print(f"Current mode: {deck_mgr.mode}")
+    elif sub == "full":
+        print(deck_mgr.set_mode("full"))
+    elif sub == "focus":
+        print(deck_mgr.set_mode("focus"))
+    elif sub == "add" and len(parts) == 3:
+        print(deck_mgr.add_tool(parts[2]))
+    elif sub == "drop" and len(parts) == 3:
+        print(deck_mgr.drop_tool(parts[2]))
+    elif sub == "reset":
+        print(deck_mgr.reset())
+    elif sub == "list":
+        tools = deck_mgr.list_tools()
+        print(f"Tools ({len(tools)}): {', '.join(tools) if tools else '(none)'}")
+    elif sub == "log":
+        log = deck_mgr.get_log()
+        print(json.dumps(log, ensure_ascii=False, indent=2))
+    else:
+        print("Usage: /deck [mode|full|focus|add <tool>|drop <tool>|reset|list|log]")
 
 
 def main():

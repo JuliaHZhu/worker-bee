@@ -161,3 +161,108 @@ class TestBuildDeck:
         d = build_deck([], fresh_registry, redundancy=5)
         from worker_bee.deck import BASELINE_POOL
         assert d.tools == BASELINE_POOL[:5]
+
+
+class TestDeckManager:
+    """DeckManager — dual-mode procurement, add/drop/reset, logging."""
+
+    def test_default_mode_is_full(self, fresh_registry):
+        _register_tools(fresh_registry)
+        from worker_bee.deck import DeckManager
+        dm = DeckManager(["fs_read_file", "sys_terminal"], fresh_registry)
+        assert dm.mode == "full"
+
+    def test_full_mode_returns_config_tools(self, fresh_registry):
+        _register_tools(fresh_registry)
+        from worker_bee.deck import DeckManager
+        dm = DeckManager(["fs_read_file", "sys_terminal"], fresh_registry)
+        deck = dm.procure([], lambda tools: tools)
+        assert set(deck.tools) == {"fs_read_file", "sys_terminal"}
+
+    def test_focus_mode_with_skill_tools(self, fresh_registry):
+        _register_tools(fresh_registry)
+        _register_net_tools(fresh_registry)
+        from worker_bee.deck import DeckManager
+        dm = DeckManager(["fs_read_file", "sys_terminal", "net_web_search"], fresh_registry)
+        dm.set_mode("focus")
+        deck = dm.procure(["net_web_search"], lambda tools: tools)
+        assert "net_web_search" in deck.tools
+        # Should have redundancy tools too
+        assert len(deck.tools) >= 1 + 1
+
+    def test_focus_mode_fallback_when_no_skills(self, fresh_registry):
+        _register_tools(fresh_registry)
+        from worker_bee.deck import DeckManager
+        dm = DeckManager(["fs_read_file", "sys_terminal"], fresh_registry)
+        dm.set_mode("focus")
+        deck = dm.procure([], lambda tools: tools)
+        assert "fs_read_file" in deck.tools
+        assert "fs_search_files" in deck.tools
+        assert "sys_terminal" in deck.tools
+
+    def test_add_tool_to_full_mode(self, fresh_registry):
+        _register_tools(fresh_registry)
+        from worker_bee.deck import DeckManager
+        dm = DeckManager(["fs_read_file"], fresh_registry)
+        result = dm.add_tool("sys_terminal")
+        assert "添加" in result
+        deck = dm.procure([], lambda tools: tools)
+        assert "sys_terminal" in deck.tools
+
+    def test_add_tool_to_focus_mode(self, fresh_registry):
+        _register_tools(fresh_registry)
+        from worker_bee.deck import DeckManager
+        dm = DeckManager(["fs_read_file"], fresh_registry)
+        dm.set_mode("focus")
+        result = dm.add_tool("sys_terminal")
+        assert "添加" in result
+        deck = dm.procure([], lambda tools: tools)
+        assert "sys_terminal" in deck.tools
+
+    def test_drop_tool(self, fresh_registry):
+        _register_tools(fresh_registry)
+        from worker_bee.deck import DeckManager
+        dm = DeckManager(["fs_read_file", "sys_terminal"], fresh_registry)
+        dm.drop_tool("sys_terminal")
+        deck = dm.procure([], lambda tools: tools)
+        assert "sys_terminal" not in deck.tools
+        assert "fs_read_file" in deck.tools
+
+    def test_reset_clears_focus_tools(self, fresh_registry):
+        _register_tools(fresh_registry)
+        from worker_bee.deck import DeckManager
+        dm = DeckManager(["fs_read_file"], fresh_registry)
+        dm.set_mode("focus")
+        dm.add_tool("sys_terminal")
+        dm.reset()
+        # After reset, focus_tools should be empty, so fallback kicks in
+        deck = dm.procure([], lambda tools: tools)
+        assert "fs_read_file" in deck.tools  # fallback includes it
+
+    def test_set_mode_invalid(self, fresh_registry):
+        from worker_bee.deck import DeckManager
+        dm = DeckManager([], fresh_registry)
+        result = dm.set_mode("invalid")
+        assert "未知" in result
+
+    def test_log_records_combos(self, fresh_registry, tmp_path):
+        _register_tools(fresh_registry)
+        from worker_bee.deck import DeckManager
+        log_file = tmp_path / "deck_log.json"
+        dm = DeckManager(["fs_read_file"], fresh_registry, log_path=log_file)
+        dm.procure([], lambda tools: tools)
+        log = dm.get_log()
+        assert len(log["combos"]) >= 1
+        for key, val in log["combos"].items():
+            assert val["count"] >= 1
+            assert "last_used" in val
+
+    def test_mode_switch_log(self, fresh_registry, tmp_path):
+        _register_tools(fresh_registry)
+        from worker_bee.deck import DeckManager
+        log_file = tmp_path / "deck_log.json"
+        dm = DeckManager([], fresh_registry, log_path=log_file)
+        dm.set_mode("focus")
+        log = dm.get_log()
+        assert log["mode_switches"] >= 1
+        assert log["focus_sessions"] >= 1

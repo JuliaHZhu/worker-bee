@@ -1,7 +1,8 @@
 """
 Tests for NATS swarm communication tools and listener.
 
-Requires a running NATS server on localhost:4222 or uses mocking.
+Uses JetStream for message persistence.
+Requires a running NATS server with JetStream enabled on localhost:4222.
 Run: pytest tests/test_swarm.py -v
 """
 import asyncio
@@ -110,14 +111,18 @@ class TestSwarmListener:
 
 
 class TestSwarmIntegration:
-    """Integration tests — requires NATS server running."""
+    """Integration tests — requires NATS server with JetStream running."""
 
     @pytest.mark.skipif(
         os.environ.get("NATS_URL") is None,
-        reason="Requires NATS server. Set NATS_URL=nats://localhost:4222 to run."
+        reason="Requires NATS server with JetStream. Set NATS_URL=nats://localhost:4222 and start nats-server -js to run."
     )
     def test_publish_to_real_nats(self):
-        """Send a message to a real NATS server."""
+        """Send a message to a real NATS JetStream server.
+
+        NOTE: Ensure the swarm-listener has created the 'swarm-messages' Stream,
+        or js.publish() will fail with 'no stream matches subject'.
+        """
         os.environ["SWARM_NATS_URL"] = os.environ.get("NATS_URL", "nats://localhost:4222")
         result = swarm_publish("swarm.test.integration", {"hello": "world"})
         data = json.loads(result)

@@ -72,6 +72,7 @@ async def _publish(subject: str, payload: dict):
     import nats
     nc = await nats.connect(NATS_URL)
     try:
+        js = nc.jetstream()
         envelope = {
             "message_id": str(uuid.uuid4()),
             "subject": subject,
@@ -80,7 +81,7 @@ async def _publish(subject: str, payload: dict):
             "sender": _get_bee_id(),
             "sequence": _next_sequence(),
         }
-        await nc.publish(subject, json.dumps(envelope, ensure_ascii=False).encode())
+        await js.publish(subject, json.dumps(envelope, ensure_ascii=False).encode())
     finally:
         await nc.drain()
 

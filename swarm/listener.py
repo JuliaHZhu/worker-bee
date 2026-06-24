@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import nats
+import nats.js.api as js_api
 
 
 # ── 配置 ──────────────────────────────────────────────
@@ -102,12 +103,15 @@ def _write_envelope(subject: str, reply_to: str, data: bytes):
 # ── 主循环 ────────────────────────────────────────────
 
 async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
-    """连接 NATS，订阅 subject，写入 mailbox。永不退出。"""
+    """连接 NATS + JetStream，用 durable pull consumer 拉取消息写入 mailbox。
+
+    使用 JetStream 保证 listener 重启后不丢消息。
+    """
     bee_id = _get_bee_id()
     print(f"[swarm-listener] 连接 {nats_url} ... (身份: {bee_id})")
     nc = await nats.connect(nats_url, connect_timeout=NATS_TIMEOUT)
 
-    # ── bee_id 冲突检测 ──
+    # ── bee_id 冲突检测（保持 Core NATS）──
     conflict_subject = f"swarm.heartbeat.{bee_id}"
     conflict_detected = False
 
@@ -139,19 +143,53 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
     except Exception:
         pass
 
-    # 正式订阅
-    async def handler(msg):
-        _write_envelope(msg.subject, msg.reply or "", msg.data)
+    # ── JetStream 初始化 ──
+    js = nc.jetstream()
 
-    await nc.subscribe(subject, cb=handler)
-    print(f"[swarm-listener] 就绪 — 监听 {subject} → {MAILBOX_INBOX}")
+    stream_name = "swarm-messages"
+    try:
+        await js.add_stream(
+            name=stream_name,
+            subjects=["swarm.>"],
+            max_age=3600 * 24 * 90,  # 90天 ≈ 3个月
+            storage=js_api.StorageType.FILE,
+            retention=js_api.RetentionPolicy.LIMITS,
+        )
+        print(f"[swarm-listener] 创建 JetStream Stream: {stream_name}")
+    except Exception as e:
+        if "already exists" in str(e).lower():
+            pass
+        else:
+            raise
+
+    # Durable Pull Consumer：重启后从上次消费位置继续
+    consumer_name = f"swarm-listener-{bee_id}"
+    config = js_api.ConsumerConfig(
+        durable_name=consumer_name,
+        ack_policy=js_api.AckPolicy.EXPLICIT,
+        ack_wait=30,  # 30秒内没 ack 就重发
+        max_deliver=3,
+        deliver_policy=js_api.DeliverPolicy.ALL,
+    )
+
+    sub = await js.pull_subscribe(
+        subject,
+        durable=consumer_name,
+        stream=stream_name,
+        config=config,
+    )
+    print(f"[swarm-listener] 就绪 — 监听 {subject} → {MAILBOX_INBOX} (JetStream durable)")
 
     # 启动心跳
     heartbeat_task = asyncio.create_task(_heartbeat_loop(nc, bee_id))
 
-    # 一直跑，直到被信号中断
+    # 主循环：pull + 写文件 + ack
     try:
-        await asyncio.Event().wait()
+        while True:
+            msgs = await sub.fetch(batch=10, timeout=5)
+            for msg in msgs:
+                _write_envelope(msg.subject, msg.reply or "", msg.data)
+                await msg.ack()
     except KeyboardInterrupt:
         print("\n[swarm-listener] 收到中断信号，正在 drain ...")
     finally:

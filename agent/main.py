@@ -75,6 +75,8 @@ def load_config():
 
 
 def _make_config(provider, model, api_key, base_url, max_iter=60, temperature=0.0):
+    import socket
+    default_bee_id = socket.gethostname().lower().replace(".", "-")
     return {
         "model": model,
         "provider": provider,
@@ -83,6 +85,7 @@ def _make_config(provider, model, api_key, base_url, max_iter=60, temperature=0.
         "max_iterations": max_iter,
         "temperature": temperature,
         "auto_confirm": False,
+        "bee_id": default_bee_id,
         "system_prompt": (
             "You are a helpful coding assistant. You have access to tools:\n"
             "- sys_terminal: run shell commands\n"
@@ -147,12 +150,19 @@ def setup():
     except ValueError:
         temperature = 0.0
 
+    # Bee ID (for swarm identification)
+    import socket
+    default_bee = socket.gethostname().lower().replace(".", "-")
+    print()
+    bee_id = input(f"Bee ID (for swarm) [{default_bee}]: ").strip() or default_bee
+
     # Lark / Feishu write permission
     print()
     lark_write = input("Allow lark-cli write operations? (send messages, upload files, edit docs) [y/N]: ").strip().lower()
     lark_allow_write = lark_write == "y"
 
     config = _make_config(provider, model, key, base, temperature=temperature)
+    config["bee_id"] = bee_id
     config["lark_allow_write"] = lark_allow_write
     path = get_config_path()
     with open(path, "w") as f:
@@ -729,7 +739,7 @@ def main():
         description="Lightweight AI agent with tool access.",
         add_help=False,
     )
-    parser.add_argument("command", nargs="?", choices=["setup", "config"], help="Command")
+    parser.add_argument("command", nargs="?", choices=["setup", "config", "retry-rate-limited"], help="Command")
     parser.add_argument("config_args", nargs="*", help="Extra args for config command")
     parser.add_argument("-m", "--model-ping", metavar="MSG", help="Quick model ping test")
     parser.add_argument("-c", "--channel-ping", metavar="MSG", help="Quick channel ping test (Feishu/Discord)")
@@ -750,6 +760,7 @@ Usage:
   worker-bee setup              Configure API key and model
   worker-bee config             Show current config
   worker-bee config key value   Update a config value
+  worker-bee retry-rate-limited Immediately retry all rate-limited jobs
   worker-bee -m "hello"         Quick model connectivity test
   worker-bee -c "hello"         Quick channel connectivity test
   worker-bee -t 0.5             Start session with temperature override
@@ -786,6 +797,16 @@ Interactive commands:
 
     if args.command == "config":
         config_cmd(args.config_args)
+        return
+
+    if args.command == "retry-rate-limited":
+        from cron.jobs import retry_rate_limited_jobs, get_rate_limited_jobs
+        pending = get_rate_limited_jobs()
+        if not pending:
+            print("API 正常，无待恢复任务。")
+            return
+        retried = retry_rate_limited_jobs()
+        print(f"已恢复 {len(retried)} 个因限流暂停的任务，下个 tick 执行。")
         return
 
     # Default: run interactive session

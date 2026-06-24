@@ -32,6 +32,8 @@ from cron.jobs import (
     mark_job_run,
     save_job_output,
     advance_next_run,
+    mark_job_rate_limited,
+    retry_rate_limited_jobs,
     OUTPUT_DIR,
     CRON_DIR,
 )
@@ -453,6 +455,18 @@ def run_job(job: dict, default_config: dict, skill_manager=None) -> None:
         error = str(e)
         output = f"Error: {e}"
 
+        # Rate-limit detection: auto-retry in 10 minutes
+        err_lower = error.lower()
+        is_rate_limit = any(k in err_lower for k in (
+            "rate limit", "ratelimit", "429", "too many requests",
+            "rate_limit_exceeded", "insufficient_quota"
+        ))
+        if is_rate_limit:
+            logger.warning("Job '%s' hit rate limit. Scheduling retry in 10 min.", job_name)
+            mark_job_rate_limited(job_id, retry_delay_minutes=10)
+            # Skip mark_job_run — mark_job_rate_limited already updated state
+            return
+
     # Save output
     save_job_output(job_id, output)
 
@@ -493,6 +507,14 @@ def tick(default_config: dict, skill_manager=None) -> int:
         return 0
 
     try:
+        # ── Retry rate-limited jobs immediately ──
+        try:
+            retried = retry_rate_limited_jobs()
+            if retried:
+                logger.info("Retried %d rate-limited job(s): %s", len(retried), ", ".join(retried))
+        except Exception:
+            logger.exception("Retry rate-limited jobs failed")
+
         # ── Job Probe tick (background monitoring, never fails tick) ──
         try:
             from tools.job_probe import probe_tick

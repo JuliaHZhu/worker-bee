@@ -15,7 +15,7 @@ import asyncio
 import json
 import os
 
-from worker_bee.registry import registry
+from agent.registry import registry
 
 
 # ── 配置 ──────────────────────────────────────────────

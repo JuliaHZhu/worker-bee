@@ -3,9 +3,9 @@
 调用链：
   Agent → deck_manage Tool → DeckManager → 文件/内存
 """
-from worker_bee.main import load_config
-from worker_bee.deck import DeckManager
-from worker_bee.registry import registry
+from agent.main import load_config
+from agent.deck import DeckManager
+from agent.registry import registry
 
 
 def deck_manage(action: str, tool_name: str = "") -> str:

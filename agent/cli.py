@@ -90,7 +90,7 @@ def _job_run(args):
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
     from tools.job_probe import _read_meta, _ensure_job_dir, _append_event, _atomic_write
-    from worker_bee.registry import registry
+    from agent.registry import registry
 
     job_id = args.job_id
     meta, body = _read_meta(job_id)
@@ -441,7 +441,7 @@ def _add_swarm_parser(sub):
 # Workspace sub-command
 # ---------------------------------------------------------------------------
 def _workspace_show(args):
-    from worker_bee.workspace import get_workspace
+    from agent.workspace import get_workspace
     print(get_workspace())
 
 
@@ -704,7 +704,7 @@ def _add_lark_parser(sub):
 
 def _lark_serve(args):
     """Start the Feishu Lark webhook server."""
-    from worker_bee.lark_cli import run_server
+    from agent.lark_cli import run_server
     run_server(port=args.port)
 
 
@@ -712,9 +712,9 @@ def _lark_serve(args):
 # Deck sub-command
 # ---------------------------------------------------------------------------
 def _deck_mode(args):
-    from worker_bee.main import load_config
-    from worker_bee.deck import DeckManager
-    from worker_bee.registry import registry
+    from agent.main import load_config
+    from agent.deck import DeckManager
+    from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
     print(f"Mode: {dm.mode}")
@@ -723,54 +723,54 @@ def _deck_mode(args):
 
 
 def _deck_full(args):
-    from worker_bee.main import load_config
-    from worker_bee.deck import DeckManager
-    from worker_bee.registry import registry
+    from agent.main import load_config
+    from agent.deck import DeckManager
+    from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
     print(dm.set_mode("full"))
 
 
 def _deck_focus(args):
-    from worker_bee.main import load_config
-    from worker_bee.deck import DeckManager
-    from worker_bee.registry import registry
+    from agent.main import load_config
+    from agent.deck import DeckManager
+    from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
     print(dm.set_mode("focus"))
 
 
 def _deck_add(args):
-    from worker_bee.main import load_config
-    from worker_bee.deck import DeckManager
-    from worker_bee.registry import registry
+    from agent.main import load_config
+    from agent.deck import DeckManager
+    from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
     print(dm.add_tool(args.tool))
 
 
 def _deck_drop(args):
-    from worker_bee.main import load_config
-    from worker_bee.deck import DeckManager
-    from worker_bee.registry import registry
+    from agent.main import load_config
+    from agent.deck import DeckManager
+    from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
     print(dm.drop_tool(args.tool))
 
 
 def _deck_reset(args):
-    from worker_bee.main import load_config
-    from worker_bee.deck import DeckManager
-    from worker_bee.registry import registry
+    from agent.main import load_config
+    from agent.deck import DeckManager
+    from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
     print(dm.reset())
 
 
 def _deck_list(args):
-    from worker_bee.main import load_config
-    from worker_bee.deck import DeckManager
-    from worker_bee.registry import registry
+    from agent.main import load_config
+    from agent.deck import DeckManager
+    from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
     tools = dm.list_tools()
@@ -779,9 +779,9 @@ def _deck_list(args):
 
 def _deck_log(args):
     import json
-    from worker_bee.main import load_config
-    from worker_bee.deck import DeckManager
-    from worker_bee.registry import registry
+    from agent.main import load_config
+    from agent.deck import DeckManager
+    from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
     print(json.dumps(dm.get_log(), ensure_ascii=False, indent=2))

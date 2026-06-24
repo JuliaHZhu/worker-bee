@@ -196,7 +196,7 @@ wb lark inbox --from 张三   # 拉取最近消息
 
 ```
 worker-bee/
-├─── worker_bee/           # 核心 agent + CLI
+├─── agent/           # 核心 agent + CLI
 │   ├─── main.py           # CLI 入口（setup / ping / session / lark）
 │   ├─── cli.py            # wb 命令行接口（job + todo + swarm + lark）
 │   ├─── agent.py          # Agent 外壳（配置、schema 缓存、agent.md/soul.md 注入）
@@ -544,7 +544,7 @@ Aristotle Bee、Architecture Bee、Project Manager Bee、WorldBee 等历史 fork
 [contents of soul.md]
 ```
 
-**原理**（来自 `worker_bee/agent.py`）：
+**原理**（来自 `agent/agent.py`）：
 
 ```python
 def _load_prompt_files() -> str:

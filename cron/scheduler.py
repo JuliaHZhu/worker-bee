@@ -36,7 +36,7 @@ from cron.jobs import (
     CRON_DIR,
 )
 
-from worker_bee.workspace import get_workspace
+from agent.workspace import get_workspace
 
 logger = logging.getLogger(__name__)
 
@@ -408,7 +408,7 @@ def run_job(job: dict, default_config: dict, skill_manager=None) -> None:
             # Inject pending tasks assigned to this job
             task_context = ""
             try:
-                from worker_bee.memory import SessionDB
+                from agent.memory import SessionDB
                 db = SessionDB()
                 pending = db.get_pending_tasks_for_job(job_id)
                 if pending:
@@ -441,7 +441,7 @@ def run_job(job: dict, default_config: dict, skill_manager=None) -> None:
                 if toolsets:
                     agent_config["tools"] = toolsets
 
-                from worker_bee.agent import AIAgent
+                from agent.agent import AIAgent
 
                 agent = AIAgent(agent_config)
                 messages = [{"role": "user", "content": full_prompt}]

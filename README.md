@@ -197,7 +197,7 @@ wb lark inbox --from Bob    # Pull recent messages
 
 ```
 worker-bee/
-├─── worker_bee/           # Core agent + CLI
+├─── agent/           # Core agent + CLI
 │   ├─── main.py           # CLI entry point (setup / ping / session / lark)
 │   ├─── cli.py            # wb command-line interface (job + todo + swarm + lark)
 │   ├─── agent.py          # Agent shell (config, schema cache, agent.md/soul.md injection)
@@ -542,7 +542,7 @@ On startup, Worker Bee reads both files and appends them to the system prompt. E
 [contents of soul.md]
 ```
 
-**How it works** (from `worker_bee/agent.py`):
+**How it works** (from `agent/agent.py`):
 
 ```python
 def _load_prompt_files() -> str:

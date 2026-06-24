@@ -27,12 +27,12 @@ import sys
 import threading
 from pathlib import Path
 
-from worker_bee.agent import AIAgent
-from worker_bee.memory import SessionDB
-from worker_bee.skills import SkillManager
-from worker_bee.registry import registry
-from worker_bee.infra_toolsets import InfraToolSet
-from worker_bee.deck import build_deck, Deck, DeckManager
+from agent.agent import AIAgent
+from agent.memory import SessionDB
+from agent.skills import SkillManager
+from agent.registry import registry
+from agent.infra_toolsets import InfraToolSet
+from agent.deck import build_deck, Deck, DeckManager
 
 VERSION = "0.1.1"
 

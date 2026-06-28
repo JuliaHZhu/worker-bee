@@ -534,13 +534,21 @@ def run_session(temperature_override: float | None = None):
         if not matched_skills:
             matched_skills = []
 
-        # 2. Collect tools from matched skills
-        skill_tools = skill_mgr.get_tools_for_skills(matched_skills)
+        # 2. Extended match: top 2 related skills beyond exact match
+        extended_skills = skill_mgr.find_extended_skills(user_input, exclude=matched_skills, top_n=2)
 
-        # 3. Build deck via DeckManager (dual-mode: full / focus)
-        deck = deck_mgr.procure(skill_tools, infra.filter_tools)
+        # 3. Collect tools from both primary and extended skills
+        all_skills = matched_skills + extended_skills
+        skill_tools = skill_mgr.get_tools_for_skills(all_skills)
+
+        # 4. Build deck via DeckManager (dual-mode: full / focus)
+        deck = deck_mgr.procure(skill_tools, infra.filter_tools, primary_skills=matched_skills, extended_skills=extended_skills)
 
         print(f"  [Deck ready: {deck.size()} tools]  (mode: {deck_mgr.mode})")
+        if matched_skills:
+            print(f"    Primary skills: {', '.join(matched_skills)}")
+        if extended_skills:
+            print(f"    Extended skills: {', '.join(extended_skills)}")
 
         # --- Dynamic context injection for skill-authoring skills ---
         skill_context = skill_mgr.build_context_for_skills(matched_skills)

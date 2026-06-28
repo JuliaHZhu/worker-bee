@@ -238,6 +238,37 @@ class SkillManager:
                     break
         return matched
 
+    def _score_skill_match(self, user_input: str, skill_meta: dict) -> int:
+        """Score how well a skill matches user input.
+
+        Returns sum of matched trigger lengths (longer triggers = higher score).
+        """
+        ui_lower = user_input.lower()
+        score = 0
+        for trigger in skill_meta.get("triggers", []):
+            t_lower = trigger.lower()
+            if t_lower in ui_lower:
+                score += len(t_lower)
+        return score
+
+    def find_extended_skills(self, user_input: str, exclude: Optional[List[str]] = None, top_n: int = 2) -> List[str]:
+        """Find top-N skills beyond exact match, ranked by trigger overlap score.
+
+        This acts as a "basic skill" layer: even when no exact trigger fires,
+        we pull in tools from the most relevant skills to keep the deck useful.
+        """
+        exclude_set = set(exclude or [])
+        scored = []
+        for name, meta in self._skills.items():
+            if name in exclude_set:
+                continue
+            score = self._score_skill_match(user_input, meta)
+            if score > 0:
+                scored.append((name, score))
+        # Sort by score descending, take top_n
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return [name for name, _ in scored[:top_n]]
+
     def get_tools_for_skills(self, skill_names: List[str]) -> List[str]:
         tools = set()
         for sn in skill_names:

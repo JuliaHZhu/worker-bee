@@ -88,14 +88,14 @@ class Deck:
 def build_deck(
     skill_tools: List[str],
     registry,
-    redundancy: int = 3,
+    redundancy: int = 2,
 ) -> Deck:
     """采购一个 Deck。
 
     Args:
         skill_tools: 匹配 skills 声明的工具
         registry: 工具注册表
-        redundancy: 冗余卡槽数（默认 3）
+        redundancy: 冗余卡槽数（默认 2）
 
     Returns:
         Deck(skill_tools + 填充的基础工具)
@@ -201,12 +201,16 @@ class DeckManager:
         self,
         skill_tools: List[str],
         infra_filter,
+        primary_skills: Optional[List[str]] = None,
+        extended_skills: Optional[List[str]] = None,
     ) -> Deck:
         """根据当前模式采购 Deck。
 
         Args:
             skill_tools: 匹配到的 skill 工具列表
             infra_filter: infra.filter_tools 方法
+            primary_skills: 精确匹配的 skill 名称
+            extended_skills: 扩展匹配（top2）的 skill 名称
 
         Returns:
             构建好的 Deck 实例
@@ -217,14 +221,14 @@ class DeckManager:
             if not skill_tools:
                 tools = list(self.FALLBACK_TOOLS)
             else:
-                deck = build_deck(skill_tools, self._registry, redundancy=3)
+                deck = build_deck(skill_tools, self._registry, redundancy=2)
                 tools = deck.tools
             # 合并用户手动添加的 focus_tools
             tools = list(dict.fromkeys(tools + self._focus_tools))
 
         final_tools = infra_filter(tools)
         deck = Deck(final_tools, self._registry)
-        self._log_combo(deck.tools)
+        self._log_combo(deck.tools, primary_skills, extended_skills)
         return deck
 
     # —— 日志 ——
@@ -248,17 +252,20 @@ class DeckManager:
         except OSError:
             pass
 
-    def _log_combo(self, tools: List[str]):
+    def _log_combo(self, tools: List[str], primary_skills: Optional[List[str]] = None, extended_skills: Optional[List[str]] = None):
         if not tools:
             return
         data = self._load_log()
         key = "+".join(sorted(tools))
         today = datetime.now().strftime("%Y-%m-%d")
-        if key in data["combos"]:
-            data["combos"][key]["count"] += 1
-            data["combos"][key]["last_used"] = today
-        else:
-            data["combos"][key] = {"count": 1, "last_used": today}
+        entry = data["combos"].get(key, {"count": 0, "last_used": today})
+        entry["count"] += 1
+        entry["last_used"] = today
+        if primary_skills:
+            entry["primary_skills"] = primary_skills
+        if extended_skills:
+            entry["extended_skills"] = extended_skills
+        data["combos"][key] = entry
         self._save_log(data)
 
     def _log_mode_switch(self):

@@ -129,15 +129,15 @@ class TestBuildDeck:
     def test_build_empty_skill_tools(self, fresh_registry):
         _register_tools(fresh_registry)
         from agent.deck import build_deck
-        d = build_deck([], fresh_registry, redundancy=3)
-        assert d.size() == 3
+        d = build_deck([], fresh_registry, redundancy=2)
+        assert d.size() == 2
         assert all(fresh_registry.has_tool(t) for t in d.tools)
 
     def test_build_with_skill_tools_no_duplicates(self, fresh_registry):
         _register_tools(fresh_registry)
         _register_net_tools(fresh_registry)
         from agent.deck import build_deck
-        d = build_deck(['fs_read_file', 'net_web_search'], fresh_registry, redundancy=3)
+        d = build_deck(['fs_read_file', 'net_web_search'], fresh_registry, redundancy=2)
         assert 'fs_read_file' in d.tools
         assert 'net_web_search' in d.tools
         assert d.size() >= 2 + 1
@@ -146,7 +146,7 @@ class TestBuildDeck:
         _register_tools(fresh_registry)
         from agent.deck import build_deck
         # fs_read_file is in BASELINE_POOL, should not be duplicated
-        d = build_deck(['fs_read_file'], fresh_registry, redundancy=3)
+        d = build_deck(['fs_read_file'], fresh_registry, redundancy=2)
         assert d.tools.count('fs_read_file') == 1
 
     def test_build_redundancy_zero(self, fresh_registry):

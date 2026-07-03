@@ -7,12 +7,12 @@
 | Bee | 设计文档 | 一句话 | 登场步骤 |
 |-----|---------|--------|---------|
 | **Aristotle Bee** | `01-aristotle-bee.md` | 术语管家，引导概念清晰 | 第 1 步 |
-| **Skeleton Bee** | `02-architecture-bee.md` | 骨架蜂，选牌型 + 定结构 | 第 2 步 |
-| **Strategy Bee** | `08-strategic-bee.md` | 战略蜂，搜索方向 + 战役报告 | 第 1/2/9 步 |
-| **PM Bee** | `03-project-manager-bee.md` | 项目总管，排期/拆分/汇总结案 | 第 3/4/6 步 |
-| **Centurion Bee** | `05-commander-bee.md` | 百夫长，监工不干活，一机盯十个 | 第 4/5/7 步 |
+| **Skeleton Bee** | `02-skeleton-bee.md` | 骨架蜂，选牌型 + 定结构 | 第 2 步 |
+| **Strategy Bee** | `08-strategy-bee.md` | 战略蜂，搜索方向 + 战役报告 | 第 1/2/9 步 |
+| **PM Bee** | `03-pm-bee.md` | 项目总管，排期/拆分/汇总结案 | 第 3/4/6 步 |
+| **Centurion Bee** | `05-centurion-bee.md` | 百夫长，监工不干活，一机盯十个 | 第 4/5/7 步 |
 | **Worker Bee** | 核心框架 | 执行者，受 Centurion 调派 | 第 5/7 步 |
-| **World Bee** | `04-verification-bee.md` | 真实校验 + 运维知识库 | 第 5/7/8 步 |
+| **World Bee** | `04-world-bee.md` | 真实校验 + 运维知识库 | 第 5/7/8 步 |
 | **Cardmaster Bee** | `09-cardmaster-bee.md` | 战术本 + 参谋长，回合制选动作 + 博弈复盘 | 第 10 步 |
 
 ---

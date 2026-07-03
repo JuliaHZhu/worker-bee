@@ -9,7 +9,7 @@
 | **Strategic Bee** | `08-strategic-bee.md` | 战略 | 搜索全地形，锁定有意义的目标 |
 | **Cardmaster Bee** | `09-cardmaster-bee.md` | 战役 | 总指挥室，回合制选动作 |
 | **Commander Bee** | `05-commander-bee.md` | 前线 | 创造性利用菜谱，缺信息回头要 |
-| **Chef Bee** | `03-project-manager-bee.md` | 战术 | 主厨，写大阶段+菜谱级 task（原 PM Bee） |
+| **Chef Bee** | `03-project-manager-bee.md` | 战术 | 主厨，写大阶段+菜谱级 task（原 Commander Bee） |
 | **Verification Bee** | `04-verification-bee.md` | 战术 | 真实物理引擎，事实验证+证据链 |
 | **Aristotle Bee** | `01-aristotle-bee.md` | 基础设施 | Strategic 辅助——术语定义+归档 |
 | **Skeleton Bee** | `02-architecture-bee.md` | 基础设施 | Strategic 辅助——画架构骨架 |

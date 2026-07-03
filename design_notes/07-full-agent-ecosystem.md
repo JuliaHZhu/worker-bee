@@ -1,6 +1,6 @@
 # 蜂群全貌 — 设计文档索引
 
-> 每个 Bee 一份设计文档。不搞抽象理论层。设计文档自带文件格式。
+> 战略 → 战役 → 战术。三层分明。
 
 ---
 
@@ -13,52 +13,63 @@
 | 3 | **PM Bee** | `03-project-manager-bee.md` | v3.0 | 12 skill：行动计划生成 + 交付触发 |
 | 4 | **World Bee** | `04-worldbee.md` | v2.0 | 14 步免疫过滤 + 证据链引擎 |
 | 5 | **Strategic Bee** | `08-strategic-bee.md` | v1.0 | 战略统合：边界定义+饱和覆盖+终极报告 |
-| 6 | **Cardmaster Bee** | `09-cardmaster-bee.md` | v2.0 | 4 象限回合制动作引擎 |
-| — | **Commander Bee** | (整合在 PM/Strategic 中) | 设计中 | 战役小队长：派发+协调 |
+| 6 | **Cardmaster Bee** | `09-cardmaster-bee.md` | v2.0 | 战役总指挥室：4 象限回合制动作引擎 |
+| — | **Commander Bee** | (整合在 PM/Cardmaster 中) | 设计中 | 前线小队长：派发任务+回收结果 |
 | — | **Worker Bee** | (核心框架) | 运行中 | LLM 自由执行层 |
 
 ---
 
-## 蜂群协作
+## 四层架构
 
 ```
-Strategic Bee（战略：边界 + 方向）
-    │
+战略层 — 管方向对不对
+  Strategic Bee（边界定义 + 领域地图 + 终极报告）
     │ strategic-brief.md
     ▼
-Commander Bee（战役：小队长，派发任务）
-    │
+战役层 — 管这仗怎么打
+  Cardmaster Bee（总指挥室：选动作、定回合、写标的物规格书）
+    │ 标的物规格书
+    ▼
+战术层 — 管怎么执行
+  Commander Bee（前线小队长：拆任务、派发 Job、回收结果）
     │ Job Board
     ▼
-Cardmaster Bee → PM Bee → Architecture Bee
-（选动作）     （拆菜谱）  （画骨架）
-    │              │           │
-    └──────────────┼───────────┘
-                   │
-                   ▼
-            Worker Bees（执行）
-                   │
-                   ▼
-            World Bee（验证）
-                   │
-                   ▼
-            Strategic Bee（终极报告）
-                   │
-                   ▼
-                  人（审阅确认）
+  PM Bee ──▶ Architecture Bee ──▶ Worker Bees ──▶ World Bee
+  （拆菜谱）   （画骨架）          （执行）         （验证）
+    │                                                   │
+    │                                         验证数据+证据链
+    │                                                   │
+    └───────────────────────────────────────────────────┘
+                                                        │
+                                                        ▼
+                                               Strategic Bee（终极报告）
+                                                        │
+                                                        ▼
+                                                       人
 ```
 
-**Aristotle Bee** 贯穿全程但完全静默——只在人主动问"这个术语什么意思"或项目归档时激活。
+**Aristotle Bee** — 贯穿全程，完全静默。只在人主动问术语或归档时激活。
 
 ---
 
-## 战略/战役/战术 三层
+## 四层职责
 
 | 层级 | Bee | 管什么 | 标准 |
 |------|-----|--------|------|
 | **战略** | Strategic Bee | 方向对不对 | 正确（饱和覆盖+边界精确） |
-| **战役** | Commander Bee | 执行到不到位 | 到位（任务派发+回收） |
-| **战术** | PM + Cardmaster + Arch | 怎么做最有效 | 高效（菜谱级精确） |
+| **战役** | Cardmaster Bee | 这仗怎么打 | 标的物质量（report/demo/pipeline/standard） |
+| **前线** | Commander Bee | 任务到不到位 | 派发+回收闭环 |
+| **战术** | PM + Arch + Worker + World | 怎么做最有效 | 菜谱级精确+验证闭环 |
+
+---
+
+## 协作流程
+
+1. Strategic 定方向（领域地图 + 假设）→ `strategic-brief.md`
+2. Cardmaster 选动作（说服/交易/生产/研究）→ 标的物规格书
+3. Commander 拆任务 → 派发到 Job Board
+4. PM 拆菜谱 → PLAN.md → Worker 执行 → World 验证
+5. World 验证数据回流 → Strategic 出终极报告 → 人审阅
 
 ---
 

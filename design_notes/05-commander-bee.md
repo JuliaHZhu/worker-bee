@@ -1,207 +1,148 @@
-# Commander Bee — 前线小队长
+# Centurion Bee — 百夫长
 
-> *菜谱是死的，执行是活的。拿到菜谱后创造性地利用它。缺什么就回头要。*
-
----
-
-## 一、Commander Bee 在蜂群中的位置
-
-```
-Cardmaster Bee（战役总指挥室）
-    │ 标的物规格书（做什么）
-    ▼
-Chef Bee（主厨）
-    │ PLAN.md（大阶段 + 菜谱级 task）
-    ▼
-Commander Bee ← 你在这里
-    │
-    │ 创造性利用菜谱
-    │ 缺信息 → 回头向 Chef 要
-    │ 派发 Job + 回收结果
-    ▼
-Worker Bees（执行）
-```
-
-**Commander 不写菜谱，不选动作，不验证结果。** 它只做一件事：**把菜谱变成现实**。菜谱是完美的，现实是不完美的。Commander 弥合这个差距。
+> *监工不干活。一机盯十个 Worker。菜谱由 PM 写，执行由 Worker 做，Centurion 只派发、监听、回收、补丁。*
 
 ---
 
-## 二、核心能力：有效利用
+## 一、Centurion Bee 在蜂群中的位置
 
-### 什么是"有效利用"
+```
+PM Bee（项目总管）
+    │ 任务拆分单 + Worker 分配方案
+    ▼
+Centurion Bee ← 你在这里（监工）
+    │
+    │ 派发 Job + 监听进度 + 回收结果
+    │ 出问题 → 重试 / 升级给 PM
+    │ 校验依赖 World Bee
+    ▼
+Worker Bees × N（执行，最多 10 个/每 Centurion）
+    │
+    ▼
+World Bee（真实校验）
+```
 
-Chef 的 PLAN.md 是过饱和的——所有 task、容错路径、资源估算全在里面。Commander 拿到后不是照单全发，而是：
-
-1. **判断可执行性**: 这个 task 的前置条件现在满足吗？真能做还是纸面上能做？
-2. **分批派发**: 不一次性全发。按依赖关系分批，前一批有结果再发下一批
-3. **缺信息就回头要**: "T-002 需要 T-001 的产出才能开始，但 T-001 的产出里缺了某个数据——Chef，你菜谱里没写这个数据去哪找，给我补一下"
-4. **现场调整**: Worker 交了结果但和预期有偏差 → 判断偏差在可接受范围内就放行，继续下一个 task。不因为小偏差卡住整条流水线
-
-**Commander 的创造力不是"发明新计划"——是"让计划在现实中跑通"**。
+**Centurion 不写菜谱，不选动作，不执行任务。** 它只做三件事：**派发、监工、回收**。
 
 ---
 
-## 三、7 个 Skill
+## 二、在十步流程中的位置
+
+| 步骤 | 参与者 | Centurion 角色 |
+|------|--------|---------------|
+| 第 4 步 | 人 + PM + Centurion | 接收任务拆分单，参与 Worker 分配讨论 |
+| 第 5 步 | Centurion + Workers ↔ World | **自动执行循环**（人不参与） |
+| 第 7 步 | Centurion + Workers | **补丁收尾**（2-3 波） |
+
+---
+
+## 三、第 5 步核心循环
 
 ```
-PLAN.md
-    │
-    ▼
-[1] plan-ingest      → 提取当前可执行的大阶段
-[2] gap-assess       → 检查信息是否充足 → 不够 → 向 Chef 要
-[3] task-batch       → 分组（并行组 + 串行组）
-[4] task-dispatch    → 写入 Job Board
-    │
-    ▼
-[5] progress-monitor → 追踪执行状态
-[6] result-recover   → 回收结果，比对验收标准
-    │
-    ├─ 通过 → 下一批
-    ├─ 偏差可接受 → 放行
-    └─ 严重偏差 → 重试 or [7] escalate → Cardmaster
+┌─────────────────────────────────────────┐
+│          Centurion 自动循环              │
+│                                         │
+│  1. task-ingest: 读 PM 的任务拆分单      │
+│       │                                 │
+│       ▼                                 │
+│  2. task-batch: 按依赖关系分批           │
+│       │                                 │
+│       ▼                                 │
+│  3. task-dispatch: 写入 Job Board       │
+│       │                                 │
+│       ▼                                 │
+│  4. progress-monitor: 追踪状态           │
+│       │                                 │
+│       ├─ Worker 完成 → 5. result-recover │
+│       │                   │              │
+│       │                   ├─ World 通过 → 下一批
+│       │                   ├─ World 驳回 → 重试
+│       │                   └─ 重试耗尽 → 升级 PM
+│       │                                  │
+│       └─ 超时/异常 → 重试 or 升级        │
+│                                          │
+│  6. 全局 done → 交付（连同日志）          │
+└─────────────────────────────────────────┘
 ```
 
-### [1] plan-ingest — 读菜谱
+---
+
+## 四、第 7 步：补丁收尾
+
+Centurion 交付后，如果 PM 在复盘会议中发现问题，则重新派发补丁任务：
+
+- **2-3 波补丁** → 收敛交付，项目结束
+- **超过 3 波** → 判定为重开发，关闭事件，开新项目
+- 补丁也是完整的 task → dispatch → monitor → recover 循环，不做特殊处理
+
+---
+
+## 五、7 个 Skill
+
+| # | Skill | 功能 | 调 LLM |
+|---|-------|------|--------|
+| 1 | **task-ingest** | 接收 PM 的任务拆分单，建立本地 Job Board | 否 |
+| 2 | **task-batch** | 按依赖关系分组（并行组 + 串行组） | 否 |
+| 3 | **task-dispatch** | 派发到 Job Board | 否 |
+| 4 | **progress-monitor** | 追踪所有 Worker 执行状态 | 否 |
+| 5 | **result-recover** | 回收交付物，提交 World Bee 校验 | 否 |
+| 6 | **retry-or-escalate** | 失败 → 重试（上限 3 次）→ 升级 PM | 是 |
+| 7 | **patch-dispatch** | 第 7 步：接收补丁任务，重新派发 | 否 |
+
+### [1] task-ingest — 接收任务
 
 | 字段 | 内容 |
 |------|------|
-| **Input** | Chef Bee 的 `PLAN.md` |
-| **Output** | 当前可执行的大阶段列表 + 阻塞项识别 |
+| **Input** | PM Bee 的任务拆分单 + Worker 分配方案 |
+| **Output** | Centurion 本地 Job Board 初始化 |
 | **工具** | `fs_read_file` |
-| **调 LLM** | 否（纯规则） |
-
-**操作**: 扫描 PLAN.md，提取每个 task 的状态（backlog / ready / doing / done）和前置依赖。找出所有"前置全部 done，当前状态 backlog"的 task——这些是可以立即执行的。
-
-```
-PLAN.md → 
-  可执行: [T-001, T-002]（无前置）
-  等待中: [T-003]（依赖 T-001, T-002）
-  已阻塞: []
-```
-
-### [2] gap-assess — 信息缺口评估
-
-| 字段 | 内容 |
-|------|------|
-| **Input** | 可执行 task 列表 + 每个 task 的 Input 字段 |
-| **Output** | 缺口清单（缺什么，向谁要）or 就绪 |
-| **工具** | `fs_read_file`（检查 Input 文件是否存在），LLM 辅助判断 |
-| **调 LLM** | 是（判断"缺的信息能自己解决还是必须问 Chef"） |
-
-**这个 skill 是 Commander 创造性的核心体现。** 它不只是检查文件在不在——它判断**信息是否充分到可以开始执行**。
-
-```
-T-002 Input: "T-001 的产出 + 窗口回复"
-  T-001 的产出: ✅ 存在（research/法规.md）
-  窗口回复: ❌ 文件不存在
-  → 缺口: 窗口回复缺失
-  → 判断: 这个缺口 Commander 自己解决不了（需要人去打电话）
-  → 动作: 向 Chef Bee 发请求：'T-002 需要窗口回复数据，但 PLAN.md 中 T-002 的容错路径已走到头。
-           请 Chef 更新 T-002 的容错方案，或标记为"等待外部数据"并解锁 PLAN'
-```
-
-**请求格式**（Commander → Chef）:
-```markdown
-# Info Request: T-002 执行受阻
-
-## 阻塞原因
-T-002 的 Input 中"窗口回复"文件缺失（`research/窗口回复.md` 不存在）
-
-## 已尝试的容错路径
-- 容错 A: 电话 → 打不通
-- 容错 B: 邮件 → 已发 3 天无回复
-- 容错 C: 网络搜索 → 信息可信度低
-
-## 需要 Chef 做什么
-1. 更新 T-002 的容错方案（加入替代数据源）
-2. 或者标记 T-002 为"等待外部数据"，更新依赖图
-3. 同时确认 T-003（填表）是否可以先用低可信度信息开始
-```
-
-### [3] task-batch — 任务分组
-
-| 字段 | 内容 |
-|------|------|
-| **Input** | 可执行 task 列表 + PLAN.md 的依赖图 |
-| **Output** | 分组方案：并行组 + 串行组 |
-| **工具** | 纯规则 |
 | **调 LLM** | 否 |
+
+### [2] task-batch — 任务分组
 
 **分批原则**:
 1. 无相互依赖的 task → 同一批，并行派发
-2. 同一批内如果有限资源冲突（如都是"自己"做）→ 按阻塞项优先级排序
+2. 同一批内有限资源冲突 → 按阻塞项优先级排序
 3. 上一批全部 done 后，才发下一批
 
 ```
-批次 1（并行）: T-001（查阅法规）∥ T-002（联系窗口）
-批次 2（串行）: T-003（填表）← 依赖 T-001 + T-002
-批次 3（串行）: T-004（提交）← 依赖 T-003
+批次 1（并行）: T-001 ∥ T-002
+批次 2（串行）: T-003 ← 依赖 T-001 + T-002
+批次 3（串行）: T-004 ← 依赖 T-003
 ```
 
-### [4] task-dispatch — 派发到 Job Board
+### [3] task-dispatch — 派发
 
-| 字段 | 内容 |
-|------|------|
-| **Input** | 当前批次的 task 列表 + PLAN.md 的 task 菜谱 |
-| **Output** | Job Board 上创建 N 个 Issue |
-| **工具** | `sys_terminal`（wb job create） |
-| **调 LLM** | 否（纯规则） |
+每个 Job 包含：标题、描述（从 PM 的 task 菜谱提取）、验收标准、前置 Job ID。
 
-每个 Job 包含：标题（从 Chef 的 task 标题）、描述（从 Chef 的 task 菜谱提取可执行部分）、验收标准、前置 Job ID。
+```
+Centurion 派发 → Job Board → Worker Bee 拉取
+```
 
-### [5] progress-monitor — 进度追踪
-
-| 字段 | 内容 |
-|------|------|
-| **Input** | Job Board 状态 |
-| **Output** | 进度报告：哪些 done、哪些 blocked、哪些超时 |
-| **工具** | `sys_terminal`（wb job status） |
-| **调 LLM** | 否（纯规则） |
+### [4] progress-monitor — 监工
 
 **异常检测**:
-- Task 预计 45min，超过 2h 未完成 → 标记异常
+- Task 超过预估时间 2x 未完成 → 标记异常
 - Worker 连续 3 次失败同一个 task → 触发 escalate
-- 阻塞项超时（等外部回复超过预期天数）→ 触发 gap-assess 重新评估
+- 阻塞项超时 → 重新评估
 
-### [6] result-recover — 回收结果
+### [5] result-recover — 回收
 
-| 字段 | 内容 |
-|------|------|
-| **Input** | Job Board 上 status=done 的 task + 交付物文件 |
-| **Output** | 验收判定：通过 / 可接受偏差 / 重试 |
-| **工具** | `fs_read_file` + LLM 辅助验收 |
-| **调 LLM** | 是（判断偏差是否可接受） |
+Worker 交付 → Centurion 回收 → 提交 World Bee 校验 → 通过/驳回。
 
-**这是 Commander 创造性的第二个体现点。** Chef 的验收标准是理想的（"≥3 条条款，每条标注日期"），现实交付物可能有偏差（"只有 2 条有日期标注"）。Commander 需要判断：这个偏差能不能放行？
+**Centurion 自己不判断质量**。质量判断是 World Bee 的事。Centurion 只做传递。
+
+### [6] retry-or-escalate — 重试/升级
 
 ```
-Chef 验收标准: ≥3 条相关条款，每条标注发布日期
-
-Worker 交付: 3 条条款，2 条有日期，1 条日期标注为"2026年"（只有年份）
-  → 偏差: 日期精度不足
-  → Commander 判断: 可接受（年份够用了，填表不需要精确到日）
-  → 放行 ✓
-
-Worker 交付: 1 条条款（另外 2 条不相关）
-  → 偏差: 数量不达标
-  → Commander 判断: 不可接受
-  → 重试（附说明"需要 ≥3 条直接相关的条款"）
-  → 重试上限 3 次，第 4 次失败 → escalate
+World 驳回 → 重试指令 → Worker 重试
+    重试上限 3 次
+    第 4 次仍失败 → 升级报告 → PM Bee
 ```
 
-**放行标准**: 偏差不影响下游 task 的执行。填表需要的"注册资本数额"有了就行，日期精确到年够了。
+**升级给 PM，不越级找 Strategy Bee。**
 
-### [7] escalate — 升级
-
-| 字段 | 内容 |
-|------|------|
-| **Input** | 重试耗尽仍失败的 task + 失败日志 |
-| **Output** | 升级报告 → Cardmaster Bee |
-| **工具** | `fs_write_file` |
-| **调 LLM** | 是（写升级报告） |
-
-**Commander 不上报给 Strategic Bee——上报给 Cardmaster。** 因为这是战役层面的问题，不是战略层面的。
-
+升级报告格式：
 ```markdown
 # 升级报告: T-002 执行失败
 
@@ -210,55 +151,61 @@ T-002: 联系工商局确认执行口径 — 已重试 3 次，全部失败
 
 ## 已尝试路径
 1. 电话 → 无人接听
-2. 邮件 → 无回复（5天）
-3. 社交媒体搜索 → 信息矛盾不可用
+2. 邮件 → 无回复
+3. 社交媒体 → 信息矛盾
 
 ## 阻塞影响
-- T-003（填表）无法开始（依赖 T-002）
-- 整条生产线停滞
+T-003（填表）无法开始，整条生产线停滞
 
-## 建议（Cardmaster 决策）
-- 选项 A: 放弃窗口确认，用低可信度数据填表（风险: 被驳回）
-- 选项 B: 替换策略——改为委托代理公司（新动作类型: 交易）
-- 选项 C: 等待（预期还需 N 天）
+## 建议（PM 决策）
+- 选项 A: 放弃窗口确认，用低可信度数据
+- 选项 B: 替换策略
+- 选项 C: 等待
+```
+
+### [7] patch-dispatch — 补丁派发
+
+与 task-dispatch 逻辑相同。补丁 Task 和正常 Task 没有区别对待。
+
+---
+
+## 六、Centurion 与其他 Bee 的关系
+
+| 从谁接收 | 接收什么 | 步骤 |
+|---------|---------|------|
+| PM Bee | 任务拆分单 + Worker 分配方案 | 第 4 步 |
+| Worker Bees | 交付物 | 第 5/7 步 |
+| World Bee | 校验结果（通过/驳回） | 第 5/7 步 |
+| PM Bee | 补丁任务 | 第 7 步 |
+
+| 发给谁 | 发什么 | 步骤 |
+|--------|--------|------|
+| Worker Bees | Job（到 Job Board） | 第 5/7 步 |
+| World Bee | Worker 交付物（提交校验） | 第 5/7 步 |
+| PM Bee | 升级报告 | 第 5 步（异常时） |
+| PM Bee | 交付 + 完整日志 | 第 5 步 done / 第 7 步 done |
+
+---
+
+## 七、信息素文件
+
+```
+~/.worker-bee/centurion/<project>/
+├── task-board.json       ← 任务拆分单的本地副本
+├── job-board.json        ← 当前 Job Board 状态
+├── progress.json         ← 进度追踪
+├── retry-log.md          ← 重试记录
+├── escalation-log.md     ← 升级报告存档
+└── delivery-log.md       ← 交付日志（给 PM 的）
 ```
 
 ---
 
-## 四、Commander 与其他 Bee 的关系
+## 八、设计原则
 
-| 从谁接收 | 接收什么 | 做什么 |
-|---------|---------|--------|
-| Chef Bee | PLAN.md | 读菜谱，提取可执行 task |
-| Chef Bee | 信息补充 | gap-assess 后回头要的 |
-| Worker Bees | 交付物 | 回收结果，验收 |
-| Cardmaster Bee | 标的物规格书（间接，通过 Chef） | — |
-
-| 发给谁 | 发什么 | 何时发 |
-|--------|--------|--------|
-| Worker Bees | Job（到 Job Board） | task-dispatch |
-| Chef Bee | 信息请求 | gap-assess 发现缺口 |
-| Cardmaster Bee | 升级报告 | escalate |
-
----
-
-## 五、设计原则
-
-1. **菜谱是起点不是终点** — Commander 不质疑菜谱的内容，但有权判断"这个 task 现在能不能做"
-2. **偏差可接受就放行** — 不等完美。Chef 的标准是目标，Commander 的标准是"能推动下一 task 就行"
-3. **缺信息就喊** — 不硬撑。喊 Chef 补，不自己编
-4. **不越级上报** — 升级给 Cardmaster（战役层），不直接找 Strategic（战略层）
-5. **创造性不等于幻觉** — Commander 的创造力是"让计划在现实中跑通"的实战智慧，不是"发明不存在的数据"
-
----
-
-## 六、信息素文件
-
-```
-~/.worker-bee/commander/<project>/
-├── plan-snapshot.md      ← plan-ingest 时保存的菜谱快照
-├── gap-log.md            ← 所有向 Chef 发出的信息请求记录
-├── batch-log.md          ← 每批 task 的派发记录
-├── progress.json         ← 当前进度（可执行/等待/阻塞/完成）
-└── escalation-log.md     ← 升级报告存档
-```
+1. **监工不干活** — Centurion 只派发、监听、回收。不写菜谱（PM）、不执行（Worker）、不校验（World）
+2. **一机盯十个** — 一个 Centurion 进程最多管理 10 个 Worker。超过 10 个 → 需要多个 Centurion，由 PM 协调
+3. **不自己判断质量** — 把交付物原样提交 World Bee，不预判
+4. **交付即移交** — done 后交付给 PM（连同完整日志），不再纠结。有问题再补丁
+5. **补丁不特殊** — 补丁 task 和正常 task 走同一套流程
+6. **超 3 波即重开** — 补丁超过 3 波 → 关闭事件，开新项目

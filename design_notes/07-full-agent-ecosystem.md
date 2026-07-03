@@ -1,130 +1,158 @@
-# 蜂群职能总结
+# 蜂群生态系统总览
 
 ---
 
 ## Bee 全表
 
-| Bee | 设计文档 | 层级 | 一句话 | 演化 |
-|-----|---------|------|--------|------|
-| **Strategic Bee** | `08-strategic-bee.md` | 战略 | 搜索全地形，锁定有意义的目标 | 新增 |
-| **Cardmaster Bee** | `09-cardmaster-bee.md` | 战役 | 总指挥室，回合制选动作 | 新增 |
-| **Commander Bee** | `05-commander-bee.md` | 前线 | 创造性利用菜谱，缺信息回头要 | 从原 Commander 拆分——派发侧 |
-| **Chef Bee** | `03-project-manager-bee.md` | 战术 | 主厨，写大阶段+菜谱级 task | 从原 Commander 拆分——规划侧 |
-| **Verification Bee** | `04-verification-bee.md` | 战术 | 真实物理引擎，事实验证+证据链 | 原 World Bee |
-| **Skeleton Bee** | `02-architecture-bee.md` | 基础设施 | Strategic 辅助——画架构骨架 | 原 Architecture Bee |
-| **Aristotle Bee** | `01-aristotle-bee.md` | 基础设施 | Strategic 辅助——术语定义+归档 | 保留 |
-| **Worker Bee** | 核心框架 | 执行 | 唯一 LLM 自由层，取 task 执行 | 保留 |
+| Bee | 设计文档 | 一句话 | 登场步骤 |
+|-----|---------|--------|---------|
+| **Aristotle Bee** | `01-aristotle-bee.md` | 术语管家，引导概念清晰 | 第 1 步 |
+| **Skeleton Bee** | `02-architecture-bee.md` | 骨架蜂，选牌型 + 定结构 | 第 2 步 |
+| **Strategy Bee** | `08-strategic-bee.md` | 战略蜂，搜索方向 + 战役报告 | 第 1/2/9 步 |
+| **PM Bee** | `03-project-manager-bee.md` | 项目总管，排期/拆分/汇总结案 | 第 3/4/6 步 |
+| **Centurion Bee** | `05-commander-bee.md` | 百夫长，监工不干活，一机盯十个 | 第 4/5/7 步 |
+| **Worker Bee** | 核心框架 | 执行者，受 Centurion 调派 | 第 5/7 步 |
+| **World Bee** | `04-verification-bee.md` | 真实校验 + 运维知识库 | 第 5/7/8 步 |
+| **Cardmaster Bee** | `09-cardmaster-bee.md` | 战役总指挥，回合制选动作 + 博弈复盘 | 第 10 步 |
 
 ---
 
-## 架构总览
+## 架构分层
 
 ```
-                  ┌─ Aristotle Bee（术语）
-基础设施 ─────────┤
-                  └─ Skeleton Bee（骨架）
-                        ▲
-                        │ Strategic Bee 调用
-                        │
-战略  Strategic Bee     搜索 + 锁定目标
-       │
-战役  Cardmaster Bee    总指挥室，回合制选动作
-       │
-前线  Commander Bee     创造性利用菜谱，缺信息喊 Chef
-       │
-战术  Chef Bee ──▶ Worker Bees ──▶ Verification Bee
-      写菜谱         执行             物理引擎验证
-       │                                │
-       └────────────────────────────────┘
-              验证数据回流 → Strategic 终极报告 → 人
+┌─────────────────────────────────────────────────────────┐
+│ 战略层                                                    │
+│   Strategy Bee + Aristotle Bee + Skeleton Bee           │
+│   只在项目入口（第 1-2 步）和出口（第 9 步）出现            │
+├─────────────────────────────────────────────────────────┤
+│ 规划层                                                    │
+│   PM Bee                                                │
+│   第 3 步排期协调 → 第 4 步拆分配兵 → 第 6 步后台监听       │
+├─────────────────────────────────────────────────────────┤
+│ 执行层                                                    │
+│   Centurion Bee + Worker Bee × N                        │
+│   第 5 步自动循环（人不参与）→ 第 7 步补丁收尾              │
+├─────────────────────────────────────────────────────────┤
+│ 校验层                                                    │
+│   World Bee                                             │
+│   第 5/7 步实时校验 → 第 8 步复盘归档（运维）               │
+├─────────────────────────────────────────────────────────┤
+│ 战役层                                                    │
+│   Cardmaster Bee                                        │
+│   第 10 步：喂外部反馈 → 博弈复盘 → 打法调整                │
+└─────────────────────────────────────────────────────────┘
 ```
 
-**Aristotle Bee + Skeleton Bee = Strategic Bee 的辅助基础设施。**
-两者都是长程静默——不在执行管道中。Strategic Bee 在搜索+锁定时调用它们辅助（术语定义、结构骨架），平时不说话。
+---
+
+## 十步完整流程
+
+```
+第 1 步│ 你 + Strategy Bee + Aristotle Bee
+      │ 聊天式探索：这事要不要做、要解决什么问题
+      │ → Strategy Report 初稿
+──────────────────────────────────────────────────────────
+第 2 步│ 你 + Strategy Bee + Skeleton Bee
+      │ "选牌型"：确定产出形态 + 抽象验收标准
+      │ → 产出形态说明书 + 验收标准清单
+      │ （Strategy Bee、Skeleton Bee、Aristotle Bee 退场）
+──────────────────────────────────────────────────────────
+第 3 步│ 你 + PM Bee
+      │ 调研现实条件、资源/时间约束
+      │ 联系内外部人员/部门，安排工作排期
+      │ → 排期表 + 资源协调记录
+──────────────────────────────────────────────────────────
+第 4 步│ 你 + PM Bee + Centurion Bee
+      │ PM 拆任务，Centurion 配 Worker
+      │ 一 Centurion 可监工约 10 个 Worker
+      │ → 任务拆分单 + Worker 分配方案
+──────────────────────────────────────────────────────────
+第 5 步│ Centurion Bee + Worker Bee × N ↔ World Bee
+      │ 自动执行循环，人不参与
+      │ Centurion 派发 → Worker 执行 → World 校验 → Centurion 回收
+      │ → 各 Worker 产出 + World Bee 校验日志
+──────────────────────────────────────────────────────────
+第 6 步│ PM Bee（后台监听所有 Centurion）
+      │ 分析/记录漏洞与不符合处，准备复盘会议议题
+      │ 全局进度 100% 时自动通知人建议开会时间
+      │ → 漏洞清单 + 会议议题草案 + 时间建议
+──────────────────────────────────────────────────────────
+第 7 步│ Centurion Bee + Worker Bee × N
+      │ 2–3 波补丁，收敛后交付
+      │ 若超出 3 波 → 判定为重开发，关闭事件另开新项目
+      │ → 补丁记录 + 交付完成 / 超限重开标记
+──────────────────────────────────────────────────────────
+第 8 步│ 生产问题 ↔ World Bee
+      │ 复盘归档：
+      │  · 有机制性方案但没用对 skill → World Bee 下次提醒 Worker
+      │  · 没有机制性方案 → 记录为未解决 gap
+      │ → World Bee ops/ 运维提醒 + known-gaps.md
+──────────────────────────────────────────────────────────
+第 9 步│ 你 + Strategy Bee
+      │ 汇总各角色 log，出战役报告
+      │ 标记战略目标接近度
+      │ 根据新发现讨论战略目的本身的扬弃
+      │ → 战役报告 + 战略目标更新
+──────────────────────────────────────────────────────────
+第 10 步│ 你 + Cardmaster Bee
+       │ 喂入外部反馈：发表/合作/人际接触结果
+       │ 博弈复盘：做对了什么、对面什么意思、怎么打更好
+       │ → 博弈复盘记录 + 打法调整建议
+```
 
 ---
 
-## Strategic Bee — 搜索+锁定
+## 人参与度热力图
 
-**层级**: 战略。只管两件事：**搜索全地形**和**锁定有意义的目标**。Aristotle 和 Skeleton 是其辅助基础设施。
+```
+步骤:  1    2    3    4    5    6    7    8    9   10
+      ███  ███  ███  ███  ---  -+-  ---  ---  ███  ███
+人:   全  全   全   全   无  通知  无   无   全   全
 
-- **核心矛盾**: 饱和式覆盖 vs 边界精确。先精确划边界（排除法，"不做"比"做"重要），再在边界内穷举
-- **上游**: 领域地图 + 信息源清单 + 初始假设 → `strategic-brief.md`
-- **下游**: Verification 数据回流 → 起草结论 → **等人审阅确认**
-- **8 skill**: boundary-define → domain-map → source-inventory → hypothesis-seed → evidence-synthesize → conclusion-draft → human-review → strategic-report
-
----
-
-## Cardmaster Bee — 总指挥室
-
-**层级**: 战役。识别战役走势，确认战役目标，卡牌化战术讨论。
-
-- **四象限**: 说服（人→report）、交易（人→demo）、生产（事→pipeline）、研究（事→standard）
-- **回合制**: 抽卡 → 标的物规格书 → 调度蜂群 → 结算成功率
-- **失败螺旋**: report 不好→补研究。demo 不好→补生产。不倒退，螺旋上升
-- **6 skill**: action-select → target-profile → spec-generate → spec-dispatch → quality-evaluate → retro-analyze
-
----
-
-## Commander Bee — 前线小队长
-
-**层级**: 前线。创造性利用 Chef 的菜谱。缺信息喊，不等完美。
-
-- **缺信息就喊**: gap-assess → 向 Chef 发补充请求。不硬撑，不自编
-- **偏差可接受就放行**: 不影响下游就放行，不等完美
-- **升级给 Cardmaster**: 重试耗尽 → escalate。不越级找 Strategic
-- **7 skill**: plan-ingest → gap-assess → task-batch → task-dispatch → progress-monitor → result-recover → escalate
-
----
-
-## Chef Bee — 主厨
-
-**层级**: 战术。写大阶段 + 菜谱级 task。先过饱和，再管交付。
-
-- **双重角色**: 行动计划生成器（GOAL→PLAN）+ 交付触发器（边际收益探测）
-- **9 字段 task**: Input/Output/时间/资源/人员/前置/阻塞项/容错/完成标准——精确到文件路径、分钟、工具名
-- **决策锁**: PLAN.md 写入 LOCKED，解锁需明确触发条件
-- **12 skill**: 仅 task-recipe 必需 LLM，其余 11 个纯规则
-
----
-
-## Verification Bee — 物理引擎
-
-**层级**: 战术。真实物理引擎——事实校验 + 证据链。以后可能接 world model。
-
-- **双重防线**: 免疫过滤（逐 claim 校验→通过/驳回/重试）+ 证据链（交叉验证→三角验证→拼凑）
-- **14 步细碎流水线**: 接收→校验→交叉验证→汇总。后期可合并为 6 步
-- **回报 Strategic**: 验证数据+证据链+新假设
-
----
-
-## Aristotle Bee + Skeleton Bee — 基础设施
-
-**层级**: 基础设施。长程静默。Strategic Bee 调用它们辅助工作，平时不说话。
-
-| | Aristotle Bee | Skeleton Bee |
-|---|---|---|
-| **给 Strategic 提供什么** | 术语的语境化定义、漂移检测 | 架构骨架、规约到不可规约的核心 |
-| **何时激活** | 人问术语 / 项目归档 / Strategic 调用 | Strategic 调用来画骨架 |
-| **产出** | `dict/<project>.md` | 5 阶段接力文件 |
-
----
-
-## Worker Bee — 执行蜂
-
-**层级**: 执行。唯一 LLM 自由层。取 task → 读 recipe → 调工具 → 写交付物。三层围栏（Deck/Git/进程隔离）。
+███ = 人在回路中主导
+-+- = 后台自动通知人（人不主动参与）
+--- = 人不参与，全自动
+```
 
 ---
 
 ## 协作闭环
 
 ```
-人（模糊目标）
-  → Strategic（搜索+锁定，调用 Aristotle+Skeleton 辅助）→ strategic-brief.md
-    → Cardmaster（选动作）→ 标的物规格书
-      → Chef（写菜谱）→ PLAN.md
-        → Commander（创造性执行，缺信息喊）→ Job Board
-          → Worker（执行）→ 交付物
-            → Verification（物理引擎验证）→ 验证数据+证据链
-              → Strategic（终极报告）→ 人审阅 ✓
+人（模糊冲动）
+  │
+  ├─ 第 1 步: Strategy + Aristotle ──→ Strategy Report
+  │
+  ├─ 第 2 步: Strategy + Skeleton ──→ 牌型 + 验收标准
+  │
+  ├─ 第 3 步: PM ──→ 排期表
+  │
+  ├─ 第 4 步: PM + Centurion ──→ 任务拆分 + Worker 分配
+  │
+  ├─ 第 5 步: Centurion + Workers ↔ World ──→ 自动执行（无人）
+  │
+  ├─ 第 6 步: PM 监听 100% ──→ 漏洞 + 会议通知
+  │
+  ├─ 第 7 步: Centurion + Workers ──→ 补丁收尾
+  │
+  ├─ 第 8 步: World Bee ──→ 问题归档 + 运维提醒
+  │
+  ├─ 第 9 步: Strategy ──→ 战役报告 + 扬弃
+  │
+  └─ 第 10 步: Cardmaster ──→ 博弈复盘
 ```
+
+---
+
+## 关键设计决策
+
+| 决策 | 理由 |
+|------|------|
+| 第 5 步人不参与 | 执行循环是纯机械的，人的介入反而降低效率 |
+| PM 第 6 步只监听不干预 | 发现漏洞只记录为议题，不自行处理 |
+| Centurion 监工不干活 | 职责清晰：派发/监听/回收，不写菜谱、不执行、不校验 |
+| 一 Centurion ≤ 10 Worker | 避免单点过载。复杂项目用多个 Centurion |
+| 补丁超 3 波即重开 | 再改就是重开发而非修 bug，应该开新项目 |
+| 第 8 步 World Bee 运维 | 让每次项目的教训变成下次的自动提醒 |
+| 第 9 步 Strategy 扬弃 | 战略不是一成不变的，新发现可以推翻旧假设 |
+| 第 10 步 Cardmaster 博弈复盘 | 内部做完了，外部反馈才是最真实的检验 |

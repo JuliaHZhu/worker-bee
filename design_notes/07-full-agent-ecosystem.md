@@ -1,6 +1,6 @@
 # 蜂群全貌 — 设计文档索引
 
-> 战略 → 战役 → 战术。三层分明。
+> 战略 → 战役 → 战术。四层分明。
 
 ---
 
@@ -8,13 +8,13 @@
 
 | # | Bee | 设计文档 | 状态 | 核心 |
 |---|-----|---------|------|------|
-| 1 | **Aristotle Bee** | `01-aristotle-bee.md` | 稳定 | 术语定义+归档。项目运行中完全静默 |
-| 2 | **Architecture Bee** | `02-architecture-bee.md` | 稳定 | 5 阶段流水线：意图→骨架→复杂度 |
-| 3 | **PM Bee** | `03-project-manager-bee.md` | v3.0 | 12 skill：行动计划生成 + 交付触发 |
-| 4 | **World Bee** | `04-worldbee.md` | v2.0 | 14 步免疫过滤 + 证据链引擎 |
-| 5 | **Strategic Bee** | `08-strategic-bee.md` | v1.0 | 战略统合：边界定义+饱和覆盖+终极报告 |
-| 6 | **Cardmaster Bee** | `09-cardmaster-bee.md` | v2.0 | 战役总指挥室：4 象限回合制动作引擎 |
-| — | **Commander Bee** | (整合在 PM/Cardmaster 中) | 设计中 | 前线小队长：派发任务+回收结果 |
+| 1 | **Scout Bee** | `08-scout-bee.md` | v1.0 | 搜索 + 锁定有意义的目标。饱和覆盖 + 边界精确 |
+| 2 | **Cardmaster Bee** | `09-cardmaster-bee.md` | v2.0 | 战役总指挥室。识别战役走势，确认战役目标，卡牌化战术讨论 |
+| 3 | **Commander Bee** | (待独立设计) | 设计中 | 前线小队长。拿到 Chef 的菜谱后创造性执行，信息不足主动要 |
+| 4 | **Chef Bee** | `03-project-manager-bee.md` | v3.0 | 主厨。大阶段 + 菜谱级 task，过饱和展开 |
+| 5 | **Skeleton Bee** | `02-architecture-bee.md` | 稳定 | 骨架蜂。5 阶段流水线：意图→骨架→复杂度 |
+| 6 | **Verification Bee** | `04-worldbee.md` | v2.0 | 真实物理引擎。事实校验 + 证据链。安装引擎类 tools |
+| 7 | **Aristotle Bee** | `01-aristotle-bee.md` | 稳定 | 术语定义+归档。项目运行中完全静默 |
 | — | **Worker Bee** | (核心框架) | 运行中 | LLM 自由执行层 |
 
 ---
@@ -22,27 +22,28 @@
 ## 四层架构
 
 ```
-战略层 — 管方向对不对
-  Strategic Bee（边界定义 + 领域地图 + 终极报告）
+战略层 — 搜索 + 锁定目标
+  Scout Bee（搜索全地形 → 锁定有意义的目标 → 终极报告）
     │ strategic-brief.md
     ▼
-战役层 — 管这仗怎么打
-  Cardmaster Bee（总指挥室：选动作、定回合、写标的物规格书）
+战役层 — 识别走势 + 确认目标
+  Cardmaster Bee（战役总指挥室：选动作、定回合、卡牌化讨论）
     │ 标的物规格书
     ▼
-战术层 — 管怎么执行
-  Commander Bee（前线小队长：拆任务、派发 Job、回收结果）
+前线层 — 创造性执行
+  Commander Bee（拿到菜谱 → 创造性利用 → 信息不足主动向 Chef 要）
     │ Job Board
     ▼
-  PM Bee ──▶ Architecture Bee ──▶ Worker Bees ──▶ World Bee
-  （拆菜谱）   （画骨架）          （执行）         （验证）
+战术层 — 生产 + 验证
+  Chef Bee ──▶ Skeleton Bee ──▶ Worker Bees ──▶ Verification Bee
+  （写菜谱）    （画骨架）        （执行）          （物理引擎验证）
     │                                                   │
     │                                         验证数据+证据链
     │                                                   │
     └───────────────────────────────────────────────────┘
                                                         │
                                                         ▼
-                                               Strategic Bee（终极报告）
+                                                  Scout Bee（终极报告）
                                                         │
                                                         ▼
                                                        人
@@ -54,29 +55,30 @@
 
 ## 四层职责
 
-| 层级 | Bee | 管什么 | 标准 |
-|------|-----|--------|------|
-| **战略** | Strategic Bee | 方向对不对 | 正确（饱和覆盖+边界精确） |
-| **战役** | Cardmaster Bee | 这仗怎么打 | 标的物质量（report/demo/pipeline/standard） |
-| **前线** | Commander Bee | 任务到不到位 | 派发+回收闭环 |
-| **战术** | PM + Arch + Worker + World | 怎么做最有效 | 菜谱级精确+验证闭环 |
+| 层级 | Bee | 管什么 | 核心能力 |
+|------|-----|--------|---------|
+| **战略** | Scout Bee | 搜索全地形，锁定有意义的目标 | 饱和覆盖 + 边界精确 |
+| **战役** | Cardmaster Bee | 识别战役走势，确认具体目标，卡牌化讨论 | 4 象限动作引擎 |
+| **前线** | Commander Bee | 拿到菜谱创造性执行，信息不足主动要 | 有效利用 + 主动应变 |
+| **战术** | Chef + Skeleton + Worker + Verification | 生产菜谱、画骨架、执行、物理验证 | 菜谱级精确 + 真实物理引擎 |
 
 ---
 
 ## 协作流程
 
-1. Strategic 定方向（领域地图 + 假设）→ `strategic-brief.md`
-2. Cardmaster 选动作（说服/交易/生产/研究）→ 标的物规格书
-3. Commander 拆任务 → 派发到 Job Board
-4. PM 拆菜谱 → PLAN.md → Worker 执行 → World 验证
-5. World 验证数据回流 → Strategic 出终极报告 → 人审阅
+1. Scout 搜索 + 锁定目标 → `strategic-brief.md`
+2. Cardmaster 识别走势 + 选动作 → 标的物规格书
+3. Commander 拿 Chef 的菜谱创造性执行 → 派发 Job → 信息不足回头要
+4. Chef 拆菜谱（大阶段 + 精确 task）→ Skeleton 画骨架 → Worker 执行 → Verification 验证
+5. Verification 验证数据回流 → Scout 出终极报告 → 人审阅
 
 ---
 
-## 设计原则
+## 命名对照
 
-1. **文件接力** — Bee 之间不传内存对象，只传文件
-2. **消费者驱动** — 先定义"谁用这个产出"，再定义怎么产
-3. **纯规则优先** — 能用规则就不用 LLM
-4. **过饱和展开** — 计划阶段宁可冗余，执行阶段不回头补
-5. **回滚成本最小化** — 流程切细碎，错只回滚一步
+| 旧名 | 新名 | 改名理由 |
+|------|------|---------|
+| Strategic Bee | **Scout Bee** | 核心是"搜索"+"锁定目标"，不是泛泛的"战略" |
+| PM Bee | **Chef Bee** | 写菜谱的，具体好玩 |
+| Architecture Bee | **Skeleton Bee** | 画骨架的，具体好玩 |
+| World Bee | **Verification Bee** | 真实物理引擎，不是"环境"是"验证" |

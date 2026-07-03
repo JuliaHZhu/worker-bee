@@ -497,7 +497,7 @@ A handoff is a work-state snapshot (Purpose, Completed, Todos, Context, Next Ste
 
 ## Design Notes
 
-Historical fork concepts (Aristotle Bee, Architecture Bee, Project Manager Bee, WorldBee) and the full agent ecosystem design are archived in `design_notes/`. They illustrate how the same kernel can wear different skill skins.
+Historical fork concepts (Aristotle Bee, Skeleton Bee, Project Manager Bee, WorldBee) and the full agent ecosystem design are archived in `design_notes/`. They illustrate how the same kernel can wear different skill skins.
 
 Operational specs (pheromone formats, mechanism vs task skill distinctions) live in `design_notes/exogenous-pheromone-formats.md`.
 

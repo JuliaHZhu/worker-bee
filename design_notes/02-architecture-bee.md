@@ -1,11 +1,11 @@
-# Architecture Bee — 架构原型蜂
+# Skeleton Bee — 骨架蜂（5 阶段流水线）
 
 > *架构在脑袋里是将出未出到逐渐清晰化的过程。*  
 > *目标：规约到不能规约。算法是效率和资源的量纲。*
 
 ## 定位
 
-Architecture Bee 是 Worker Bee 的一个 **fork（专能化 Agent）**，不是单体 skill。它通过**多个 skill 的排列组合**，像小马过河一样逐步逼近未知架构问题的核心。
+Skeleton Bee 是 Worker Bee 的一个 **fork（专能化 Agent）**，不是单体 skill。它通过**多个 skill 的排列组合**，像小马过河一样逐步逼近未知架构问题的核心。
 
 适用场景：
 - 软件架构（模块分解、接口设计）
@@ -36,7 +36,7 @@ Archetype（原型）暴露后，要考虑"怎么实现"。算法选择的标准
 
 ## Skill 流水线（5 阶段）
 
-Architecture Bee 由 5 个串联的 stage-skill + 1 个入口 skill 组成，通过**外源信息素 Markdown 文件**接力。
+Skeleton Bee 由 5 个串联的 stage-skill + 1 个入口 skill 组成，通过**外源信息素 Markdown 文件**接力。
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐

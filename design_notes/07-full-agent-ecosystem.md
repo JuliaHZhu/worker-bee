@@ -8,7 +8,7 @@
 
 | # | Bee | 设计文档 | 状态 | 核心 |
 |---|-----|---------|------|------|
-| 1 | **Scout Bee** | `08-scout-bee.md` | v1.0 | 搜索 + 锁定有意义的目标。饱和覆盖 + 边界精确 |
+| 1 | **Strategy Bee** | `08-strategy-bee.md` | v1.0 | 搜索 + 锁定有意义的目标。饱和覆盖 + 边界精确 |
 | 2 | **Cardmaster Bee** | `09-cardmaster-bee.md` | v2.0 | 战役总指挥室。识别战役走势，确认战役目标，卡牌化战术讨论 |
 | 3 | **Commander Bee** | (待独立设计) | 设计中 | 前线小队长。拿到 Chef 的菜谱后创造性执行，信息不足主动要 |
 | 4 | **Chef Bee** | `03-project-manager-bee.md` | v3.0 | 主厨。大阶段 + 菜谱级 task，过饱和展开 |
@@ -23,7 +23,7 @@
 
 ```
 战略层 — 搜索 + 锁定目标
-  Scout Bee（搜索全地形 → 锁定有意义的目标 → 终极报告）
+  Strategy Bee（搜索全地形 → 锁定有意义的目标 → 终极报告）
     │ strategic-brief.md
     ▼
 战役层 — 识别走势 + 确认目标
@@ -43,7 +43,7 @@
     └───────────────────────────────────────────────────┘
                                                         │
                                                         ▼
-                                                  Scout Bee（终极报告）
+                                                  Strategy Bee（终极报告）
                                                         │
                                                         ▼
                                                        人
@@ -57,7 +57,7 @@
 
 | 层级 | Bee | 管什么 | 核心能力 |
 |------|-----|--------|---------|
-| **战略** | Scout Bee | 搜索全地形，锁定有意义的目标 | 饱和覆盖 + 边界精确 |
+| **战略** | Strategy Bee | 搜索全地形，锁定有意义的目标 | 饱和覆盖 + 边界精确 |
 | **战役** | Cardmaster Bee | 识别战役走势，确认具体目标，卡牌化讨论 | 4 象限动作引擎 |
 | **前线** | Commander Bee | 拿到菜谱创造性执行，信息不足主动要 | 有效利用 + 主动应变 |
 | **战术** | Chef + Skeleton + Worker + Verification | 生产菜谱、画骨架、执行、物理验证 | 菜谱级精确 + 真实物理引擎 |
@@ -66,11 +66,11 @@
 
 ## 协作流程
 
-1. Scout 搜索 + 锁定目标 → `strategic-brief.md`
+1. Strategy 搜索 + 锁定目标 → `strategic-brief.md`
 2. Cardmaster 识别走势 + 选动作 → 标的物规格书
 3. Commander 拿 Chef 的菜谱创造性执行 → 派发 Job → 信息不足回头要
 4. Chef 拆菜谱（大阶段 + 精确 task）→ Skeleton 画骨架 → Worker 执行 → Verification 验证
-5. Verification 验证数据回流 → Scout 出终极报告 → 人审阅
+5. Verification 验证数据回流 → Strategy 出终极报告 → 人审阅
 
 ---
 
@@ -78,7 +78,7 @@
 
 | 旧名 | 新名 | 改名理由 |
 |------|------|---------|
-| Strategic Bee | **Scout Bee** | 核心是"搜索"+"锁定目标"，不是泛泛的"战略" |
+| Strategic Bee | **Strategy Bee** | 核心是"搜索"+"锁定目标"，名词优于形容词 |
 | PM Bee | **Chef Bee** | 写菜谱的，具体好玩 |
 | Architecture Bee | **Skeleton Bee** | 画骨架的，具体好玩 |
 | World Bee | **Verification Bee** | 真实物理引擎，不是"环境"是"验证" |

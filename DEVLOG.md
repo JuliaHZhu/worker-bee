@@ -61,8 +61,8 @@
 | 提交 | 改了哪 |
 |------|--------|
 | `1db8bbd` pip-installable | 可 pip 安装 + 对话就绪 |
-| `6e0a4e6` batch handoff + 三 Bee fork | 批量交接 + Aristotle/Architecture/PM Bee |
-| `5784cc4` PM Bee 原子组合 | 7 skill 原子化 + 栈编排 |
+| `6e0a4e6` batch handoff + 三 Bee fork | 批量交接 + Aristotle/Architecture/Chef Bee |
+| `5784cc4` Chef Bee 原子组合 | 7 skill 原子化 + 栈编排 |
 | `9047f6c` WorldBee | 环境引擎——现实检查 |
 | `097c8a2` 清理 | 删除过时代码和孤儿文件 |
 | `9c3f04a` Feishu App Bot API | send_message 升级到飞书应用机器人 API |

@@ -114,8 +114,8 @@ Evaluator 既不对 evolution agent 暴露，也不对 meta-agent 暴露。agent
 
 | AEvo 概念 | Worker-Bee 对应 | 差异 |
 |-----------|----------------|------|
-| Harness（工作区 + evaluator 隔离） | WorldBee（状态观测 + 环境边界） | WorldBee 还承担更多——pheromone 广播、跨 agent 状态同步 |
-| Meta-Agent（机制编辑决策） | Strategic Bee | Strategic Bee 更偏战略层决策，不直接改代码 |
+| Harness（工作区 + evaluator 隔离） | Verification Bee（状态观测 + 环境边界） | Verification Bee 还承担更多——pheromone 广播、跨 agent 状态同步 |
+| Meta-Agent（机制编辑决策） | Strategy Bee | Strategy Bee 更偏战略层决策，不直接改代码 |
 | Evolution Context C_r | NATS 消息历史 + 文件 mailbox | worker-bee 的 context 天然分布式，AEvo 是单机 harness |
 | Procedure-Based | 无直接对应 | worker-bee 全是 agent-based |
 | Agent-Based | 工蜂本体 | worker-bee agent 不走 harness 内的 candidate 循环 |
@@ -124,16 +124,16 @@ Evaluator 既不对 evolution agent 暴露，也不对 meta-agent 暴露。agent
 
 | | AEvo | Worker-Bee |
 |---|------|------------|
-| 元决策者 | **单体** meta-agent | **双体联合**: WorldBee（观测）+ Strategic Bee（决策） |
+| 元决策者 | **单体** meta-agent | **双体联合**: Verification Bee（观测）+ Strategy Bee（决策） |
 | 进化对象 | 单个任务（benchmark/优化问题） | 整个蜂群生态（agent + skill + tool） |
 | 安全模型 | Harness 内 evaluator 隔离 | 每 agent 内置 safety.py + 外部 audit log |
 | 干预粒度 | Meta-editing phase 产 run plan，segment 跑 N 轮 | 更粗——cron job 间隔 + handoff 触发 |
 
 ### 可直接借鉴的点
 
-1. **Evaluator 隔离 → WorldBee 加 evaluation firewall**: 让 WorldBee 成为唯一有权访问评测结果的 Bee，其他 agent 只收反馈摘要
-2. **Coarse-grained intervention → Strategic Bee 的干预频率设计**: 不每轮决策，设置"进化段"后再审视
-3. **Harness CLI → WorldBee CLI 增强**: 可恢复、可查询状态的命令行接口
+1. **Evaluator 隔离 → Verification Bee 加 evaluation firewall**: 让 Verification Bee 成为唯一有权访问评测结果的 Bee，其他 agent 只收反馈摘要
+2. **Coarse-grained intervention → Strategy Bee 的干预频率设计**: 不每轮决策，设置"进化段"后再审视
+3. **Harness CLI → Verification Bee CLI 增强**: 可恢复、可查询状态的命令行接口
 
 ## 潜在问题
 
@@ -155,10 +155,10 @@ Evaluator 既不对 evolution agent 暴露，也不对 meta-agent 暴露。agent
 
 ## 对 Worker-Bee 进化的启发
 
-用户判断：**"进化任务"由 WorldBee + Strategic Bee 联合决策**。
+用户判断：**"进化任务"由 Verification Bee + Strategy Bee 联合决策**。
 
 这个映射是精准的：
-- **WorldBee** = 状态观测 + harness 边界（对应 AEvo 的 Harness role）——观测全局状态、累积 pheromone、检测停滞/重复失败
-- **Strategic Bee** = 机制编辑决策（对应 AEvo 的 Meta-Agent role）——决定改什么 skill/tool/agent 配置、不改什么
+- **Verification Bee** = 状态观测 + harness 边界（对应 AEvo 的 Harness role）——观测全局状态、累积 pheromone、检测停滞/重复失败
+- **Strategy Bee** = 机制编辑决策（对应 AEvo 的 Meta-Agent role）——决定改什么 skill/tool/agent 配置、不改什么
 
 与 AEvo 的单体 meta-agent 不同，这个双体设计更符合蜂群架构的去中心化原则——观测和决策分开，各自独立演化和替换。

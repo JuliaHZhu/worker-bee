@@ -1,28 +1,28 @@
-# Strategic Bee — 战略统合
+# Strategy Bee — 搜索 + 锁定
 
 > *战略的标准是正确。正确 = 饱和式覆盖 + 边界精确。这两个要求相互矛盾，但这就是战略工作的本质。*
 
 ---
 
-## 一、Strategic Bee 在蜂群中的位置
+## 一、Strategy Bee 在蜂群中的位置
 
 ```
-Strategic Bee（战略：正确）
+Strategy Bee（战略：正确）
     │
     │ 战略方向 + 边界定义
     ▼
-Commander Bee（战役：小队长，派发+协调）
+Commander Bee（前线小队长：创造性执行，信息不足主动向 Chef 要）
     │
     │ 任务流
     ▼
-PM Bee（计划：菜谱级拆解）→ Worker Bees → World Bee（验证）
+Chef Bee（计划：菜谱级拆解）→ Worker Bees → Verification Bee（验证）
     │                                              │
     │                                              │ 验证数据
     │                                              ▼
-    └────────────────────────────── Strategic Bee（终极报告）
+    └────────────────────────────── Strategy Bee（终极报告）
 ```
 
-**Strategic Bee 在两端出现**：上游定方向，下游出报告。这是一个闭环。
+**Strategy Bee 在两端出现**：上游定方向，下游出报告。这是一个闭环。
 
 ---
 
@@ -52,13 +52,13 @@ PM Bee（计划：菜谱级拆解）→ Worker Bees → World Bee（验证）
 
 步骤 3: 收束
   - 从饱和覆盖中提取模式
-  - 生成假设（可被 World Bee 验证的命题）
+  - 生成假设（可被 Verification Bee 验证的命题）
   - 明确"已知"和"未知"的边界（新一轮的精确边界）
 ```
 
-**Strategic Bee 的 decompose-goal 和 PM Bee 的 task-decompose 是两层**：
+**Strategy Bee 的 decompose-goal 和 Chef Bee 的 task-decompose 是两层**：
 
-| | Strategic Bee | PM Bee |
+| | Strategy Bee | Chef Bee |
 |---|---|---|
 | 拆什么 | 目标 → 领域（domain） | 任务 → 步骤（step） |
 | 精度 | 领域级别 | 文件级别 |
@@ -68,7 +68,7 @@ PM Bee（计划：菜谱级拆解）→ Worker Bees → World Bee（验证）
 
 ---
 
-## 三、Strategic Bee 的两个角色
+## 三、Strategy Bee 的两个角色
 
 ### 角色一：战略规划（上游）
 
@@ -82,7 +82,7 @@ PM Bee（计划：菜谱级拆解）→ Worker Bees → World Bee（验证）
 [1] boundary-define   → 划定领域边界（做什么、不做什么）
 [2] domain-map        → 枚举所有相关子领域
 [3] source-inventory  → 每个子领域的信息源清单（饱和式）
-[4] hypothesis-seed   → 生成初始假设（待 World Bee 验证）
+[4] hypothesis-seed   → 生成初始假设（待 Verification Bee 验证）
   │
   ▼
 输出: strategic-brief.md → Commander Bee
@@ -198,7 +198,7 @@ AI agent 商业模式 — 领域地图
 ```markdown
 # 初始假设: AI agent 商业模式
 
-## H1: 开源框架的商业模式正在收敛到 2 种
+201|## H1: 开源框架的商业模式正在收敛到 2 种
 - 命题: 开源 AI agent 框架要么走"托管云服务"（像 MongoDB Atlas），要么走"企业支持"（像 Red Hat）
 - 可验证: 收集 ≥10 个开源框架的定价页面 → 分类统计
 - 如果为真: 新进入者的选择空间很小，必须在 2 者中选
@@ -215,7 +215,7 @@ AI agent 商业模式 — 领域地图
 - 优先级: medium
 ```
 
-这些假设交给 Commander → PM → Worker → World 执行验证。World Bee 验证后，数据回流到 Strategic Bee 做终极报告。
+这些假设交给 Commander → PM → Worker → World 执行验证。Verification Bee 验证后，数据回流到 Strategy Bee 做终极报告。
 
 ---
 
@@ -223,10 +223,10 @@ AI agent 商业模式 — 领域地图
 
 **消费者**: 人（最终的决策者）  
 **产品**: 战略报告（高度人工配合）  
-**输入**: World Bee 的验证数据 + 证据链报告
+**输入**: Verification Bee 的验证数据 + 证据链报告
 
 ```
-World Bee 验证数据
+Verification Bee 验证数据
     │
     ▼
 [5] evidence-synthesize → 将验证数据整合进领域框架
@@ -235,13 +235,13 @@ World Bee 验证数据
 [8] strategic-report    → 最终报告
 ```
 
-**这是高度人工配合的过程。** Strategic Bee 不做最终判断——它把验证过的数据按领域框架组织好，起草结论，然后**等人来确认或推翻**。
+**这是高度人工配合的过程。** Strategy Bee 不做最终判断——它把验证过的数据按领域框架组织好，起草结论，然后**等人来确认或推翻**。
 
 #### [5] evidence-synthesize — 整合验证数据
 
 | 字段 | 内容 |
 |------|------|
-| **Input** | World Bee 的 evidence-chain.md + verified/ 数据 + domain-map |
+| **Input** | Verification Bee 的 evidence-chain.md + verified/ 数据 + domain-map |
 | **Output** | 按领域框架组织的数据汇编 |
 | **调 LLM** | 是 |
 
@@ -310,7 +310,7 @@ World Bee 验证数据
 | **Output** | 经过人确认/修改/推翻的结论 |
 | **调 LLM** | 否 |
 
-**这是 Strategic Bee 停下来等人的环节。** 目标让人确认三件事：
+**这是 Strategy Bee 停下来等人的环节。** 目标让人确认三件事：
 1. 边界定义对不对？（有没有该做但没做的领域？）
 2. 结论对不对？（有没有数据不支持但直觉告诉你是对的？）
 3. 信息缺口要不要填？（有些缺口如果填的成本太高可以不填）
@@ -325,13 +325,13 @@ World Bee 验证数据
 
 ---
 
-## 四、Strategic Bee 与 Aristotle Bee 的分工
+## 四、Strategy Bee 与 Aristotle Bee 的分工
 
-| | Strategic Bee | Aristotle Bee |
+| | Strategy Bee | Aristotle Bee |
 |---|---|---|
 | **活跃时机** | 启动 + 收尾（两端），运行中定期 | 子项目运行中**完全静默** |
 | **管什么** | 战略方向、领域边界、终极报告 | 术语定义、词典归档 |
-| **数据来源** | World Bee 的验证数据 + 人的输入 | 项目中自然出现的术语 |
+| **数据来源** | Verification Bee 的验证数据 + 人的输入 | 项目中自然出现的术语 |
 | **产出** | strategic-brief.md, 战略报告 | dict/<project>.md |
 | **和人的关系** | 高度配合（人确认边界、人审阅结论） | 被动服务（人有新术语才用） |
 
@@ -341,11 +341,11 @@ World Bee 验证数据
 
 ## 五、与 Commander Bee 的分工
 
-| | Strategic Bee | Commander Bee |
+| | Strategy Bee | Commander Bee |
 |---|---|---|
 | **层级** | 战略 | 战役 |
 | **管什么** | 方向对不对 | 执行到不到位 |
-| **输入** | 人的目标 + World 数据 | Strategic Bee 的战略简报 |
+| **输入** | 人的目标 + World 数据 | Strategy Bee 的战略简报 |
 | **输出** | 领域地图 + 假设 + 最终报告 | 任务流（Job Board） |
 | **决策方式** | LLM + 人确认 | 规则引擎 |
 | **何时用 LLM** | boundary-define, domain-map, conclusion-draft | 不用 LLM 做决策 |

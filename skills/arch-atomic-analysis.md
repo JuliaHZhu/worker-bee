@@ -1,6 +1,6 @@
 ---
 name: arch-atomic-analysis
-description: 论文/申论专用——切原子→打标签→看统计→生成模板。Architecture Bee 的结构分析技能。小说请用 arch-novel-split + arch-novel-tag。
+description: 论文/申论专用——切原子→打标签→看统计→生成模板。Skeleton Bee 的结构分析技能。小说请用 arch-novel-split + arch-novel-tag。
 trigger: 原子分析, 逐段分析, 切原子, 打标签, 文章结构, 看统计, 分析结构, 拆文章, 原子, 生成模板
 tools:
   - net_web_extract
@@ -21,7 +21,7 @@ category: architecture
 ├── source.md      ← 原始文本（URL 提取或用户粘贴）
 ├── atoms.md       ← 原子序列（每个原子一行：ID + 标签 + 字数 + 首句）
 ├── stats.md       ← 章节级统计表 + 整体数据特征
-└── template.md    ← PM Bee 填空模板（可选，从 stats 生成）
+└── template.md    ← Chef Bee 填空模板（可选，从 stats 生成）
 ```
 
 `<name>` = 文章标题或用户指定的英文短名（如 `three-body-ch3`）。
@@ -141,11 +141,11 @@ category: architecture
 - 心理描写最后三章归零
 ```
 
-**一句话特征**（放最顶上，Architecture Bee 对话入口）：
+**一句话特征**（放最顶上，Skeleton Bee 对话入口）：
 
 > 对话驱动型叙事，第三章对话密度异常。描写集中在开头，后期偏动作推进。场景切换少（线性时间线）。
 
-## Phase 4: 生成模板（给 PM Bee）
+## Phase 4: 生成模板（给 Chef Bee）
 
 **什么时候**：统计完成 + 用户说 "生成模板" / "PM用"
 

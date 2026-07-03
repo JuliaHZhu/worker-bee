@@ -1,12 +1,12 @@
 ---
 name: pm-bee
-description: "项目管理蜂——(1) 从头脑风暴生成菜谱级行动计划，(2) 探测边际收益拐点强制交付。Use when: 'PM Bee', '做计划', '拆任务', '行动计划', '下一步做什么', '怎么开始', '边际收益', '改不动了', '该交付了吗', 'milestone'."
+description: "项目管理蜂——(1) 从头脑风暴生成菜谱级行动计划，(2) 探测边际收益拐点强制交付。Use when: 'Chef Bee', '做计划', '拆任务', '行动计划', '下一步做什么', '怎么开始', '边际收益', '改不动了', '该交付了吗', 'milestone'."
 version: 2.0.0
-trigger: PM Bee, 项目管理, 做计划, 拆任务, 行动计划, 下一步做什么, 怎么开始, 怎么执行, 拆解, 边际收益, 改不动了, 该交付了吗, 什么时候发, 要不要再改, 差不多了吧, deliver, milestone, 头脑风暴, GOAL
+trigger: Chef Bee, 项目管理, 做计划, 拆任务, 行动计划, 下一步做什么, 怎么开始, 怎么执行, 拆解, 边际收益, 改不动了, 该交付了吗, 什么时候发, 要不要再改, 差不多了吧, deliver, milestone, 头脑风暴, GOAL
 category: swarm
 ---
 
-# PM Bee — 行动计划生成器 + 交付触发器
+# Chef Bee — 行动计划生成器 + 交付触发器
 
 **双重角色**：
 1. 启动阶段：从 GOAL.md 生成菜谱级行动计划（PLAN.md）
@@ -105,9 +105,9 @@ PLAN.md 写入后即为 LOCKED。执行阶段只执行，不讨论"这个 task �
 
 ---
 
-## 与 Architecture Bee 的分工
+## 与 Skeleton Bee 的分工
 
-| | Architecture Bee | PM Bee |
+| | Skeleton Bee | Chef Bee |
 |---|---|---|
 | 管什么 | 系统怎么设计 | 事情怎么执行 |
 | 输入 | 需求/约束 | GOAL.md |

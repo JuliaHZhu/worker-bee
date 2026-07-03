@@ -1,16 +1,16 @@
-# World Bee — 免疫过滤 + 证据链引擎
+# Verification Bee — 真实物理引擎（免疫过滤 + 证据链）
 
 > *第一道防线：过滤事实错误。第二道防线：拼凑环环相扣的证据链。*
 > *流程切得细碎——降低返工。后期再合并——提升流畅。*
 
 ---
 
-## 一、World Bee 的双重防线
+## 一、Verification Bee 的双重防线
 
 | 防线 | 角色 | 触发 | 消费者 |
 |------|------|------|--------|
 | **免疫过滤**（第一道） | 事实校验 → 过滤错误 → 重试指令 | 每个 Worker 提交产出 | Commander（重试指令） |
-| **证据链引擎**（第二道） | 交叉验证 → 拼凑证据 → 阶段性结论 + 新假设 | 多个 Worker 产出汇集 | Strategic Bee（报告） |
+| **证据链引擎**（第二道） | 交叉验证 → 拼凑证据 → 阶段性结论 + 新假设 | 多个 Worker 产出汇集 | Strategy Bee（报告） |
 
 **两道的区别**：第一道是"这个数据对不对"，第二道是"这些数据放一起说明什么"。
 
@@ -18,11 +18,11 @@
 
 ## 二、核心假设
 
-1. **Worker Bee 没有 subagent 机制** — 它不会自己查自己。出错就交给 World Bee 检测 → Commander 重试。
+1. **Worker Bee 没有 subagent 机制** — 它不会自己查自己。出错就交给 Verification Bee 检测 → Commander 重试。
 2. **流程切细碎** — 每个 skill 做一件事，错了只回滚那一步，不用整个阶段重做。
 3. **后期合并** — 细碎 skill 跑通后，相邻的纯规则 skill 可以合并为一个，减少文件跳转。
 4. **证据链必须是闭环的** — 不能只靠一个 Worker 的数据下结论。至少 2 个方向的数据相互印证。
-5. **回报 Strategic Bee** — World Bee 不做战略决策，只把"验证过的数据 + 发现的新问题"打包给 Strategic Bee。
+5. **回报 Strategy Bee** — Verification Bee 不做战略决策，只把"验证过的数据 + 发现的新问题"打包给 Strategy Bee。
 
 ---
 
@@ -50,7 +50,7 @@
 │   ├── 10-hypotheses.md         ← 新假设
 │   └── 11-gaps.md               ← 信息缺口
 └── reports/
-    └── strategic-<date>.md      ← 给 Strategic Bee 的定期报告
+    └── strategic-<date>.md      ← 给 Strategy Bee 的定期报告
 ```
 
 ---
@@ -88,7 +88,7 @@ Worker 产出
 [11] summary-synthesize → 09-summary.md         阶段性结论
 [12] hypothesis-generate → 10-hypotheses.md     新假设
 [13] gap-detect         → 11-gaps.md            信息缺口
-[14] report-strategic   → reports/strategic-*.md 回报 Strategic Bee
+[14] report-strategic   → reports/strategic-*.md 回报 Strategy Bee
 ```
 
 ---
@@ -502,7 +502,7 @@ worker-news vs worker-finance:
 4. 时效缺口: 数据时间戳过期（如"最新财报"但已过了一个季度）
 ```
 
-### [14] report-strategic — 回报 Strategic Bee
+### [14] report-strategic — 回报 Strategy Bee
 
 | 字段 | 内容 |
 |------|------|
@@ -510,10 +510,10 @@ worker-news vs worker-finance:
 | **Output** | `reports/strategic-<date>.md` |
 | **工具** | LLM（组装） |
 | **调 LLM** | 是 |
-| **消费者** | **Strategic Bee** ← 这是最终交付对象 |
+| **消费者** | **Strategy Bee** ← 这是最终交付对象 |
 
 ```markdown
-# World Bee 报告 — 2026-07-01
+# Verification Bee 报告 — 2026-07-01
 
 ## 数据概况
 - 4 个 Worker 提交产出
@@ -528,7 +528,7 @@ worker-news vs worker-finance:
 1. [high] H1: 海外增长独立于国内政策 — 可验证，影响大
 2. [medium] H2: 研发投入与毛利率正相关 — 需要历史数据
 
-## 当前信息缺口（需要 Strategic Bee 判断方向）
+## 当前信息缺口（需要 Strategy Bee 判断方向）
 - Q: 海外的34%是来自哪些市场？需要启动针对性调研吗？
 - Q: 某公司的同行对比数据缺失，需要做竞品分析吗？
 
@@ -560,7 +560,7 @@ Worker: 重新生成（这次参考了建议）
 World: 再次进入 [1] data-ingest → ... → 通过 or 再驳回
 ```
 
-重试上限：同一 task 最多重试 3 次。3 次后 → 标记为 "failed_permanent"，上报 Strategic Bee。
+重试上限：同一 task 最多重试 3 次。3 次后 → 标记为 "failed_permanent"，上报 Strategy Bee。
 
 ---
 
@@ -603,17 +603,17 @@ ingest-and-normalize → fact-check-pipeline → evidence-chain → cross-valida
 
 ---
 
-## 十二、与 PM Bee / Strategic Bee 的接口
+## 十二、与 Chef Bee / Strategy Bee 的接口
 
 ```
-Worker Bee → World Bee → Strategic Bee
+Worker Bee → Verification Bee → Strategy Bee
                 │
                 ├─ 驳回 → Commander → 重试 Worker
-                └─ 通过 → 证据链 → 结论+假设 → Strategic Bee
+                └─ 通过 → 证据链 → 结论+假设 → Strategy Bee
 
-PM Bee 的 PLAN.md 定义执行范围
-  → World Bee 的 gap-detect 参考 PLAN.md 判断"哪些领域完全没有数据"
-  → Strategic Bee 的 horizon-scan 参考 World Bee 的假设列表
+Chef Bee 的 PLAN.md 定义执行范围
+  → Verification Bee 的 gap-detect 参考 PLAN.md 判断"哪些领域完全没有数据"
+  → Strategy Bee 的 horizon-scan 参考 Verification Bee 的假设列表
 ```
 
-**World Bee 不直接和 Worker Bee 通信**——只通过 Commander 发重试指令。**不直接和 PM Bee 通信**——只参考 PLAN.md 做 gap 检测。**唯一的外部消费者是 Strategic Bee**。
+**Verification Bee 不直接和 Worker Bee 通信**——只通过 Commander 发重试指令。**不直接和 Chef Bee 通信**——只参考 PLAN.md 做 gap 检测。**唯一的外部消费者是 Strategy Bee**。

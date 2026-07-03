@@ -1,10 +1,10 @@
-# Project Manager Bee — 行动计划生成器 + 交付触发器
+# Chef Bee — 主厨（大阶段 + 菜谱级 task）
 
 > *从头脑风暴到菜谱级执行方案。先过饱和，再执行。*
 
 ---
 
-## 一、PM Bee 的双重角色
+## 一、Chef Bee 的双重角色
 
 | 角色 | 消费者 | 产品 | 阶段 | 触发 |
 |------|--------|------|------|------|
@@ -18,7 +18,7 @@
 ```
 ~/.worker-bee/pm/<project>/
 ├── GOAL.md                  ← 头脑风暴（人类写，自由格式）
-├── PLAN.md                  ← 行动计划（PM Bee 生成，LOCKED 后只读）
+├── PLAN.md                  ← 行动计划（Chef Bee 生成，LOCKED 后只读）
 ├── PLAN.lock                ← 决策锁（fcntl 排他锁）
 ├── state.json               ← 执行状态追踪（每个 task 的当前阶段）
 ├── _internal/
@@ -335,7 +335,7 @@ GOAL.md
 | **工具** | `fs_read_file`，LLM 辅助生成容错方案 |
 | **时间** | 每个 task 3-5min，可并行处理多个 task |
 
-**这是 PM Bee 最核心的 skill——把骨架变成菜谱。** 每个 task 必须填满全部 9 个字段，不能留空。
+**这是 Chef Bee 最核心的 skill——把骨架变成菜谱。** 每个 task 必须填满全部 9 个字段，不能留空。
 
 **Output 格式** (`04-recipes.md`):
 
@@ -468,7 +468,7 @@ T-001 → T-003 → T-004 → T-005 → T-007
 
 | 字段 | 内容 |
 |------|------|
-| **消费者** | [8] plan-assemble（内部下游）+ World Bee（执行时参考） |
+| **消费者** | [8] plan-assemble（内部下游）+ Verification Bee（执行时参考） |
 | **产品** | `_internal/07-contingency.md` |
 | **Input** | `04-recipes.md`（所有 task 的容错字段 + 阻塞项字段） |
 | **Output** | 容错矩阵：什么条件 → 触发什么 fallback → 预计影响 |
@@ -498,7 +498,7 @@ T-001 → T-003 → T-004 → T-005 → T-007
 | T-005 审核被拒 | 补正后仍被拒 | → 解锁 PLAN，分析拒绝原因，重新生成计划 |
 
 ## PLAN 解锁条件
-以下条件任一满足时，PLAN.lock 自动释放（由 World Bee 检测）:
+以下条件任一满足时，PLAN.lock 自动释放（由 Verification Bee 检测）:
 1. 任一"高"阻塞风险 task 的容错路径全部走完仍失败
 2. 外部新信息（法规变更、窗口回复否定、预算被砍）
 3. T-005 审核返回"拒绝"（非"补正"）
@@ -530,7 +530,7 @@ T-001 → T-003 → T-004 → T-005 → T-007
 
 | 字段 | 内容 |
 |------|------|
-| **消费者** | 执行者（信号：不要再讨论了，执行）+ World Bee（监控解锁条件） |
+| **消费者** | 执行者（信号：不要再讨论了，执行）+ Verification Bee（监控解锁条件） |
 | **产品** | `PLAN.lock` + PLAN.md 状态更新为 LOCKED |
 | **Input** | `PLAN.md` |
 | **Output** | `PLAN.lock`（fcntl 排他锁）+ `PLAN.md` Meta 段状态改为 LOCKED |
@@ -539,7 +539,7 @@ T-001 → T-003 → T-004 → T-005 → T-007
 
 **锁定语义**:
 - LOCKED = 计划已决策，执行阶段只执行不讨论
-- 解锁条件（由 World Bee 监控）：见 `07-contingency.md` 升级路径
+- 解锁条件（由 Verification Bee 监控）：见 `07-contingency.md` 升级路径
 - 锁不是不可变的——修改需要明确的触发条件
 
 ---
@@ -674,7 +674,7 @@ else:
 
 ## 五、执行状态追踪
 
-`state.json` — PM Bee 在执行阶段追踪每个 task 的状态变化。
+`state.json` — Chef Bee 在执行阶段追踪每个 task 的状态变化。
 
 ```json
 {
@@ -694,16 +694,16 @@ else:
 }
 ```
 
-World Bee 在每次环境扫描时读取此文件，检查是否需要触发解锁。
+Verification Bee 在每次环境扫描时读取此文件，检查是否需要触发解锁。
 
 ---
 
-## 六、PM Bee 与 Commander Bee 的接口
+## 六、Chef Bee 与 Commander Bee 的接口
 
-PM Bee 不直接和 Worker Bee 通信。它产出的 `PLAN.md` 交给 Commander Bee，由 Commander 做最后的拆解和派发。
+Chef Bee 不直接和 Worker Bee 通信。它产出的 `PLAN.md` 交给 Commander Bee，由 Commander 做最后的拆解和派发。
 
 ```
-PM Bee                     Commander Bee
+Chef Bee                     Commander Bee
   │                              │
   ├─ PLAN.md 写入                │
   ├─ PLAN.lock 锁定              │
@@ -729,13 +729,13 @@ PM Bee                     Commander Bee
 
 ---
 
-## 七、PM Bee 与 World Bee 的接口
+## 七、Chef Bee 与 Verification Bee 的接口
 
-World Bee 在执行阶段监控：
+Verification Bee 在执行阶段监控：
 1. 读取 `state.json` → 检查哪些 task 在 doing 状态
 2. 读取 `07-contingency.md` → 知道什么条件触发解锁
 3. 检测到解锁条件 → 写入 `pheromones/warnings/PLAN-unlock-<project>.md`
-4. PM Bee（或人）看到 warning → 决定是否解锁 PLAN
+4. Chef Bee（或人）看到 warning → 决定是否解锁 PLAN
 
 ---
 

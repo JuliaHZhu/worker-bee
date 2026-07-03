@@ -44,7 +44,7 @@ li{margin:4px 0}
 <!-- ═══════════════════════════════════════════ -->
 <h2>Problem Statement</h2>
 
-<p>Worker Bee 需要跨机器协同：Commander Bee 派发工单、Worker Bee 互相通知、World Bee 提供信息支持。当前缺少轻量级的跨机器消息总线。</p>
+<p>Worker Bee 需要跨机器协同：Commander Bee 派发工单、Worker Bee 互相通知、Verification Bee 提供信息支持。当前缺少轻量级的跨机器消息总线。</p>
 
 <p><strong>需求：</strong></p>
 <ul>
@@ -72,7 +72,7 @@ li{margin:4px 0}
 
 <ol>
   <li>作为 Worker Bee，我希望能通过 <code>swarm_publish</code> 向蜂群广播事件（如"工单完成"），其他 Bee 能收到</li>
-  <li>作为 Worker Bee，我希望能通过 <code>swarm_request</code> 向 World Bee 查询信息，60 秒内得到回复</li>
+  <li>作为 Worker Bee，我希望能通过 <code>swarm_request</code> 向 Verification Bee 查询信息，60 秒内得到回复</li>
   <li>作为 Commander Bee，我希望能通过 NATS 向特定 Worker Bee 派发工单</li>
   <li>作为 Worker Bee，我希望收到的消息保存在 <code>mailbox/inbox/</code>，我随时可以读取</li>
   <li>作为用户，我希望 swarm_listener 重启后不会丢消息（NATS 缓存机制）</li>

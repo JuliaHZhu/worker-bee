@@ -499,7 +499,7 @@ Handoff 是工作态快照（Purpose / Completed / Todos / Context / Next Step�
 
 ## 设计笔记
 
-Aristotle Bee、Architecture Bee、Project Manager Bee、WorldBee 等历史 fork 概念，以及完整的 agent 生态系统设计，均存档于 `design_notes/` 。它们说明了同一个内核如何穿上不同的 skill 外衣。
+Aristotle Bee、Skeleton Bee、Project Manager Bee、WorldBee 等历史 fork 概念，以及完整的 agent 生态系统设计，均存档于 `design_notes/` 。它们说明了同一个内核如何穿上不同的 skill 外衣。
 
 运营规范（信息素格式、mechanism vs task skill 区别）见 `design_notes/exogenous-pheromone-formats.md`。
 

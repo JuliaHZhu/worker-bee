@@ -21,52 +21,75 @@ nats_nodes:
     name: "nats-3"
 
 # ── Bee 角色部署映射 ──
-# 每台服务器可以部署一个或多个 bee 角色
-# 建议：commander 单独一台，worker/world/writer 可按需分配
+# 每台服务器部署一个或多个 Bee 角色
+# 对齐 design_notes/07-full-agent-ecosystem.md 十步流程
 servers:
-  # ── 指挥官节点 ──
+  # ── Aristotle Bee ──
   - host: "10.0.1.10"
-    name: "beebox-commander"
+    name: "beebox-aristotle"
     roles:
-      - commander
-    # commander 是否也跑 NATS
+      - aristotle
     nats_server: true
     env:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
 
-  # ── Worker 节点 1 ──
+  # ── Skeleton Bee ──
   - host: "10.0.1.11"
-    name: "beebox-worker-1"
+    name: "beebox-skeleton"
     roles:
-      - worker
-      - hermes
-    nats_server: true
-    env:
-      OPENAI_API_KEY: "${OPENAI_API_KEY}"
-
-  # ── Worker 节点 2 ──
-  - host: "10.0.1.12"
-    name: "beebox-worker-2"
-    roles:
-      - worker
-      - openclaw
-    nats_server: true
-    env:
-      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
-
-  # ── World + Writer 节点 ──
-  - host: "10.0.1.13"
-    name: "beebox-creative"
-    roles:
-      - world
-      - writer
+      - skeleton
     nats_server: false
     env:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
 
-  # ── Newspaper 节点 ──
+  # ── Strategy Bee ──
+  - host: "10.0.1.12"
+    name: "beebox-strategy"
+    roles:
+      - strategy
+    nats_server: false
+    env:
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
+
+  # ── PM Bee ──
+  - host: "10.0.1.13"
+    name: "beebox-pm"
+    roles:
+      - pm
+    nats_server: false
+    env:
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+
+  # ── Centurion Bee ──
   - host: "10.0.1.14"
+    name: "beebox-centurion"
+    roles:
+      - centurion
+    nats_server: false
+    env:
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+
+  # ── World Bee ──
+  - host: "10.0.1.15"
+    name: "beebox-world"
+    roles:
+      - world
+    nats_server: false
+    env:
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+
+  # ── Cardmaster Bee ──
+  - host: "10.0.1.16"
+    name: "beebox-cardmaster"
+    roles:
+      - cardmaster
+    nats_server: false
+    env:
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+
+  # ── Newspaper demo ──
+  - host: "10.0.1.17"
     name: "beebox-newspaper"
     roles:
       - newspaper

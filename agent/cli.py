@@ -819,6 +819,112 @@ def _add_deck_parser(sub):
 
 
 # ---------------------------------------------------------------------------
+# Cron sub-command — daily auto-update
+# ---------------------------------------------------------------------------
+
+_CRON_MARKER = "# worker-bee-auto-update"
+_CRON_ENTRY = (
+    "0 3 * * * "
+    "{python} -m pip install --upgrade --quiet "
+    "git+https://github.com/JuliaHZhu/worker-bee.git "
+    "2>&1 | logger -t worker-bee-update"
+)
+
+
+def _cron_install(args):
+    """Add a daily auto-update cron job for worker-bee."""
+    import subprocess, sys
+
+    # Check if already installed
+    result = subprocess.run(
+        ["crontab", "-l"], capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        existing = ""
+    else:
+        existing = result.stdout.rstrip("\n")
+    if _CRON_MARKER in existing:
+        print("✅ Cron job already installed.")
+        return
+
+    # Build the entry
+    python = sys.executable
+    entry = _CRON_ENTRY.format(python=python)
+
+    # Append
+    new_crontab = (existing + "\n" if existing else "") + _CRON_MARKER + "\n" + entry + "\n"
+    subprocess.run(
+        ["crontab", "-"],
+        input=new_crontab, text=True, check=True,
+    )
+    print("✅ Installed daily auto-update (runs at 03:00 UTC daily).")
+    print(f"   Command: pip install --upgrade worker-bee")
+
+
+def _cron_uninstall(args):
+    """Remove the worker-bee auto-update cron job."""
+    import subprocess
+
+    result = subprocess.run(
+        ["crontab", "-l"], capture_output=True, text=True,
+    )
+    if result.returncode != 0 or _CRON_MARKER not in result.stdout:
+        print("ℹ️  No worker-bee cron job found.")
+        return
+
+    lines = result.stdout.split("\n")
+    new_lines = []
+    skip_next = False
+    for line in lines:
+        if _CRON_MARKER in line:
+            skip_next = True
+            continue
+        if skip_next:
+            skip_next = False
+            continue
+        new_lines.append(line)
+
+    new_crontab = "\n".join(new_lines).strip() + "\n"
+    if new_crontab.strip():
+        subprocess.run(
+            ["crontab", "-"],
+            input=new_crontab, text=True, check=True,
+        )
+    else:
+        subprocess.run(["crontab", "-r"], check=True)
+    print("🗑️  Removed worker-bee auto-update cron job.")
+
+
+def _cron_status(args):
+    """Check whether the auto-update cron job is installed."""
+    import subprocess
+
+    result = subprocess.run(
+        ["crontab", "-l"], capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        print("🔴 No crontab configured.")
+    elif _CRON_MARKER in result.stdout:
+        print("🟢 Auto-update cron job is installed (daily at 03:00 UTC).")
+    else:
+        print("🔴 Worker-bee auto-update cron job is NOT installed.")
+
+
+def _add_cron_parser(sub):
+    cron = sub.add_parser("cron", help="Manage daily auto-update cron job")
+    cron_sub = cron.add_subparsers(dest="cron_cmd", required=True)
+
+    p = cron_sub.add_parser("install", help="Install daily auto-update cron job")
+    p.set_defaults(func=_cron_install)
+
+    p = cron_sub.add_parser("uninstall", help="Remove the auto-update cron job")
+    p.set_defaults(func=_cron_uninstall)
+
+    p = cron_sub.add_parser("status", help="Check if auto-update is installed")
+    p.set_defaults(func=_cron_status)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main(argv=None):
@@ -845,6 +951,8 @@ def main(argv=None):
             "  wb deck mode\n"
             "  wb deck focus\n"
             "  wb deck add fs_write_file\n"
+            "  wb cron install\n"
+            "  wb cron status\n"
         ),
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -854,6 +962,7 @@ def main(argv=None):
     _add_workspace_parser(sub)
     _add_lark_parser(sub)
     _add_deck_parser(sub)
+    _add_cron_parser(sub)
 
     args = parser.parse_args(argv)
     args.func(args)

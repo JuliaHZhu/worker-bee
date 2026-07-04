@@ -1,6 +1,6 @@
-# Cardmaster Bee — 战术本 + 参谋长
+# Cardmaster Bee — 回合制动作引擎
 
-> *战术本：每种局面该出什么招，标的物是什么。参谋长：不决策，只做参谋——复盘、解读、建议。*
+> *把一切变成国际象棋。每个回合抽一张动作卡，生产关键标的物，结算成功率。*
 
 ---
 
@@ -50,7 +50,7 @@ Cardmaster 只有 **4 种动作**。每一种都有明确的目标、关键标�
 | **目标** | 让对方接受你的信息框架，进入你的信息链 |
 | **关键标的物** | **report** — 一份让对方无法拒绝的论证报告 |
 | **标的物内容** | 你为什么找他、你的信用证据、他能得到什么、不加入的代价 |
-| **标的物生产者** | Worker Bee（调研+写作），Verification Bee（事实校验） |
+| **标的物生产者** | Worker Bee（调研+写作），World Bee（事实校验） |
 | **成功率公式** | `report质量 × 对方关系基础 × 时机` |
 | **失败处理** | 回到研究动作——report 不够好是因为标准不对 |
 
@@ -58,11 +58,11 @@ Cardmaster 只有 **4 种动作**。每一种都有明确的目标、关键标�
 例:
   抽卡: 说服 → 目标: 投资人张总
   标的物: 一份市场分析 report（证明你的方向是唯一正确的）
-  调度: Chef Bee → 拆 task → Worker 调研+写作 → World 验证数据
+  调度: PM Bee → 拆 task → Worker 调研+写作 → World 验证数据
   结算: report 通过 World 验证 → 成功率 85% → 发给他
 ```
 
-**report 质量评估维度**（Verification Bee 验证后打分）:
+**report 质量评估维度**（World Bee 验证后打分）:
 1. 数据准确度（triangulated claims 占比）
 2. 逻辑完整性（证据链是否有断裂）
 3. 针对性（是否回应了对方已知的顾虑）
@@ -75,7 +75,7 @@ Cardmaster 只有 **4 种动作**。每一种都有明确的目标、关键标�
 | **目标** | 用你有的换他没有的（钱、时间、渠道、数据、背书） |
 | **关键标的物** | **product demo** — 让对方看到"这东西已经能跑了" |
 | **标的物内容** | 可运行的原型、可测量的指标、可对比的竞品分析 |
-| **标的物生产者** | Worker Bee（开发+测试），Verification Bee（性能基准验证） |
+| **标的物生产者** | Worker Bee（开发+测试），World Bee（性能基准验证） |
 | **成功率公式** | `demo完成度 × 对方需求匹配度 × 替代方案稀缺性` |
 | **失败处理** | 回到生产动作——demo 不够好是因为流水线有问题 |
 
@@ -83,14 +83,14 @@ Cardmaster 只有 **4 种动作**。每一种都有明确的目标、关键标�
 例:
   抽卡: 交易 → 目标: 渠道商李总
   标的物: product demo（你的产品在他的渠道跑一遍的数据）
-  调度: Chef Bee → 拆 task → Worker 开发 demo → World 验证性能
+  调度: PM Bee → 拆 task → Worker 开发 demo → World 验证性能
   结算: demo 通过性能基准 → 成功率 72% → 约演示时间
 ```
 
 **demo 质量评估维度**:
 1. 功能完整度（承诺的功能实现了多少）
 2. 性能指标（和竞品的对比数据）
-3. 稳定性（Verification Bee 压测结果）
+3. 稳定性（World Bee 压测结果）
 4. 适配度（在对方环境/场景下的表现）
 
 #### 生产 (Produce) — 客体是事，build 流水线
@@ -101,7 +101,7 @@ Cardmaster 只有 **4 种动作**。每一种都有明确的目标、关键标�
 | **动作形式** | **build 流水线** |
 | **产品** | **pipeline** — 一套标准化的生产流程 |
 | **产品内容** | 输入规范 → 处理步骤 → 输出规格 → 质检标准 → 扩展点 |
-| **产品生产者** | Skeleton Bee（设计流水线结构）+ Chef Bee（拆 task）+ Worker Bee（实现） |
+| **产品生产者** | Architecture Bee（设计流水线结构）+ PM Bee（拆 task）+ Worker Bee（实现） |
 | **成功标准** | 流水线跑通 3 次，产出方差 < 阈值 |
 | **失败处理** | 回到研究动作——流水线卡住是因为标准没定清楚 |
 
@@ -109,7 +109,7 @@ Cardmaster 只有 **4 种动作**。每一种都有明确的目标、关键标�
 例:
   抽卡: 生产 → 目标: 论文写作流水线
   产品: pipeline（文献调研→大纲→初稿→修改→定稿 五阶段流水线）
-  调度: Skeleton Bee → 设计流水线结构 → Chef Bee → 拆 task → Worker 实现
+  调度: Architecture Bee → 设计流水线结构 → PM Bee → 拆 task → Worker 实现
   结算: 流水线产出 3 篇论文片段，质量方差 < 0.1 → 成功
 ```
 
@@ -127,7 +127,7 @@ Cardmaster 只有 **4 种动作**。每一种都有明确的目标、关键标�
 | **动作形式** | **build 标准** |
 | **产品** | **standard** — 一套可操作的判断标准 |
 | **产品内容** | 定义 → 测量方法 → 阈值 → 边界案例 → 更新机制 |
-| **产品生产者** | Aristotle Bee（术语定义）+ Skeleton Bee（标准结构）+ Verification Bee（数据验证） |
+| **产品生产者** | Aristotle Bee（术语定义）+ Architecture Bee（标准结构）+ World Bee（数据验证） |
 | **成功标准** | 标准被 ≥2 个不同的 Worker 任务正确使用，判断结果一致 |
 | **失败处理** | 再研究——标准不够清晰是因为定义还没对齐 |
 
@@ -135,7 +135,7 @@ Cardmaster 只有 **4 种动作**。每一种都有明确的目标、关键标�
 例:
   抽卡: 研究 → 目标: "什么是一篇好论文"
   产品: standard（评估论文的 5 维度标准）
-  调度: Aristotle Bee → 定义"好"的每个维度 → Skeleton Bee → 标准结构 → Verification Bee 验证
+  调度: Aristotle Bee → 定义"好"的每个维度 → Architecture Bee → 标准结构 → World Bee 验证
   结算: 标准被 3 个 Worker 任务使用，评分一致 → 成功
 ```
 
@@ -181,7 +181,7 @@ Cardmaster 只有 **4 种动作**。每一种都有明确的目标、关键标�
   │     ├─ 生产论文流水线 → 需要一条 5 阶段 pipeline
   │     └─ 研究"好论文标准" → 需要一套 5 维度 standard
   │
-  ├─ 4. 调度蜂群: Chef Bee 拆 task → Workers 执行 → Verification Bee 验证
+  ├─ 4. 调度蜂群: PM Bee 拆 task → Workers 执行 → World Bee 验证
   │     （这一步可能跨越多轮 Worker 执行）
   │
   ├─ 5. 结算: 标的物质量 → 成功率 → 发 or 不发
@@ -223,7 +223,7 @@ standard 不好 → 再研究
 
 ## 四、标的物规格书
 
-Cardmaster 抽卡后，生成一份标的物规格书，交给 Chef Bee 执行。这是 Cardmaster 的核心产出。
+Cardmaster 抽卡后，生成一份标的物规格书，交给 PM Bee 执行。这是 Cardmaster 的核心产出。
 
 ```markdown
 # 标的物规格书: report-2026-0701-001
@@ -256,9 +256,9 @@ Cardmaster 抽卡后，生成一份标的物规格书，交给 Chef Bee 执行�
   - 针对性: 明确回应张总的顾虑（开源怎么赚钱）
 
 ## 调度
-- Chef Bee: 拆成 5 个 task（每章 1 个 + 交叉验证 1 个）
+- PM Bee: 拆成 5 个 task（每章 1 个 + 交叉验证 1 个）
 - Worker: 5 个 Worker 并行调研+写作
-- Verification Bee: 验证所有数据 claim，产出证据链报告
+- World Bee: 验证所有数据 claim，产出证据链报告
 ```
 
 ---
@@ -266,7 +266,7 @@ Cardmaster 抽卡后，生成一份标的物规格书，交给 Chef Bee 执行�
 ## 五、Cardmaster 与蜂群的接口
 
 ```
-                 Strategy Bee（长期方向）
+                 Strategic Bee（长期方向）
                        │
                        │ "需要融资" or "需要拓展渠道"
                        ▼
@@ -275,7 +275,7 @@ Cardmaster 抽卡后，生成一份标的物规格书，交给 Chef Bee 执行�
         ┌──────────────┼──────────────┐
         │              │              │
         ▼              ▼              ▼
-    Chef Bee       Architecture    Aristotle
+    PM Bee       Architecture    Aristotle
    （拆task）     Bee（结构）    Bee（定义）
         │              │              │
         └──────────────┼──────────────┘
@@ -284,7 +284,7 @@ Cardmaster 抽卡后，生成一份标的物规格书，交给 Chef Bee 执行�
                   Worker Bees
                        │
                        ▼
-                  Verification Bee（验证）
+                  World Bee（验证）
                        │
                        ▼
                  Cardmaster Bee（结算）
@@ -317,7 +317,7 @@ Cardmaster 抽卡后，生成一份标的物规格书，交给 Chef Bee 执行�
 │   ├── report-2026-0701-001/
 │   │   ├── spec.md           ← 原始规格书
 │   │   ├── report.md         ← 最终产出
-│   │   └── world-verdict.json ← Verification Bee 验证结果
+│   │   └── world-verdict.json ← World Bee 验证结果
 │   └── ...
 └── evaluations/              ← 成功/失败分析
     └── round-R3-retro.md
@@ -332,15 +332,15 @@ Cardmaster 抽卡后，生成一份标的物规格书，交给 Chef Bee 执行�
 | 1 | **action-select** | 分析当前状态 → 推荐本回合动作（or 人指定） | 是 |
 | 2 | **target-profile** | 为目标客体（人/事）生成画像：已知信息、顾虑、关系基础 | 是 |
 | 3 | **spec-generate** | 根据动作类型 + 目标画像 → 生成标的物规格书 | 是 |
-| 4 | **spec-dispatch** | 将规格书拆成调度指令 → Chef Bee（拆 task）+ 指定验证者（Verification Bee） | 否（纯规则） |
-| 5 | **quality-evaluate** | 读取 Verification Bee 验证结果 → 标的物质量评分 → 成功率 | 否（纯规则） |
+| 4 | **spec-dispatch** | 将规格书拆成调度指令 → PM Bee（拆 task）+ 指定验证者（World Bee） | 否（纯规则） |
+| 5 | **quality-evaluate** | 读取 World Bee 验证结果 → 标的物质量评分 → 成功率 | 否（纯规则） |
 | 6 | **retro-analyze** | 失败时分析原因 → 推荐下一回合动作（回到哪个象限补课） | 是 |
 
 ### [1] action-select — 选择本回合动作
 
 | 字段 | 内容 |
 |------|------|
-| **Input** | 上一回合的结果 + Strategy Bee 方向 + 卡组状态 |
+| **Input** | 上一回合的结果 + Strategic Bee 方向 + 卡组状态 |
 | **Output** | 本回合动作: {action_type, target} |
 | **调 LLM** | 是 |
 
@@ -348,7 +348,7 @@ Cardmaster 抽卡后，生成一份标的物规格书，交给 Chef Bee 执行�
 ```
 当前状态:
   - 上一回合: 研究"好 report 标准" → 成功（标准已建立）
-  - Strategy Bee 方向: 需要融资
+  - Strategic Bee 方向: 需要融资
   - 卡组: 4 张全可用
 
 推荐: 说服 → 投资人张总（有标准，可以做 report 了）
@@ -376,30 +376,30 @@ Cardmaster 抽卡后，生成一份标的物规格书，交给 Chef Bee 执行�
 | 字段 | 内容 |
 |------|------|
 | **Input** | 标的物规格书 |
-| **Output** | Chef Bee 的 GOAL.md（交给 Chef Bee 做行动计划） |
-| **调 LLM** | 否（纯规则：把规格书的章节 → Chef Bee 的 task 骨架） |
+| **Output** | PM Bee 的 GOAL.md（交给 PM Bee 做行动计划） |
+| **调 LLM** | 否（纯规则：把规格书的章节 → PM Bee 的 task 骨架） |
 
 **转换规则**:
 ```
 report 规格书的 5 个必需章节
-  → Chef Bee GOAL.md: 5 个 task + 1 个交叉验证 task
-  → Chef Bee 自动进入 plan-generate 流水线
+  → PM Bee GOAL.md: 5 个 task + 1 个交叉验证 task
+  → PM Bee 自动进入 plan-generate 流水线
 
 demo 规格书的功能清单
-  → Chef Bee GOAL.md: 功能 task + 性能 task + 适配 task
+  → PM Bee GOAL.md: 功能 task + 性能 task + 适配 task
 
 pipeline 规格书的阶段定义
-  → Skeleton Bee（设计结构）→ Chef Bee（每个阶段拆 task）
+  → Architecture Bee（设计结构）→ PM Bee（每个阶段拆 task）
 
 standard 规格书的维度定义
-  → Aristotle Bee（定义术语）→ Skeleton Bee（标准结构）
+  → Aristotle Bee（定义术语）→ Architecture Bee（标准结构）
 ```
 
 ### [5] quality-evaluate — 质量评估
 
 | 字段 | 内容 |
 |------|------|
-| **Input** | Verification Bee 验证结果（证据链报告） + 标的物规格书 |
+| **Input** | World Bee 验证结果（证据链报告） + 标的物规格书 |
 | **Output** | 质量评分（0-100）+ 成功率（%）+ 发/不发 |
 | **调 LLM** | 否（纯规则） |
 
@@ -446,65 +446,3 @@ standard 的一致性低 → 定义不清晰 → 下一回合: 研究（再次�
 3. **蜂群是工厂** — Cardmaster 不自己生产标的物。它写规格书，蜂群生产。
 4. **螺旋上升** — 失败不是倒退，是让标准更清晰的机会。
 5. **回合之间不耦合** — 每回合独立结算。上回合的失败只影响下回合的动作选择，不影响上回合的结算。
-
----
-
-## 九、第 10 步：博弈复盘（外部反馈解读）
-
-### 在十步流程中的位置
-
-| 步骤 | 参与者 | Cardmaster 角色 |
-|------|--------|----------------|
-| 10 博弈复盘 | 人 + Cardmaster | 外部反馈解读 + 打法优化 |
-
-### 前置条件
-项目交付完成（第 7 步补丁收敛 + 第 9 步战役报告）。
-
-### 输入
-- 发表/合作/人际接触等外部反馈结果
-- 战役报告（第 9 步，了解"做了什么"）
-- 历次 Cardmaster 回合日志（了解"怎么打的"）
-
-### 核心工作
-
-#### 1. 我是不是做对了？
-把外部反馈对照当初的标的物和动作选择，逐回合复盘：
-- 说服动作 → 对方的实际反应是什么？report 质量够不够？
-- 交易动作 → 成交了吗？demo 打动对方了吗？
-- 生产动作 → 流水线经受住外部检验了吗？
-- 研究动作 → 标准在市场/学术/合作中成立了吗？
-
-#### 2. 对面是什么意思？
-解读外部反馈的潜台词：
-- 对方说"再看看" → 是 report 说服力不够还是时机不对？
-- 对方说"不错但..." → 是 demo 功能缺失还是需求不匹配？
-- 外部批评/拒绝 → 是方向问题还是执行问题？
-
-#### 3. 怎么打可能能让我达到目的？
-基于复盘提出调整建议：
-- 先补研究（标准不够清楚）再打说服？
-- 先补生产（demo 不够硬）再打交易？
-- 换目标客体？（这个人不对，换赛道）
-
-### 产出
-- 博弈复盘记录
-- 打法调整建议
-
-### 追加 Skill
-
-| # | Skill | 功能 | 调 LLM |
-|---|-------|------|--------|
-| 7 | **external-feedback-ingest** | 接收外部反馈，结构化归档 | 是 |
-| 8 | **move-retro** | 逐回合复盘：做对了什么、对面什么意思 | 是 |
-| 9 | **strategy-adjust** | 基于复盘建议下阶段打法调整 | 是 |
-
-### 信息素文件追加
-
-```
-~/.worker-bee/cardmaster/<project>/
-├── ...
-└── post-mortem/               ← 第 10 步
-    ├── external-feedback.md    ← 外部反馈结构化记录
-    ├── move-retro.md           ← 逐回合复盘
-    └── strategy-adjust.md      ← 打法调整建议
-```

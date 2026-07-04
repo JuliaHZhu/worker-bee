@@ -157,7 +157,7 @@ Compile/runtime/answer error 在进化后降到接近零。
 | 资源演化 | RSPL 五类资源均可进化 | **只有 skill 层进化**（Darwin Skill），tool 层写死 |
 | 版本控制 | RSPL 原生 version lineage + rollback | 无原生版本控制（靠 git） |
 | 通信模型 | Agent Bus（标准化消息） | NATS + 文件 mailbox |
-| 进化策略 | SEPL 算子代数（可插拔） | Verification Bee + Strategy Bee 联合决策 |
+| 进化策略 | SEPL 算子代数（可插拔） | WorldBee + Strategic Bee 联合决策 |
 | 安全模型 | Version + rollback + evolvability mask | safety.py + audit log |
 
 ### 核心差异：协议 vs 惯例
@@ -171,8 +171,8 @@ AGP 试图做一个**通用协议规范**——任何人按 RSPL/SEPL 接口实�
 | RSPL 五类资源抽象 | 把 worker-bee 的资源显式化：Prompt/Agent/Tool 各有注册表 | 中 |
 | Evolvability Mask | 给 skill 加 `evolvable: true/false` 标记，锁定核心 safety skill | 高 |
 | Version Manager | skill 注册表加版本号 + lineage，支持回滚 | 中 |
-| Trace Manager | 增强 Verification Bee 的执行轨迹记录，不只是 pheromone | 低 |
-| SEPL 算子代数 | Strategy Bee 的决策流程可参考 Reflect→Select→Improve→Evaluate→Commit | 中 |
+| Trace Manager | 增强 WorldBee 的执行轨迹记录，不只是 pheromone | 低 |
+| SEPL 算子代数 | Strategic Bee 的决策流程可参考 Reflect→Select→Improve→Evaluate→Commit | 中 |
 
 ### 不需要借鉴的
 
@@ -188,7 +188,7 @@ AGP 试图做一个**通用协议规范**——任何人按 RSPL/SEPL 接口实�
 | 核心操作 | Meta-agent 编辑 Π | SEPL 算子读写 RSPL 资源 |
 | 安全机制 | Harness 内的 evaluator 隔离 | 版本化 + rollback + evolvability mask |
 | 可组合性 | 单 harness 内 | 协议级互操作 |
-| 对 worker-bee 的启发 | Verification Bee=Harness, Strategy Bee=Meta-Agent | 资源抽象 + 版本控制 + 安全标记 |
+| 对 worker-bee 的启发 | WorldBee=Harness, Strategic Bee=Meta-Agent | 资源抽象 + 版本控制 + 安全标记 |
 
 **AGP 和 AEvo 互补**：AGP 定义"资源和进化该长什么样"的规范，AEvo 提供"怎么让 meta-agent 编辑进化机制"的一种具体策略。两者可以叠加——AEvo 的 meta-agent 通过 SEPL 算子接口操作 RSPL 资源。
 
@@ -206,7 +206,7 @@ AGP 试图做一个**通用协议规范**——任何人按 RSPL/SEPL 接口实�
 |---------|----------------|
 | 协议驱动 → 通用互操作 | 惯例驱动 → 极简可替换 |
 | 五类资源抽象 → 统一管理 | 一切皆 skill → skill 接 tool 接死 |
-| SEPL 算子代数 → 可插拔进化策略 | Verification Bee+Strategy Bee → 双体联合决策 |
+| SEPL 算子代数 → 可插拔进化策略 | WorldBee+Strategic Bee → 双体联合决策 |
 | 版本化 + rollback → 安全恢复 | git + safety.py → 外部治理 |
 | 目标是**协议标准** | 目标是**蜂群生态** |
 

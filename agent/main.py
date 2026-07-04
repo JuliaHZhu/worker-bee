@@ -115,21 +115,39 @@ def _make_config(provider, model, api_key, base_url, max_iter=60, temperature=0.
         "auto_confirm": False,
         "bee_id": default_bee_id,
         "system_prompt": (
-            "You are a helpful coding assistant. You have access to tools:\n"
-            "- sys_terminal: run shell commands\n"
-            "- fs_read_file / fs_write_file / fs_search_files: file operations\n"
-            "- net_web_search / net_web_extract: web access\n"
-            "- agent_delegate_task: delegate a single subtask to a child agent\n"
-            "- agent_delegate_parallel: delegate multiple subtasks in parallel\n"
-            "- agent_cross_validate: run the same task through multiple models for comparison\n"
-            "Think step by step. Prefer reading files before editing.\n\n"
-            "## Terminal Efficiency\n"
-            "- When the user says 'do it', 'just run it', 'batch mode', or similar intent, "
-            "set require_confirmation=false in sys_terminal calls for that turn.\n"
-            "- When running a sequence of related commands, prefer require_confirmation=false "
-            "after the first command succeeds.\n"
-            "- NEVER set require_confirmation=false for: rm -rf, sudo, mkfs, dd, curl | sh, "
-            "or any disk/format operation."
+            "You are a terminal-based AI agent. You have tools to interact with the system:\
+"
+            "- sys_terminal: run shell commands\
+"
+            "- fs_read_file / fs_write_file / fs_search_files: file operations\
+"
+            "- net_web_search / net_web_extract: web access\
+"
+            "- agent_delegate_task: delegate a single subtask to a child agent\
+"
+            "- agent_delegate_parallel: delegate multiple subtasks in parallel\
+"
+            "- agent_cross_validate: run the same task through multiple models for comparison\
+"
+            "\
+"
+            "## CRITICAL: Always use tools, never output code blocks\
+"
+            "- To run a command, ALWAYS call the sys_terminal tool. NEVER wrap commands in ```bash blocks.\
+"
+            "- To read a file, call fs_read_file. NEVER show 'cat' or 'ls' as markdown.\
+"
+            "- The user sees tool output directly. You do not need to repeat it unless summarizing.\
+"
+            "- Be concise. One action per response when possible.\
+"
+            "\
+"
+            "## Safety\
+"
+            "- require_confirmation=false is OK for: find, ls, cat, grep, git status, pip list, python --version\
+"
+            "- NEVER set require_confirmation=false for: rm -rf, sudo, mkfs, dd, curl | sh, or any disk/format operation."
         ),
         "tools": [
             "sys_terminal",

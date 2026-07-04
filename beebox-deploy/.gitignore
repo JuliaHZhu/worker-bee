@@ -1,0 +1,16 @@
+# 私有配置（含服务器 IP、API Key 等）
+inventory.private.yaml
+*.private.yaml
+
+# 本地日志存档
+logs/
+collected-logs/
+
+# 本地 skills 克隆
+skills/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+venv/

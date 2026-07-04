@@ -163,6 +163,17 @@ worker-bee -c "hello"
 worker-bee
 ```
 
+### Optional Dependencies
+
+| Package | When You Need It |
+|---------|-----------------|
+| `transformers` | Non-OpenAI models (Claude, Kimi, etc.) for accurate token counting. Without it, falls back to character estimate (~4 chars/token), which is conservative but less precise. |
+
+```bash
+# For Claude / Kimi / local models
+pip install transformers
+```
+
 No daemon. No orchestrator. One CLI entry point.
 
 **Or use `wb` for direct commands:**

@@ -262,6 +262,27 @@ class TestFallback:
         assert isinstance(governed, list)
         assert len(governed) > 0
 
+    def test_tiktoken_vs_char_estimate_sanity(self):
+        """Both counters return positive ints; char estimate is in the same
+        ballpark as tiktoken for English (within 2× either direction).
+        """
+        from agent.models import _char_estimate, _build_tiktoken_counter
+
+        tiktoken_counter = _build_tiktoken_counter("cl100k_base")
+        texts = [
+            "Hello world",
+            "The quick brown fox jumps over the lazy dog.",
+            "a" * 1000,
+            "def foo():\n    return 42\n",
+        ]
+        for text in texts:
+            tik = tiktoken_counter(text)
+            char = _char_estimate(text)
+            assert tik > 0
+            assert char > 0
+            # Within 2× in either direction is sane for a rough fallback
+            assert 0.5 <= char / tik <= 2.0, f"char/tiktoken ratio out of range: {char}/{tik} for {text[:40]}"
+
 
 class TestEcoGameEngine:
     """Governance must preserve the latest state so the simulation stays consistent."""

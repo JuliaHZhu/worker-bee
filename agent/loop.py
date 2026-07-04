@@ -10,6 +10,8 @@ import logging
 
 from agent.registry import registry
 from agent.audit import log_tool_call
+from agent.governance import govern_messages
+from agent.models import ModelRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -76,30 +78,6 @@ def _api_call_with_retry(
     return None, last_error_category
 
 
-def _trim_messages(messages, max_len=60):
-    """Drop oldest full turn(s) from head. Never orphan tool_calls."""
-    while len(messages) > max_len:
-        i = 0
-        while i < len(messages) and messages[i].get("role") == "system":
-            i += 1
-        if i >= len(messages):
-            break
-
-        # The first non-system message MUST be a user message to form a
-        # deletable turn. If it's assistant/tool, skip forward to the next
-        # user so we don't split a turn in half.
-        if messages[i].get("role") != "user":
-            while i < len(messages) and messages[i].get("role") != "user":
-                i += 1
-            if i >= len(messages):
-                break
-
-        j = i + 1
-        while j < len(messages) and messages[j].get("role") != "user":
-            j += 1
-        del messages[i:j]
-
-
 def run_conversation(
     agent,          # AIAgent instance (for config, protocol, max_iterations access)
     messages: List[Dict],
@@ -119,7 +97,10 @@ def run_conversation(
     """
     protocol = agent.protocol
     max_iters = agent.max_iterations
-    max_ctx = getattr(agent, "max_context_messages", 90)
+
+    # ── model-aware governance setup ───────────────────────────────────
+    registry = ModelRegistry()
+    profile = registry.get(agent.model)
 
     # ── resolve tools ──────────────────────────────────────────────────
     if deck is not None:
@@ -129,6 +110,8 @@ def run_conversation(
     else:
         active_tools = agent._build_tools(tools)
 
+    # ── governance before first LLM call ───────────────────────────────
+    messages = govern_messages(messages, profile)
     api_msgs = protocol.build_messages(messages)
 
     temperature = getattr(agent, "temperature", 0.0)
@@ -190,9 +173,8 @@ def run_conversation(
                 tc["id"], tool_result,
             ))
 
-        # ── crude context trim ──────────────────────────────────────
-        if len(messages) > max_ctx:
-            _trim_messages(messages, max_ctx)
-            api_msgs = protocol.build_messages(messages)
+        # ── governance before next LLM call ─────────────────────────
+        messages = govern_messages(messages, profile)
+        api_msgs = protocol.build_messages(messages)
 
     return "(reached max iterations)"

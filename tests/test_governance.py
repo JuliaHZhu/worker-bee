@@ -266,6 +266,7 @@ class TestFallback:
         """Both counters return positive ints; char estimate is in the same
         ballpark as tiktoken for English (within 2× either direction).
         """
+        pytest.importorskip("tiktoken")
         from agent.models import _char_estimate, _build_tiktoken_counter
 
         tiktoken_counter = _build_tiktoken_counter("cl100k_base")

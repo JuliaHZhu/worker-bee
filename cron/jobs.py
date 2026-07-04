@@ -84,9 +84,12 @@ def _cross_process_lock():
     this prevents multi-instance data corruption during load-modify-save cycles.
     """
     ensure_dirs()
-    # Create lock file if it doesn't exist (touch), then lock it
-    _JOBS_LOCK_FILE.touch(exist_ok=True)
-    with open(_JOBS_LOCK_FILE, 'r+') as f:
+    # Create lock file if it doesn't exist (touch), then lock it.
+    # Use CRON_DIR dynamically so tests that patch CRON_DIR don't
+    # hit a stale absolute path (e.g. ~/.worker-bee/cron/.jobs.lock).
+    lock_file = CRON_DIR / ".jobs.lock"
+    lock_file.touch(exist_ok=True)
+    with open(lock_file, 'r+') as f:
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
             yield

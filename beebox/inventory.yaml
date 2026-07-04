@@ -1,17 +1,14 @@
-# BeeBox 服务器清单
-# 复制此文件为 inventory.private.yaml 并填入你的实际服务器信息
-# inventory.private.yaml 已加入 .gitignore，不会提交到 Git
+# BeeBox 服务器清单（种子模式）
+# 复制此文件为 inventory.private.yaml 并填入实际服务器信息
+# inventory.private.yaml 已加入 .gitignore
 
 # ── SSH 全局配置 ──
 ssh:
   user: "ubuntu"
   key_file: "~/.ssh/id_rsa"
-  # 如需密码认证，改为 password: "your-password"
-  # 注意：密码认证不推荐用于生产环境
   port: 22
 
 # ── NATS 集群节点（所有 bee 共享的通信总线）──
-# 第一个节点通常作为 seed
 nats_nodes:
   - host: "10.0.1.10"
     name: "nats-1"
@@ -20,79 +17,76 @@ nats_nodes:
   - host: "10.0.1.12"
     name: "nats-3"
 
-# ── Bee 角色部署映射 ──
-# 每台服务器部署一个或多个 Bee 角色
-# 对齐 design_notes/07-full-agent-ecosystem.md 十步流程
+# ── 8 台机 — 只记录 IP 和名字，不预设角色 ──
+# 每台机的角色由 worker-bee 种子自己演化决定（seed → evolve）
 servers:
-  # ── Aristotle Bee ──
   - host: "10.0.1.10"
-    name: "beebox-aristotle"
-    roles:
-      - aristotle
+    name: "bee-01"
     nats_server: true
     env:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
-      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
 
-  # ── Skeleton Bee ──
   - host: "10.0.1.11"
-    name: "beebox-skeleton"
-    roles:
-      - skeleton
-    nats_server: false
+    name: "bee-02"
+    nats_server: true
     env:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
 
-  # ── Strategy Bee ──
   - host: "10.0.1.12"
-    name: "beebox-strategy"
-    roles:
-      - strategy
-    nats_server: false
+    name: "bee-03"
+    nats_server: true
     env:
-      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
 
-  # ── PM Bee ──
   - host: "10.0.1.13"
-    name: "beebox-pm"
-    roles:
-      - pm
+    name: "bee-04"
     nats_server: false
     env:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
 
-  # ── Centurion Bee ──
   - host: "10.0.1.14"
-    name: "beebox-centurion"
-    roles:
-      - centurion
+    name: "bee-05"
     nats_server: false
     env:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
 
-  # ── World Bee ──
   - host: "10.0.1.15"
-    name: "beebox-world"
-    roles:
-      - world
+    name: "bee-06"
     nats_server: false
     env:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
 
-  # ── Cardmaster Bee ──
   - host: "10.0.1.16"
-    name: "beebox-cardmaster"
-    roles:
-      - cardmaster
+    name: "bee-07"
     nats_server: false
     env:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
 
-  # ── Newspaper demo ──
   - host: "10.0.1.17"
-    name: "beebox-newspaper"
-    roles:
-      - newspaper
+    name: "bee-08"
     nats_server: false
     env:
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
+
+# ── 种子仓库 — 所有机器装同一个 ──
+seed_repo: "https://github.com/JuliaHZhu/worker-bee.git"
+seed_branch: main
+
+# ── Skills 仓库 ──
+skills_repo:
+  url: "https://github.com/JuliaHZhu/skills.git"
+  branch: main
+  local_path: "skills"
+
+# ── NATS 集群配置 ──
+nats:
+  cluster_name: "beebox-cluster"
+  port: 4222
+  cluster_port: 6222
+  http_port: 8222
+
+# ── 日志收集配置 ──
+logs:
+  remote_log_dir: "~/.beebox/logs"
+  local_collect_dir: "./collected-logs"
+  retention_days: 30

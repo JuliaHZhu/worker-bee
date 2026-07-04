@@ -27,6 +27,8 @@ import sys
 import threading
 from pathlib import Path
 
+import yaml
+
 from agent.agent import AIAgent
 from agent.memory import SessionDB
 from agent.skills import SkillManager
@@ -54,6 +56,32 @@ def _cron_tick_loop(config: dict, skill_mgr):
 def _config_dir() -> Path:
     """Return the user config directory (~/.worker-bee)."""
     return Path.home() / ".worker-bee"
+
+
+def load_bee_config() -> dict:
+    """Load bee role config from config.yaml (seed/role/evolution).
+
+    Looks for config.yaml in:
+      1. Current working directory (project root)
+      2. Fallback: ~/.worker-bee/config.yaml
+
+    Returns dict with defaults if not found.
+    """
+    paths = [
+        Path("config.yaml"),
+        _config_dir() / "config.yaml",
+    ]
+    for p in paths:
+        if p.exists():
+            try:
+                with open(p) as f:
+                    cfg = yaml.safe_load(f) or {}
+                cfg.setdefault("role", "seed")
+                cfg.setdefault("evolution", {})
+                return cfg
+            except Exception:
+                pass
+    return {"role": "seed", "evolution": {}}
 
 
 def get_config_path():
@@ -406,6 +434,22 @@ def run_session(temperature_override: float | None = None):
     if loaded_skills:
         print(f"Loaded {len(loaded_skills)} skill(s): {', '.join(loaded_skills)}")
 
+    # ── Bee role detection ─────────────────────────────────────────────────
+    bee_cfg = load_bee_config()
+    bee_role = bee_cfg.get("role", "seed")
+    bee_evolution = bee_cfg.get("evolution", {})
+    print(f"Bee role: {bee_role}")
+    if bee_role == "seed":
+        stage = bee_evolution.get("stage", "seed")
+        tasks = bee_evolution.get("tasks_completed", 0)
+        print(f"  Evolution stage: {stage} | tasks completed: {tasks}")
+        task_types = bee_evolution.get("task_types", {})
+        if task_types:
+            print(f"  Task types: {task_types}")
+    elif bee_role != "seed":
+        evolved_at = bee_evolution.get("evolved_at", "unknown")
+        print(f"  Evolved at: {evolved_at}")
+
     plat = infra.platform
     print(f"Platform: {plat}")
     if plat != "linux":
@@ -533,6 +577,10 @@ def run_session(temperature_override: float | None = None):
         matched_skills = skill_mgr.match_skills(user_input)
         if not matched_skills:
             matched_skills = []
+
+        # ── Seed role: always include seed skill ──
+        if bee_role == "seed" and "seed" not in matched_skills:
+            matched_skills.insert(0, "seed")
 
         # 2. Extended match: top 2 related skills beyond exact match
         extended_skills = skill_mgr.find_extended_skills(user_input, exclude=matched_skills, top_n=2)

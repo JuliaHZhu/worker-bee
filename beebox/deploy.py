@@ -1,4 +1,4 @@
-"""BeeBox deploy — bulk clone, install, NATS setup."""
+"""BeeBox deploy — bulk clone seed, install, NATS setup (seed mode)."""
 from __future__ import annotations
 
 import os
@@ -55,32 +55,31 @@ def deploy_nats(
         print(f"  [NATS] {host} started")
 
 
-def deploy_bee(
+def deploy_seed(
     host: str,
     user: str,
     key_file: str,
     port: int,
-    role: str,
-    bee_def: dict,
+    seed_repo: str,
+    seed_branch: str,
+    server_name: str,
     env_vars: dict,
     dry_run: bool,
 ) -> None:
-    """Deploy a single bee role to a remote host."""
-    repo_url = bee_def["repo"]
-    branch = bee_def["branch"]
-    app_dir = f"~/.beebox/apps/{role}"
-    venv_dir = f"~/.beebox/venvs/{role}"
-    print(f"  [BEE:{role}] deploying to {host} ...")
+    """Deploy worker-bee seed to a remote host. All servers get the same repo."""
+    app_dir = "~/.beebox/worker-bee"
+    venv_dir = "~/.beebox/venv"
+    print(f"  [SEED] deploying to {host} ({server_name}) ...")
 
     env_exports = " ".join(f'export {k}="{v}"; ' for k, v in env_vars.items() if v)
     cmd = textwrap.dedent(f"""\
         set -e
         {env_exports}
-        mkdir -p ~/.beebox/{{apps,venvs,logs,shared,skills}}
+        mkdir -p ~/.beebox/{{venv,logs,shared,skills}}
         if [ -d {app_dir}/.git ]; then
-            cd {app_dir} && git fetch origin && git checkout {branch} && git pull origin {branch}
+            cd {app_dir} && git fetch origin && git checkout {seed_branch} && git pull origin {seed_branch}
         else
-            git clone --branch {branch} --depth 1 {repo_url} {app_dir}
+            git clone --branch {seed_branch} --depth 1 {seed_repo} {app_dir}
         fi
         python3 -m venv {venv_dir}
         source {venv_dir}/bin/activate
@@ -91,7 +90,7 @@ def deploy_bee(
         if [ -f {app_dir}/pyproject.toml ]; then
             pip install -e {app_dir} -q
         fi
-        echo "[DONE] {role} deployed at {host}"
+        echo "[DONE] worker-bee seed deployed at {host} ({server_name})"
     """)
 
     if dry_run:
@@ -101,21 +100,22 @@ def deploy_bee(
     rc, out, err = ssh_cmd(host, user, key_file, port, cmd)
     print(textwrap.indent(out, "    "))
     if rc != 0:
-        raise RuntimeError(f"{role}@{host} deploy failed: {err}")
+        raise RuntimeError(f"seed@{host} deploy failed: {err}")
 
 
-def write_log(log_dir: Path, inventory: dict, bees_def: dict) -> None:
+def write_log(log_dir: Path, inventory: dict) -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     from .core import yaml
+
     log_file = log_dir / f"deploy-{timestamp}.yaml"
     log_data = {
         "timestamp": timestamp,
+        "seed_repo": inventory.get("seed_repo", ""),
         "servers": [
-            {"host": s["host"], "name": s["name"], "roles": s["roles"]}
+            {"host": s["host"], "name": s["name"]}
             for s in inventory.get("servers", [])
         ],
-        "bees": bees_def,
     }
     with open(log_file, "w", encoding="utf-8") as f:
         yaml.dump(log_data, f, allow_unicode=True, sort_keys=False)

@@ -1,4 +1,4 @@
-"""BeeBox skills sync — distribute skills from standalone repo to nodes."""
+"""BeeBox skills sync — distribute skills from standalone repo to nodes (seed mode)."""
 from __future__ import annotations
 
 import os
@@ -29,30 +29,33 @@ def sync_to_server(
     key_file: str,
     port: int,
     local_skills: Path,
-    required_skills: list[str],
+    server_name: str,
     dry_run: bool,
 ) -> None:
+    """Sync all skills to a remote server (seed mode — no per-role filtering)."""
     if dry_run:
-        print(f"  [DRY-RUN] sync {len(required_skills)} skills to {host}")
+        print(f"  [DRY-RUN] sync skills to {server_name}@{host}")
         return
 
     remote_dir = "~/.beebox/skills"
-    for skill in required_skills:
-        src = local_skills / skill
-        if not src.exists():
-            print(f"  [SKIP] local skill missing: {skill}")
-            continue
-        dst = f"{user}@{host}:{remote_dir}/"
-        rsync = [
-            "rsync", "-az", "--delete",
-            "-e", f"ssh -o StrictHostKeyChecking=accept-new -p {port} -i {os.path.expanduser(key_file)}",
-            str(src) + "/",
-            dst + skill + "/",
-        ]
-        print(f"  [SYNC] {skill} -> {host}:{remote_dir}/{skill}")
-        result = subprocess.run(rsync, capture_output=True, text=True)
-        if result.returncode != 0:
-            print(f"  [WARN] rsync failed: {result.stderr.strip()}")
 
-    index = "\n".join(required_skills)
+    # Sync entire skills directory
+    src = str(local_skills) + "/"
+    dst = f"{user}@{host}:{remote_dir}/"
+    rsync = [
+        "rsync", "-az", "--delete",
+        "-e", f"ssh -o StrictHostKeyChecking=accept-new -p {port} -i {os.path.expanduser(key_file)}",
+        src,
+        dst,
+    ]
+    print(f"  [SYNC] skills → {server_name}@{host}:{remote_dir}")
+    result = subprocess.run(rsync, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"  [WARN] rsync failed: {result.stderr.strip()}")
+
+    # Write index
+    skill_files = sorted(
+        [p.name for p in local_skills.glob("*.md") if not p.name.startswith(".")]
+    )
+    index = "\n".join(skill_files)
     ssh_cmd(host, user, key_file, port, f"echo '{index}' > {remote_dir}/.index")

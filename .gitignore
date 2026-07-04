@@ -1,5 +1,6 @@
 # Runtime / sensitive
 config.json
+config.local.yaml
 state.db
 *.db
 *.sqlite

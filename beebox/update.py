@@ -1,4 +1,4 @@
-"""BeeBox update — bulk git pull + dependency reinstall."""
+"""BeeBox update — bulk git pull + dependency reinstall (seed mode)."""
 from __future__ import annotations
 
 import json
@@ -13,12 +13,12 @@ def update_bee(
     user: str,
     key_file: str,
     port: int,
-    role: str,
+    server_name: str,
     dry_run: bool,
 ) -> dict:
-    """Update a single bee and return log entry."""
-    app_dir = f"~/.beebox/apps/{role}"
-    venv_dir = f"~/.beebox/venvs/{role}"
+    """Update worker-bee seed on a remote host. All servers run the same code."""
+    app_dir = "~/.beebox/worker-bee"
+    venv_dir = "~/.beebox/venv"
     cmd = (
         f"cd {app_dir} && "
         "OLD_HEAD=$(git rev-parse HEAD) && "
@@ -31,8 +31,8 @@ def update_bee(
     )
 
     if dry_run:
-        print(f"  [DRY-RUN] {role}@{host}: git pull")
-        return {"host": host, "role": role, "changed": False, "dry_run": True}
+        print(f"  [DRY-RUN] {server_name}@{host}: git pull")
+        return {"host": host, "name": server_name, "changed": False, "dry_run": True}
 
     rc, out, _ = ssh_cmd(host, user, key_file, port, cmd)
     changed = "CHANGED" in out
@@ -41,11 +41,11 @@ def update_bee(
     head_change = next((l for l in lines if " -> " in l), "")
 
     if rc != 0:
-        print(f"  [ERROR] {role}@{host} update failed")
-        return {"host": host, "role": role, "changed": False, "error": out}
+        print(f"  [ERROR] {server_name}@{host} update failed")
+        return {"host": host, "name": server_name, "changed": False, "error": out}
 
     if changed:
-        print(f"  [UPDATED] {role}@{host}: {head_change}")
+        print(f"  [UPDATED] {server_name}@{host}: {head_change}")
         for c in commits:
             print(f"    {c}")
         install_cmd = (
@@ -56,13 +56,13 @@ def update_bee(
         )
         rc2, _, err2 = ssh_cmd(host, user, key_file, port, install_cmd)
         if rc2 != 0:
-            print(f"  [WARN] {role}@{host} reinstall failed: {err2}")
+            print(f"  [WARN] {server_name}@{host} reinstall failed: {err2}")
     else:
-        print(f"  [OK] {role}@{host}: up to date")
+        print(f"  [OK] {server_name}@{host}: up to date")
 
     return {
         "host": host,
-        "role": role,
+        "name": server_name,
         "changed": changed,
         "head_change": head_change,
         "commits": commits,

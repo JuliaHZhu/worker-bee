@@ -20,8 +20,12 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-import nats
-import nats.js.api as js_api
+try:
+    import nats
+    import nats.js.api as js_api
+except ModuleNotFoundError:  # pragma: no cover
+    nats = None  # type: ignore
+    js_api = None  # type: ignore
 
 
 # ── 配置 ──────────────────────────────────────────────
@@ -107,6 +111,11 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
 
     使用 JetStream 保证 listener 重启后不丢消息。
     """
+    if nats is None:
+        raise RuntimeError(
+            "nats-py is required for swarm listener. "
+            "Install it with: pip install 'worker-bee[swarm]'"
+        )
     bee_id = _get_bee_id()
     print(f"[swarm-listener] 连接 {nats_url} ... (身份: {bee_id})")
     nc = await nats.connect(nats_url, connect_timeout=NATS_TIMEOUT)

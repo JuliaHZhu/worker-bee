@@ -11,6 +11,7 @@ from __future__ import annotations
 import fnmatch
 import os
 import re
+import shlex
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -98,10 +99,8 @@ _HARDLINE_RE = re.compile(
       | :\(\)\{\s*:\|:&\s*\};:
       | eval\s*\(
       | exec\s*\(
-      | curl\s+.*\|\s*sh\b
-      | wget\s+.*\|\s*sh\b
-      | curl\s+.*\|\s*bash\b
-      | wget\s+.*\|\s*bash\b
+      | curl\s+.*\|\s*(?:sh|bash|zsh|dash|ash|fish)\b
+      | wget\s+.*\|\s*(?:sh|bash|zsh|dash|ash|fish)\b
     )
     """,
     re.VERBOSE | re.IGNORECASE,
@@ -113,6 +112,18 @@ _HARDLINE_COMMANDS: set[str] = {
     "shutdown", "reboot", "halt", "poweroff",
     "systemctl", "init", "telinit",
 }
+
+
+def _canonicalize_tokens(command: str) -> list[str]:
+    """Parse *command* with shlex and strip leading backslash escapes.
+
+    Returns empty list on malformed quoting (treated as suspicious).
+    """
+    try:
+        tokens = shlex.split(command.strip())
+    except ValueError:
+        return []
+    return [re.sub(r"^\\+", "", tok) for tok in tokens]
 
 # Allowlist for sys_terminal — commands that run immediately without confirmation.
 # Patterns are fnmatch globs.  Commands with shell metacharacters always bypass.
@@ -170,11 +181,16 @@ DANGEROUS: list[str] = [
     "mkfs", "mkswap", "swapon",
     "dd if=", "dd of=",
     "> /dev", "< /dev", "/dev/sd", "/dev/hd", "/dev/nvme",
-    "curl *|*sh", "wget *|*sh", "curl *|*bash", "wget *|*bash",
+    "curl *|*sh", "wget *|*sh",
+    "curl *|*bash", "wget *|*bash",
+    "curl *|*zsh", "wget *|*zsh",
+    "curl *|*dash", "wget *|*dash",
+    "curl *|*ash", "wget *|*ash",
+    "curl *|*fish", "wget *|*fish",
     ":(){ :|:& };:",  # fork bomb
     "eval(", "exec(", "__import__('os').system",
     "git push", "git reset", "git rebase", "git stash drop",
-    "python -c", "python3 -c", "python -m", "python3 -m",
+    "python -c", "python3 -c",
 ]
 
 # Shell metacharacters that break simple allowlist matching
@@ -214,30 +230,41 @@ def detect_hardline_command(command: str) -> tuple[bool, Optional[str]]:
     if ">/dev/" in lowered.replace(" ", "") or ">/dev/" in lowered:
         return True, "redirect to block device"
 
-    # Regex-based complex patterns
-    if _HARDLINE_RE.search(lowered):
-        if "rm" in lowered and ("/" in stripped or "~" in stripped or "$home" in lowered):
-            return True, "rm targeting filesystem root or home directory"
-        if "mkfs" in lowered:
-            return True, "mkfs filesystem formatting command"
-        if "dd" in lowered and "of=/dev/" in lowered:
-            return True, "dd writing to block device"
-        if ":(){ :|:& };:" in lowered or "fork bomb" in lowered:
-            return True, "fork bomb"
-        if "|" in lowered and ("sh" in lowered or "bash" in lowered):
-            return True, "piped curl/wget into shell"
-        if any(w in lowered for w in ("shutdown", "reboot", "halt", "poweroff", "init", "telinit")):
-            return True, "shutdown/reboot/halt/poweroff/init/telinit system control command"
-        return True, "matches unconditional blocklist pattern"
+    # Canonicalize tokens (shlex parse + strip backslash escapes like \rm → rm)
+    canonical = _canonicalize_tokens(stripped)
+    if canonical is None:
+        return True, "malformed command"
+
+    canonical_lower = [t.lower() for t in canonical]
+    canonical_str = " ".join(canonical).lower()
 
     # Simple prefix match for obviously destructive standalone commands
-    first_word = stripped.split()[0].lower() if stripped else ""
+    # Uses canonical tokens so \rm is treated as rm.
+    first_word = canonical_lower[0] if canonical_lower else ""
     if first_word in _HARDLINE_COMMANDS:
-        # Heuristic: block if it targets rootfs or no specific safe target
-        if "/" in stripped or "~" in stripped or "$HOME" in stripped:
+        rest = " ".join(canonical_lower[1:])
+        if "/" in rest or "~" in rest or "$home" in rest:
             return True, f"'{first_word}' targeting filesystem root"
         if first_word in ("shutdown", "reboot", "halt", "poweroff", "init", "telinit"):
             return True, "shutdown/reboot/halt/poweroff/init/telinit system control command"
+
+    # Regex-based complex patterns (run against canonical string so \rm is caught)
+    if _HARDLINE_RE.search(canonical_str):
+        if "rm" in canonical_str and ("/" in canonical_str or "~" in canonical_str):
+            return True, "rm targeting filesystem root or home directory"
+        if "mkfs" in canonical_str:
+            return True, "mkfs filesystem formatting command"
+        if "dd" in canonical_str and "of=/dev/" in canonical_str:
+            return True, "dd writing to block device"
+        if ":(){ :|:& };:" in canonical_str or "fork bomb" in canonical_str:
+            return True, "fork bomb"
+        if "|" in canonical_str and any(
+            s in canonical_str for s in ("sh", "bash", "zsh", "dash", "ash", "fish")
+        ):
+            return True, "piped curl/wget into shell"
+        if any(w in canonical_str for w in ("shutdown", "reboot", "halt", "poweroff", "init", "telinit")):
+            return True, "shutdown/reboot/halt/poweroff/init/telinit system control command"
+        return True, "matches unconditional blocklist pattern"
 
     return False, None
 

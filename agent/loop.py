@@ -184,7 +184,11 @@ def run_conversation(
 
         result = protocol.build_response(response)
 
+        # DEBUG: print tool_calls content
+        logger.warning("DEBUG tool_call: result['tool_calls'] = %s", result["tool_calls"])
+        
         if not result["tool_calls"]:
+            logger.warning("DEBUG tool_call: NO tool_calls, returning text")
             return result["text"]
 
         # ── record assistant turn ───────────────────────────────────
@@ -203,6 +207,7 @@ def run_conversation(
 
         # ── execute tools (serialise unsafe, parallelise safe) ────
         tool_calls = result["tool_calls"]
+        logger.warning("DEBUG tool_call: executing %d tool_calls", len(tool_calls))
         _execute_one_tool = _make_tool_executor(protocol, messages, api_msgs)
 
         i = 0
@@ -210,6 +215,7 @@ def run_conversation(
             # Gather a consecutive batch of parallel-safe tools
             batch: List[Dict] = []
             while i < len(tool_calls) and tool_registry.is_parallel_safe(tool_calls[i]["name"]):
+                logger.warning("DEBUG tool_call: tool %s is parallel_safe", tool_calls[i]["name"])
                 batch.append(tool_calls[i])
                 i += 1
 
@@ -229,6 +235,7 @@ def run_conversation(
             if i < len(tool_calls):
                 # Next tool is NOT parallel-safe — execute serially
                 tc = tool_calls[i]
+                logger.warning("DEBUG tool_call: tool %s is NOT parallel_safe, executing serially", tc["name"])
                 tool_result = _execute_single_tool(tool_registry, tc["name"], tc["arguments"], tc["id"])
                 _execute_one_tool(tc["id"], tool_result)
                 i += 1

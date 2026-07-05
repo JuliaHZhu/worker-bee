@@ -155,6 +155,7 @@ class SkillManager:
         return {
             "name": name,
             "description": meta.get("description", meta.get("name", "")),
+            "version": meta.get("version", "0.0.0"),
             "triggers": triggers,
             "tools": tools,
             "category": meta.get("category", ""),

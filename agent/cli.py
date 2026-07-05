@@ -436,6 +436,141 @@ def _add_swarm_parser(sub):
     p = swarm_sub.add_parser("status", help="Check NATS connection and listener health")
     p.set_defaults(func=_swarm_status)
 
+    p = swarm_sub.add_parser("menu", help="Interactive swarm control menu (TUI)")
+    p.set_defaults(func=_swarm_menu)
+
+
+def _swarm_menu(args):
+    """Interactive menu for swarm operations."""
+    import json
+    import subprocess
+    import os
+    from pathlib import Path
+    from tools.swarm import swarm_publish
+
+    nats_url = os.environ.get("SWARM_NATS_URL", "nats://localhost:4222")
+    bee_id = "unknown"
+    role = "seed"
+    try:
+        cfg = json.loads((Path.home() / ".worker-bee" / "config.json").read_text())
+        bee_id = cfg.get("bee_id", "unknown")
+        role = cfg.get("role", "seed")
+    except Exception:
+        pass
+
+    def _print_header():
+        print("\n" + "=" * 50)
+        print(f"  🐝 Swarm Control Menu  |  {bee_id} ({role})")
+        print(f"  NATS: {nats_url}")
+        print("=" * 50)
+
+    def _menu_items():
+        # Listener status
+        pg = subprocess.run(["pgrep", "-f", "swarm/listener.py"], capture_output=True, text=True)
+        listener_pid = pg.stdout.strip().split()[0] if pg.stdout.strip() else None
+        listener_status = f"🟢 PID {listener_pid}" if listener_pid else "🔴 stopped"
+
+        # Mailbox count
+        inbox = Path.home() / ".worker-bee" / "mailbox" / "inbox"
+        unread = len(list(inbox.glob("*.json"))) if inbox.exists() else 0
+
+        return [
+            ("1", f"Status overview       ({listener_status}, 📬 {unread} unread)"),
+            ("2", "Start listener        (spawn background NATS subscriber)"),
+            ("3", "Stop listener         (kill swarm/listener.py process)"),
+            ("4", "Send test message     (fire-and-forget to swarm.test.hello)"),
+            ("5", "Read mailbox          (show latest inbox messages)"),
+            ("6", "Set role              (write role to config.json)"),
+            ("0", "Exit"),
+        ]
+
+    def _start_listener():
+        listener_path = Path(__file__).parent.parent / "swarm" / "listener.py"
+        if not listener_path.exists():
+            print("❌ listener.py not found")
+            return
+        subprocess.Popen(
+            [sys.executable, str(listener_path), nats_url],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        print("🟢 Listener spawned (background). Check status in a few seconds.")
+
+    def _stop_listener():
+        pg = subprocess.run(["pgrep", "-f", "swarm/listener.py"], capture_output=True, text=True)
+        if not pg.stdout.strip():
+            print("🔴 Listener not running")
+            return
+        for pid in pg.stdout.strip().split():
+            subprocess.run(["kill", pid])
+        print("🔴 Listener stopped")
+
+    def _send_test():
+        try:
+            result = swarm_publish("swarm.test.hello", {"from": bee_id, "msg": "ping"})
+            data = json.loads(result)
+            print("✅" if data.get("ok") else "❌", result)
+        except Exception as e:
+            print(f"❌ {e}")
+
+    def _read_mailbox():
+        inbox = Path.home() / ".worker-bee" / "mailbox" / "inbox"
+        if not inbox.exists():
+            print("📭 Mailbox empty")
+            return
+        files = sorted(inbox.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:10]
+        print(f"\n📬 Latest {len(files)} messages:")
+        for f in files:
+            try:
+                msg = json.loads(f.read_text())
+                ts = msg.get("timestamp", "?")[:19]
+                subj = msg.get("subject", "?")
+                sender = msg.get("sender", "?")
+                print(f"  [{ts}] {subj:30s} from {sender}")
+            except Exception:
+                print(f"  (unreadable) {f.name}")
+
+    def _set_role():
+        print("\nRoles: strategy | pm | centurion | worker | world | aristotle | skeleton | cardmaster | seed")
+        new_role = input("Enter role: ").strip().lower()
+        if not new_role:
+            return
+        cfg_path = Path.home() / ".worker-bee" / "config.json"
+        try:
+            cfg = json.loads(cfg_path.read_text()) if cfg_path.exists() else {}
+        except Exception:
+            cfg = {}
+        cfg["role"] = new_role
+        cfg_path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False))
+        nonlocal role
+        role = new_role
+        print(f"✅ Role set to '{new_role}' in {cfg_path}")
+
+    while True:
+        _print_header()
+        for key, desc in _menu_items():
+            print(f"  [{key}] {desc}")
+        choice = input("\nSelect: ").strip()
+
+        if choice == "0":
+            print("Bye.")
+            break
+        elif choice == "1":
+            _swarm_status(args)
+        elif choice == "2":
+            _start_listener()
+        elif choice == "3":
+            _stop_listener()
+        elif choice == "4":
+            _send_test()
+        elif choice == "5":
+            _read_mailbox()
+        elif choice == "6":
+            _set_role()
+        else:
+            print("Invalid choice")
+        input("\nPress Enter to continue...")
+
 
 # ---------------------------------------------------------------------------
 # Workspace sub-command
@@ -944,6 +1079,7 @@ def main(argv=None):
             "  wb todo stats 14\n"
             "  wb workspace\n"
             "  wb swarm listen\n"
+            "  wb swarm menu\n"
             "  wb lark serve --port 8080\n"
             "  wb lark who 张三\n"
             "  wb lark chats\n"

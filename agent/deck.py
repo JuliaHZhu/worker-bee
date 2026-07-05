@@ -17,6 +17,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from agent.protocols import normalize_schema
+
 
 # 基础工具池：按优先级排序，用于填充冗余卡槽
 BASELINE_POOL = [
@@ -58,10 +60,10 @@ class Deck:
         return out
 
     def get_schemas_for_protocol(self, protocol: str) -> List[dict]:
-        """返回 Deck 内所有工具的 schema，按协议转换。
-        
-        Anthropic 格式（默认）：直接返回 registry schema。
-        OpenAI 格式：转换为 function-calling 格式。
+        """返回 Deck 内所有工具的 schema，按协议转换并规范化。
+
+        Anthropic 格式（默认）：直接返回 registry schema（已规范化）。
+        OpenAI 格式：转换为 function-calling 格式（已规范化）。
         """
         raw = self.schemas()
         if protocol == "openai":
@@ -75,8 +77,8 @@ class Deck:
                         "parameters": s.get("input_schema", {"type": "object"}),
                     },
                 })
-            return converted
-        return raw
+            return [normalize_schema(c) for c in converted]
+        return [normalize_schema(s) for s in raw]
 
     def size(self) -> int:
         return len(self.tools)

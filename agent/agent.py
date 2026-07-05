@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from agent.loop import run_conversation as _run_conversation
-from agent.protocols import AnthropicProtocol, OpenAIProtocol, Protocol
+from agent.protocols import AnthropicProtocol, OpenAIProtocol, Protocol, normalize_schema
 from agent.registry import registry
 
 DEFAULT_SYSTEM_PROMPT = (
@@ -116,9 +116,9 @@ class AIAgent:
                     "parameters": s.get("input_schema", {"type": "object"}),
                 }
                 converted.append({"type": "function", "function": openai_schema})
-            result = converted
+            result = [normalize_schema(c) for c in converted]
         else:
-            result = schemas
+            result = [normalize_schema(s) for s in schemas]
 
         self._tool_schema_cache[cache_key] = result
         return result

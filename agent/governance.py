@@ -5,6 +5,7 @@ Used by the Loop *before* every LLM call.  Responsibilities:
   2. Backfill missing tool_results (assistant issued tool_call but no result yet).
   3. Compact old messages (microcompact) when history grows long.
   4. Hard-truncate when approaching the model's context-window limit.
+  5. Enforce role alternation (merge consecutive same-role, fix trailing assistant).
 
 All strategies are model-aware via ModelProfile.
 
@@ -13,11 +14,12 @@ What we bring in (3rd-party):
   None directly — tiktoken / transformers are consumed via agent.models.
 
 What we write ourselves:
-  _drop_orphans()        — remove dangling tool results.
-  _backfill_missing()    — inject placeholders for incomplete calls.
-  _microcompact()        — collapse old read_file / exec results to summaries.
-  _hard_trim()           — discard oldest messages to fit token budget.
-  govern_messages()      — public entrypoint used by the Loop.
+  _drop_orphans()              — remove dangling tool results.
+  _backfill_missing()          — inject placeholders for incomplete calls.
+  _microcompact()              — collapse old read_file / exec results to summaries.
+  _hard_trim()                 — discard oldest messages to fit token budget.
+  _enforce_role_alternation()  — merge consecutive same-role, fix trailing assistant.
+  govern_messages()            — public entrypoint used by the Loop.
 """
 from __future__ import annotations
 
@@ -205,6 +207,82 @@ def _hard_trim(
 
 
 # ---------------------------------------------------------------------------
+# 5. Role alternation enforcement
+# ---------------------------------------------------------------------------
+
+_SYNTHETIC_USER_CONTENT = "[system] Continuing conversation..."
+
+
+def _enforce_role_alternation(messages: list[Message]) -> list[Message]:
+    """Merge consecutive same-role messages and fix trailing assistant messages.
+
+    Some providers (OpenAI-compat, vLLM, Ollama, etc.) reject requests where:
+      - two consecutive non-system messages share the same role, or
+      - the last message is a bare assistant (no tool_calls).
+
+    This function sanitises the message list to keep API calls safe.
+    """
+    if not messages:
+        return messages
+
+    merged: list[Message] = []
+    for msg in messages:
+        role = msg.get("role")
+        if (
+            merged
+            and role != "system"
+            and role not in ("tool",)
+            and merged[-1].get("role") == role
+            and role in ("user", "assistant")
+        ):
+            prev = merged[-1]
+            if role == "assistant":
+                prev_has_tools = bool(prev.get("tool_calls"))
+                curr_has_tools = bool(msg.get("tool_calls"))
+                if curr_has_tools:
+                    # Current message has tool_calls — it takes precedence
+                    merged[-1] = dict(msg)
+                    continue
+                if prev_has_tools:
+                    # Previous message has tool_calls — keep it, skip current
+                    continue
+            # Merge content strings
+            prev_content = prev.get("content") or ""
+            curr_content = msg.get("content") or ""
+            if isinstance(prev_content, str) and isinstance(curr_content, str):
+                prev["content"] = (prev_content + "\n\n" + curr_content).strip()
+            else:
+                merged[-1] = dict(msg)
+        else:
+            merged.append(dict(msg))
+
+    # Drop trailing assistant messages that have no tool_calls
+    last_popped: Message | None = None
+    while merged and merged[-1].get("role") == "assistant":
+        last_popped = merged.pop()
+
+    # If removing trailing assistants left only system messages, recover
+    # the last popped assistant as a user message so the request stays valid.
+    if (
+        merged
+        and last_popped is not None
+        and not any(m.get("role") in ("user", "tool") for m in merged)
+    ):
+        recovered = dict(last_popped)
+        recovered["role"] = "user"
+        merged.append(recovered)
+
+    # Safety net: first non-system message must not be a bare assistant
+    for i, msg in enumerate(merged):
+        if msg.get("role") != "system":
+            if msg.get("role") == "assistant" and not msg.get("tool_calls"):
+                merged.insert(i, {"role": "user", "content": _SYNTHETIC_USER_CONTENT})
+            break
+
+    return merged
+
+
+# ---------------------------------------------------------------------------
 # Public entrypoint
 # ---------------------------------------------------------------------------
 
@@ -220,6 +298,9 @@ def govern_messages(
       2. Backfill missing (complete partial state)
       3. Microcompact old results (reduce bloat)
       4. Hard trim to token budget (fit context window)
+      5. Drop orphans again (hard_trim may have broken pairs)
+      6. Backfill missing again
+      7. Enforce role alternation (final safety net)
     """
     out = _drop_orphans(messages)
     out = _backfill_missing(out)
@@ -228,4 +309,10 @@ def govern_messages(
     out = _microcompact(out, age)
 
     out = _hard_trim(out, profile, counter)
+
+    # Hard trim may have dropped assistant/tool pairs; re-normalise.
+    out = _drop_orphans(out)
+    out = _backfill_missing(out)
+
+    out = _enforce_role_alternation(out)
     return out

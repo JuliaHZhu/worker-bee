@@ -7,13 +7,59 @@ are handled by the Protocol object passed in.
 from typing import Dict, List, Optional, Tuple, Any
 import time
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
-from agent.registry import registry
+from agent.registry import registry as tool_registry
 from agent.audit import log_tool_call
 from agent.governance import govern_messages
 from agent.models import ModelRegistry
 
 logger = logging.getLogger(__name__)
+
+# ── tool result guardrails ──────────────────────────────────────────────
+
+_MAX_TOOL_RESULT_CHARS = 10_000
+_TRUNCATION_NOTICE = "\n\n... [truncated: result exceeded {} chars]"
+
+
+def _truncate_tool_result(content: Any) -> str:
+    """Clamp tool output to a safe size before stuffing it into history."""
+    text = str(content)
+    if len(text) > _MAX_TOOL_RESULT_CHARS:
+        text = text[:_MAX_TOOL_RESULT_CHARS] + _TRUNCATION_NOTICE.format(_MAX_TOOL_RESULT_CHARS)
+        logger.warning("Tool result truncated: %d → %d chars", len(text), _MAX_TOOL_RESULT_CHARS)
+    return text
+
+
+def _execute_single_tool(
+    tool_registry, name: str, arguments: dict, tool_call_id: str
+) -> str:
+    """Run one tool, log it, truncate result, and return the string."""
+    t0 = time.time()
+    try:
+        raw = tool_registry.call(name, arguments)
+        dt = (time.time() - t0) * 1000
+        result = _truncate_tool_result(raw)
+        log_tool_call(name, arguments, result, dt, error=False)
+    except Exception as e:
+        _err = f"Tool error: {e}"
+        dt = (time.time() - t0) * 1000
+        log_tool_call(name, arguments, _err, dt, error=True)
+        result = "Tool execution failed. Please check your request and try again."
+    return result
+
+
+def _make_tool_executor(protocol, messages: List[dict], api_msgs: List[dict]):
+    """Return a closure that appends a tool result to both message lists."""
+    def append(tool_call_id: str, result: str):
+        tool_msg = {
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "content": result,
+        }
+        messages.append(tool_msg)
+        api_msgs.append(protocol.build_tool_result_block(tool_call_id, result))
+    return append
 
 
 # ── API resilience: retry with exponential backoff ──────────────────────
@@ -155,29 +201,37 @@ def run_conversation(
             result["text"], result["reasoning"], result["tool_calls"],
         ))
 
-        # ── execute tools ───────────────────────────────────────────
-        for tc in result["tool_calls"]:
-            t0 = time.time()
-            try:
-                tool_result = registry.call(tc["name"], tc["arguments"])
-                dt = (time.time() - t0) * 1000
-                log_tool_call(tc["name"], tc["arguments"], tool_result, dt, error=False)
-            except Exception as e:
-                # Log detailed error internally; return generic message to LLM
-                # to prevent information leakage via exception strings.
-                _err_detail = f"Tool error: {e}"
-                dt = (time.time() - t0) * 1000
-                log_tool_call(tc["name"], tc["arguments"], _err_detail, dt, error=True)
-                tool_result = "Tool execution failed. Please check your request and try again."
-            tool_msg = {
-                "role": "tool",
-                "tool_call_id": tc["id"],
-                "content": tool_result,
-            }
-            messages.append(tool_msg)
-            api_msgs.append(protocol.build_tool_result_block(
-                tc["id"], tool_result,
-            ))
+        # ── execute tools (serialise unsafe, parallelise safe) ────
+        tool_calls = result["tool_calls"]
+        _execute_one_tool = _make_tool_executor(protocol, messages, api_msgs)
+
+        i = 0
+        while i < len(tool_calls):
+            # Gather a consecutive batch of parallel-safe tools
+            batch: List[Dict] = []
+            while i < len(tool_calls) and tool_registry.is_parallel_safe(tool_calls[i]["name"]):
+                batch.append(tool_calls[i])
+                i += 1
+
+            if batch:
+                # Execute batch in parallel
+                with ThreadPoolExecutor(max_workers=len(batch)) as pool:
+                    futures = {
+                        tc["id"]: pool.submit(
+                            _execute_single_tool, tool_registry, tc["name"], tc["arguments"], tc["id"]
+                        )
+                        for tc in batch
+                    }
+                    for tc in batch:
+                        tool_result = futures[tc["id"]].result()
+                        _execute_one_tool(tc["id"], tool_result)
+
+            if i < len(tool_calls):
+                # Next tool is NOT parallel-safe — execute serially
+                tc = tool_calls[i]
+                tool_result = _execute_single_tool(tool_registry, tc["name"], tc["arguments"], tc["id"])
+                _execute_one_tool(tc["id"], tool_result)
+                i += 1
 
         # ── governance before next LLM call ─────────────────────────
         messages = govern_messages(messages, profile)

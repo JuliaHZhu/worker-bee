@@ -37,9 +37,17 @@ class ToolRegistry:
         parameters: dict,
         handler: Callable,
         tags: Optional[List[str]] = None,
-        category: Optional[str] = None
+        category: Optional[str] = None,
+        is_parallel_safe: bool = True,
     ):
-        """Register a tool with rich metadata. Thread-safe."""
+        """Register a tool with rich metadata. Thread-safe.
+
+        Args:
+            is_parallel_safe: Whether this tool can be executed concurrently
+                with other tools.  Default True.  Set False for tools that
+                mutate shared state (e.g. git commit, file write) where order
+                matters.
+        """
         with self._lock:
             self._tools[name] = {
                 "schema": {
@@ -52,6 +60,7 @@ class ToolRegistry:
                 "category": category or "",
                 "name": name,
                 "description": description,
+                "is_parallel_safe": is_parallel_safe,
             }
         self._bump_generation()
         # Invalidate schemas cache since registry changed
@@ -168,6 +177,14 @@ class ToolRegistry:
         info.pop("handler", None)
         info["tags"] = list(info["tags"])
         return info
+
+    def is_parallel_safe(self, name: str) -> bool:
+        """Return whether a tool may be executed concurrently. Thread-safe."""
+        with self._lock:
+            entry = self._tools.get(name)
+            if entry is None:
+                return True  # conservative default
+            return entry.get("is_parallel_safe", True)
 
     def has_tool(self, name: str) -> bool:
         with self._lock:

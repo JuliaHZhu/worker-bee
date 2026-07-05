@@ -2,9 +2,156 @@
 
 Each protocol handles: client init, message conversion, response extraction,
 and the actual API call.  The agent loop never branches on provider.
+
+Also includes schema normalisation (_normalize_schema) so tool descriptions
+and parameter shapes survive a wider range of provider quirks (vLLM,
+Ollama, DeepSeek, Moonshot, etc.).
 """
 import json
+import logging
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
+
+# ── Schema normalisation — make tool definitions robust across providers ──
+
+_MAX_DESCRIPTION_LENGTH = 1536
+
+
+def _truncate_description(text: str, limit: int = _MAX_DESCRIPTION_LENGTH) -> str:
+    """Clamp description length so providers with small limits don't 400."""
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3] + "..."
+
+
+def _flatten_anyof_oneof(node: Any) -> Any:
+    """Replace anyOf/oneOf with a simple union when possible.
+
+    Some providers (vLLM, Ollama, older Moonshot) choke on nested anyOf.
+    We flatten trivial cases to a single type list.
+    """
+    if not isinstance(node, dict):
+        return node
+
+    out = dict(node)
+    for key in ("anyOf", "oneOf"):
+        if key not in out:
+            continue
+        variants = out.pop(key)
+        if not isinstance(variants, list):
+            continue
+        types = []
+        for v in variants:
+            if isinstance(v, dict) and "type" in v:
+                types.append(v["type"])
+            elif isinstance(v, str):
+                types.append(v)
+        if types:
+            out["type"] = list(dict.fromkeys(types))  # preserve order, dedupe
+    return out
+
+
+def _normalize_schema_props(props: dict) -> dict:
+    """Recursively normalise a JSON Schema properties dict."""
+    out = {}
+    for k, v in props.items():
+        if not isinstance(v, dict):
+            out[k] = v
+            continue
+        v = _flatten_anyof_oneof(v)
+        if "properties" in v:
+            v["properties"] = _normalize_schema_props(v["properties"])
+        if "items" in v and isinstance(v["items"], dict):
+            v["items"] = _flatten_anyof_oneof(v["items"])
+            if "properties" in v["items"]:
+                v["items"]["properties"] = _normalize_schema_props(v["items"]["properties"])
+        # Default additionalProperties to False for objects without it
+        if v.get("type") == "object" and "additionalProperties" not in v:
+            v["additionalProperties"] = False
+        out[k] = v
+    return out
+
+
+def normalize_schema(schema: dict) -> dict:
+    """Return a provider-safe copy of a tool schema.
+
+    Mutations applied:
+      - description truncated to ~1536 chars
+      - anyOf/oneOf flattened to simple type lists
+      - nested properties normalised recursively
+      - additionalProperties defaults to False for objects
+    """
+    out = dict(schema)
+    out["description"] = _truncate_description(out.get("description", ""))
+    params = out.get("parameters") or out.get("input_schema")
+    if isinstance(params, dict):
+        params = dict(params)
+        if "properties" in params:
+            params["properties"] = _normalize_schema_props(params["properties"])
+        params = _flatten_anyof_oneof(params)
+        # Preserve whichever key existed
+        if "parameters" in out:
+            out["parameters"] = params
+        if "input_schema" in out:
+            out["input_schema"] = params
+    return out
+
+
+# ── Provider adapter helpers — lightweight quirks layer ───────────────────
+
+class ProviderAdapter:
+    """Lightweight provider-specific tweaks applied at call time.
+
+    This is intentionally minimal — a framework for future expansion,
+    not a full rewrite of the protocol layer.  Add new provider quirks
+    as methods here rather than scattering conditionals through the loop.
+    """
+
+    # Known provider identifiers
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
+    DEEPSEEK = "deepseek"
+    MOONSHOT = "moonshot"
+    VLLM = "vllm"
+    OLLAMA = "ollama"
+
+    def __init__(self, provider: str, model: str = ""):
+        self.provider = provider.lower()
+        self.model = model.lower()
+
+    def filter_temperature(self, temperature: float) -> Optional[float]:
+        """Return adjusted temperature or None to omit the parameter.
+
+        Some reasoning models (o1, deepseek-r1, etc.) reject temperature.
+        """
+        reasoning_models = ("o1", "o3", "deepseek-r1", "qwq")
+        if any(r in self.model for r in reasoning_models):
+            return None
+        return temperature
+
+    def supports_reasoning_content(self) -> bool:
+        """Whether this provider returns a separate reasoning_content field."""
+        return self.provider in (self.DEEPSEEK,)
+
+    def prepare_system_prompt(self, prompt: str) -> str:
+        """Last-chance system prompt sanitisation."""
+        # Strip empty reasoning blocks that some providers reject
+        return prompt.strip()
+
+    @classmethod
+    def for_model(cls, model: str) -> "ProviderAdapter":
+        """Heuristic adapter selection from model name."""
+        m = model.lower()
+        if "claude" in m:
+            return cls(cls.ANTHROPIC, model)
+        if "deepseek" in m:
+            return cls(cls.DEEPSEEK, model)
+        if "moonshot" in m or "kimi" in m:
+            return cls(cls.MOONSHOT, model)
+        if "llama" in m or "qwen" in m or "mistral" in m:
+            return cls(cls.VLLM, model)
+        return cls(cls.OPENAI, model)
 
 
 # ── protocol-neutral helpers ────────────────────────────────────────────

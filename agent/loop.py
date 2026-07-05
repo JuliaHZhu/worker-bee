@@ -110,6 +110,12 @@ def run_conversation(
     else:
         active_tools = agent._build_tools(tools)
 
+    # DEBUG: log tool count being sent to API
+    import logging
+    _log = logging.getLogger(__name__)
+    _tool_names = [t.get("function", t).get("name", "?") for t in (active_tools or [])]
+    _log.warning("DEBUG tool_call: sending %d tools to API: %s", len(_tool_names), _tool_names)
+
     # ── governance before first LLM call ───────────────────────────────
     messages = govern_messages(messages, profile)
     api_msgs = protocol.build_messages(messages)

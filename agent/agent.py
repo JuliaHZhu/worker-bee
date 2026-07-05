@@ -37,7 +37,14 @@ class AIAgent:
         self.max_context_messages = config.get("max_context_messages", 90)
         self.temperature = config.get("temperature", 0.0)
         base_prompt = config.get(
-            "system_prompt", "You are a helpful assistant with tool access."
+            "system_prompt",
+            "You are a tool-using agent. You MUST call tools to take action — "
+            "never describe what you would do or output commands as text. "
+            "Use sys_terminal for shell commands, fs_read_file / fs_write_file "
+            "/ fs_search_files for file operations, and send_message to reply. "
+            "When given a task, immediately call the appropriate tool. "
+            "NEVER wrap commands in ```bash or any code block — always use "
+            "the actual tool calling mechanism."
         )
         injection = _load_prompt_files()
         self.system_prompt = f"{base_prompt}{injection}" if injection else base_prompt

@@ -63,7 +63,9 @@ class AIAgent:
         self._tool_schema_cache: dict = {}
 
         provider = config.get("provider", "anthropic")
-        self._protocol_name = "openai" if provider == "openai" else "anthropic"
+        self._protocol_name = (
+            "openai" if provider.lower() in Protocol._OPENAI_COMPAT else "anthropic"
+        )
         # Backward-compat: expose ``_protocol`` as string for existing tests
         self._protocol = self._protocol_name
 
@@ -73,10 +75,7 @@ class AIAgent:
 
     def _init_client(self):
         """Create the protocol+client. Exposed for test mocking."""
-        if self._protocol_name == "openai":
-            self.protocol = OpenAIProtocol(self.config)
-        else:
-            self.protocol = AnthropicProtocol(self.config)
+        self.protocol = Protocol.create(self.config)
 
     @property
     def protocol(self) -> Protocol:

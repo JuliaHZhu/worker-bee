@@ -170,10 +170,12 @@ def _normalize_args(value: Any) -> dict:
 class Protocol:
     """Protocol implementation for one provider family."""
 
+    _OPENAI_COMPAT = frozenset({"openai", "moonshot", "deepseek", "vllm", "ollama"})
+
     @staticmethod
     def create(config: dict) -> "Protocol":
         provider = config.get("provider", "anthropic")
-        if provider == "openai":
+        if provider.lower() in Protocol._OPENAI_COMPAT:
             return OpenAIProtocol(config)
         return AnthropicProtocol(config)
 

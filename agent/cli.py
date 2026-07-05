@@ -819,6 +819,54 @@ def _add_deck_parser(sub):
 
 
 # ---------------------------------------------------------------------------
+# Config sub-command — read/write config.json
+# ---------------------------------------------------------------------------
+def _config_show(args):
+    import json
+    from agent.main import load_config
+    cfg = load_config()
+    if cfg is None:
+        print("No config found. Run: wb setup")
+        return
+    # Redact api_key
+    safe = dict(cfg)
+    if "api_key" in safe:
+        key = safe["api_key"]
+        safe["api_key"] = key[:7] + "***" + key[-4:] if len(key) > 12 else "***"
+    print(json.dumps(safe, indent=2, ensure_ascii=False))
+
+
+def _config_set(args):
+    import json
+    from pathlib import Path
+    from agent.main import get_config_path
+    path = Path(get_config_path())
+    cfg = {}
+    if path.exists():
+        cfg = json.loads(path.read_text())
+    cfg[args.key] = args.value
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False))
+    display_val = args.value
+    if args.key == "api_key" and len(display_val) > 12:
+        display_val = display_val[:7] + "***" + display_val[-4:]
+    print(f"✅ {args.key} = {display_val}")
+
+
+def _add_config_parser(sub):
+    cfg = sub.add_parser("config", help="View or update ~/.worker-bee/config.json")
+    cfg_sub = cfg.add_subparsers(dest="config_cmd", required=True)
+
+    p = cfg_sub.add_parser("show", help="Show current config (api_key redacted)")
+    p.set_defaults(func=_config_show)
+
+    p = cfg_sub.add_parser("set", help="Set a config field")
+    p.add_argument("key", help="Field name (model, api_key, base_url, provider, ...)")
+    p.add_argument("value", help="New value")
+    p.set_defaults(func=_config_set)
+
+
+# ---------------------------------------------------------------------------
 # Cron sub-command — daily auto-update
 # ---------------------------------------------------------------------------
 
@@ -951,6 +999,8 @@ def main(argv=None):
             "  wb deck mode\n"
             "  wb deck focus\n"
             "  wb deck add fs_write_file\n"
+            "  wb config show\n"
+            "  wb config set model deepseek-v4-flash\n"
             "  wb cron install\n"
             "  wb cron status\n"
         ),
@@ -962,6 +1012,7 @@ def main(argv=None):
     _add_workspace_parser(sub)
     _add_lark_parser(sub)
     _add_deck_parser(sub)
+    _add_config_parser(sub)
     _add_cron_parser(sub)
 
     args = parser.parse_args(argv)

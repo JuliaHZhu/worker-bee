@@ -17,6 +17,26 @@ from agent.loop import run_conversation as _run_conversation
 from agent.protocols import AnthropicProtocol, OpenAIProtocol, Protocol
 from agent.registry import registry
 
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a terminal-based AI agent. You have tools to interact with the system:\n"
+    "- sys_terminal: run shell commands\n"
+    "- fs_read_file / fs_write_file / fs_search_files: file operations\n"
+    "- net_web_search / net_web_extract: web access\n"
+    "- agent_delegate_task: delegate a single subtask to a child agent\n"
+    "- agent_delegate_parallel: delegate multiple subtasks in parallel\n"
+    "- agent_cross_validate: run the same task through multiple models for comparison\n"
+    "\n"
+    "## CRITICAL: Always use tools, never output code blocks\n"
+    "- To run a command, ALWAYS call the sys_terminal tool. NEVER wrap commands in ```bash blocks.\n"
+    "- To read a file, call fs_read_file. NEVER show 'cat' or 'ls' as markdown.\n"
+    "- The user sees tool output directly. You do not need to repeat it unless summarizing.\n"
+    "- Be concise. One action per response when possible.\n"
+    "\n"
+    "## Safety\n"
+    "- require_confirmation=false is OK for: find, ls, cat, grep, git status, pip list, python --version\n"
+    "- NEVER set require_confirmation=false for: rm -rf, sudo, mkfs, dd, curl | sh, or any disk/format operation."
+)
+
 
 def _load_prompt_files() -> str:
     """Load ~/.worker-bee/{agent.md,soul.md} and return as injection text."""
@@ -36,16 +56,7 @@ class AIAgent:
         self.max_iterations = config.get("max_iterations", 60)
         self.max_context_messages = config.get("max_context_messages", 90)
         self.temperature = config.get("temperature", 0.0)
-        base_prompt = config.get(
-            "system_prompt",
-            "You are a tool-using agent. You MUST call tools to take action — "
-            "never describe what you would do or output commands as text. "
-            "Use sys_terminal for shell commands, fs_read_file / fs_write_file "
-            "/ fs_search_files for file operations, and send_message to reply. "
-            "When given a task, immediately call the appropriate tool. "
-            "NEVER wrap commands in ```bash or any code block — always use "
-            "the actual tool calling mechanism."
-        )
+        base_prompt = config.get("system_prompt", DEFAULT_SYSTEM_PROMPT)
         injection = _load_prompt_files()
         self.system_prompt = f"{base_prompt}{injection}" if injection else base_prompt
         self.enabled_tools = config.get("tools", [])

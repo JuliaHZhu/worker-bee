@@ -120,38 +120,6 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
     print(f"[swarm-listener] 连接 {nats_url} ... (身份: {bee_id})")
     nc = await nats.connect(nats_url, connect_timeout=NATS_TIMEOUT)
 
-    # ── bee_id 冲突检测（保持 Core NATS）──
-    conflict_subject = f"swarm.heartbeat.{bee_id}"
-    conflict_detected = False
-
-    async def _conflict_check(msg):
-        nonlocal conflict_detected
-        try:
-            data = json.loads(msg.data.decode("utf-8"))
-            if data.get("action") == "check_conflict":
-                # 回复冲突检查——有人在问是不是重复了
-                reply_data = json.dumps({"conflict": True, "responder": bee_id})
-                await nc.publish(msg.reply, reply_data.encode())
-        except Exception:
-            pass
-
-    await nc.subscribe(conflict_subject, cb=_conflict_check)
-
-    # 发送冲突检查请求，等 2 秒
-    check_msg = json.dumps({"action": "check_conflict"})
-    try:
-        resp = await nc.request(conflict_subject, check_msg.encode(), timeout=2)
-        resp_data = json.loads(resp.data.decode("utf-8"))
-        if resp_data.get("conflict"):
-            print(f"\n[swarm-listener] ❌ bee_id 冲突: {bee_id} 已被其他节点使用")
-            print("[swarm-listener] 请修改 config.json 中的 bee_id 后重启。")
-            await nc.drain()
-            sys.exit(1)
-    except asyncio.TimeoutError:
-        pass  # 没有冲突，继续
-    except Exception:
-        pass
-
     # ── JetStream 初始化 ──
     js = nc.jetstream()
 

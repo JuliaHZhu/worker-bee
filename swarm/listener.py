@@ -163,7 +163,10 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
     # 主循环：pull + 写文件 + ack
     try:
         while True:
-            msgs = await sub.fetch(batch=10, timeout=5)
+            try:
+                msgs = await sub.fetch(batch=10, timeout=5)
+            except nats.errors.TimeoutError:
+                continue  # 空轮询，继续下一轮
             for msg in msgs:
                 _write_envelope(msg.subject, msg.reply or "", msg.data)
                 await msg.ack()
@@ -175,7 +178,10 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
             await heartbeat_task
         except asyncio.CancelledError:
             pass
-        await nc.drain()
+        try:
+            await nc.drain()
+        except Exception:
+            pass
         print("[swarm-listener] 已断开")
 
 

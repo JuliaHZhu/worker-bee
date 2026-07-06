@@ -140,7 +140,7 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
             raise
 
     # Durable Pull Consumer：重启后从上次消费位置继续
-    consumer_name = f"swarm-listener-{bee_id}"
+    consumer_name = f"swarm-listener-{bee_id}".replace(".", "-")
     config = js_api.ConsumerConfig(
         durable_name=consumer_name,
         ack_policy=js_api.AckPolicy.EXPLICIT,

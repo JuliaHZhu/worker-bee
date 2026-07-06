@@ -209,6 +209,33 @@ class ModelRegistry:
             encoding_name="auto",
             reserved_output_tokens=8192,
         ),
+        # DeepSeek v4 models — 1M context, OpenAI-compatible
+        # https://api-docs.deepseek.com/quick_start/pricing
+        "deepseek-v4-flash": ModelProfile(
+            name="deepseek-v4-flash",
+            context_window=1_000_000,
+            encoding_name="auto",
+            reserved_output_tokens=32_768,
+        ),
+        "deepseek-v4-pro": ModelProfile(
+            name="deepseek-v4-pro",
+            context_window=1_000_000,
+            encoding_name="auto",
+            reserved_output_tokens=32_768,
+        ),
+        # Legacy names — deprecated 2026/07/24, map to v4-flash equivalents
+        "deepseek-chat": ModelProfile(
+            name="deepseek-chat",
+            context_window=1_000_000,
+            encoding_name="auto",
+            reserved_output_tokens=32_768,
+        ),
+        "deepseek-reasoner": ModelProfile(
+            name="deepseek-reasoner",
+            context_window=1_000_000,
+            encoding_name="auto",
+            reserved_output_tokens=32_768,
+        ),
     }
 
     def __init__(self, overrides: dict[str, ModelProfile] | None = None) -> None:

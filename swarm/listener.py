@@ -34,6 +34,28 @@ MAILBOX_INBOX = Path.home() / ".worker-bee" / "mailbox" / "inbox"
 MAILBOX_SENT  = Path.home() / ".worker-bee" / "mailbox" / "sent"
 NATS_TIMEOUT = float(os.environ.get("SWARM_NATS_TIMEOUT", "5"))
 HEARTBEAT_INTERVAL = 30  # seconds
+PID_FILE = Path.home() / ".worker-bee" / "listener.pid"
+
+
+def _write_pid() -> None:
+    """将当前进程 PID 写入文件，用于 CLI 单例检查。"""
+    PID_FILE.write_text(str(os.getpid()), encoding="utf-8")
+
+
+def _remove_pid() -> None:
+    """清理 PID 文件。"""
+    try:
+        PID_FILE.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
+def read_listener_pid() -> int | None:
+    """读取已记录的 listener PID（供 CLI 使用）。"""
+    try:
+        return int(PID_FILE.read_text(encoding="utf-8").strip())
+    except Exception:
+        return None
 
 # ── bee_id 读取 ──────────────────────────────────────────────
 
@@ -106,16 +128,39 @@ def _write_envelope(subject: str, reply_to: str, data: bytes):
 
 # ── 主循环 ────────────────────────────────────────────
 
+def _setup_signal_handlers(loop):
+    """注册信号处理器，保证收到 SIGTERM/SIGINT 时清理 PID 文件。"""
+    for sig in ("SIGTERM", "SIGINT"):
+        try:
+            loop.add_signal_handler(
+                getattr(__import__("signal"), sig),
+                lambda: asyncio.create_task(_graceful_shutdown()),
+            )
+        except Exception:
+            pass
+
+
+async def _graceful_shutdown():
+    """信号触发时取消主任务，使 finally 块执行。"""
+    for task in asyncio.all_tasks():
+        if task is not asyncio.current_task():
+            task.cancel()
+
+
 async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
     """连接 NATS + JetStream，用 durable pull consumer 拉取消息写入 mailbox。
 
     使用 JetStream 保证 listener 重启后不丢消息。
+    启动前写入 PID 文件，退出时清理，防止重复启动。
     """
     if nats is None:
         raise RuntimeError(
             "nats-py is required for swarm listener. "
             "Install it with: pip install 'worker-bee[swarm]'"
         )
+    _write_pid()
+    loop = asyncio.get_running_loop()
+    _setup_signal_handlers(loop)
     bee_id = _get_bee_id()
     print(f"[swarm-listener] 连接 {nats_url} ... (身份: {bee_id})")
     nc = await nats.connect(nats_url, connect_timeout=NATS_TIMEOUT)
@@ -182,6 +227,7 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
             await nc.drain()
         except Exception:
             pass
+        _remove_pid()
         print("[swarm-listener] 已断开")
 
 
@@ -189,4 +235,7 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
 
 if __name__ == "__main__":
     url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_NATS_URL
-    asyncio.run(listen(nats_url=url))
+    try:
+        asyncio.run(listen(nats_url=url))
+    finally:
+        _remove_pid()

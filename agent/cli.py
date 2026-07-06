@@ -358,11 +358,40 @@ def _add_todo_parser(sub):
 # ---------------------------------------------------------------------------
 # Swarm sub-command
 # ---------------------------------------------------------------------------
+def _listener_pid_file() -> Path:
+    from pathlib import Path
+    return Path.home() / ".worker-bee" / "listener.pid"
+
+
+def _listener_is_running() -> tuple[bool, int | None]:
+    """检查 listener 是否已在运行。返回 (running, pid_or_none)。"""
+    import os
+    pid_file = _listener_pid_file()
+    if not pid_file.exists():
+        return False, None
+    try:
+        pid = int(pid_file.read_text(encoding="utf-8").strip())
+        os.kill(pid, 0)
+        return True, pid
+    except (ValueError, OSError, ProcessLookupError):
+        # PID 文件残留但进程已死 → 清理
+        try:
+            pid_file.unlink(missing_ok=True)
+        except Exception:
+            pass
+        return False, None
+
+
 def _swarm_listen(args):
-    """Start the NATS swarm listener (background process)."""
+    """Start the NATS swarm listener (foreground process)."""
     import subprocess
     import os
     from pathlib import Path
+
+    running, pid = _listener_is_running()
+    if running:
+        print(f"⚠️  Listener already running (PID {pid}). Stop it first: wb swarm menu → 3")
+        sys.exit(1)
 
     listener_path = Path(__file__).parent.parent / "swarm" / "listener.py"
     if not listener_path.exists():
@@ -414,13 +443,9 @@ def _swarm_status(args):
         print("📭 Mailbox: not initialized (no messages yet)")
 
     # Check if listener process is running
-    import subprocess
-    result = subprocess.run(
-        ["pgrep", "-f", "swarm/listener.py"],
-        capture_output=True, text=True,
-    )
-    if result.stdout.strip():
-        print(f"🟢 Listener: running (PID {result.stdout.strip().split()[0]})")
+    running, pid = _listener_is_running()
+    if running:
+        print(f"🟢 Listener: running (PID {pid})")
     else:
         print("🔴 Listener: not running (start with: wb swarm listen)")
 
@@ -485,6 +510,10 @@ def _swarm_menu(args):
         ]
 
     def _start_listener():
+        running, pid = _listener_is_running()
+        if running:
+            print(f"⚠️  Listener already running (PID {pid}). Stop it first (menu option 3).")
+            return
         listener_path = Path(__file__).parent.parent / "swarm" / "listener.py"
         if not listener_path.exists():
             print("❌ listener.py not found")
@@ -497,12 +526,18 @@ def _swarm_menu(args):
         print("🟢 Listener spawned (background). Check status in a few seconds.")
 
     def _stop_listener():
+        running, pid = _listener_is_running()
+        if running and pid is not None:
+            subprocess.run(["kill", str(pid)])
+            print(f"🔴 Listener stopped (PID {pid})")
+            return
+        # Fallback: 模糊匹配（兼容旧进程没有 PID 文件的情况）
         pg = subprocess.run(["pgrep", "-f", "swarm/listener.py"], capture_output=True, text=True)
         if not pg.stdout.strip():
             print("🔴 Listener not running")
             return
-        for pid in pg.stdout.strip().split():
-            subprocess.run(["kill", pid])
+        for p in pg.stdout.strip().split():
+            subprocess.run(["kill", p])
         print("🔴 Listener stopped")
 
     def _send_test():

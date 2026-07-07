@@ -23,9 +23,13 @@ from pathlib import Path
 try:
     import nats
     import nats.js.api as js_api
+    from nats.errors import ConnectionClosedError, NoServersError, TimeoutError as NatsTimeoutError
 except ModuleNotFoundError:  # pragma: no cover
     nats = None  # type: ignore
     js_api = None  # type: ignore
+    ConnectionClosedError = Exception  # type: ignore
+    NoServersError = Exception  # type: ignore
+    NatsTimeoutError = asyncio.TimeoutError  # type: ignore
 
 
 # ── 配置 ──────────────────────────────────────────────
@@ -192,10 +196,32 @@ async def _graceful_shutdown():
             task.cancel()
 
 
+async def _ensure_pull_subscription(js, subject: str, stream_name: str, consumer_name: str):
+    """创建或重新创建 durable pull subscription。
+
+    在 NATS 断线重连后调用，恢复消息消费。
+    """
+    config = js_api.ConsumerConfig(
+        durable_name=consumer_name,
+        ack_policy=js_api.AckPolicy.EXPLICIT,
+        ack_wait=30,
+        max_deliver=3,
+        deliver_policy=js_api.DeliverPolicy.ALL,
+    )
+    sub = await js.pull_subscribe(
+        subject,
+        durable=consumer_name,
+        stream=stream_name,
+        config=config,
+    )
+    return sub
+
+
 async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
     """连接 NATS + JetStream，用 durable pull consumer 拉取消息写入 mailbox。
 
     使用 JetStream 保证 listener 重启后不丢消息。
+    断线重连后自动恢复 subscription，避免静默失效。
     启动前写入 PID 文件，退出时清理，防止重复启动。
     """
     if nats is None:
@@ -208,7 +234,11 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
     _setup_signal_handlers(loop)
     bee_id = _get_bee_id()
     print(f"[swarm-listener] 连接 {nats_url} ... (身份: {bee_id})")
-    nc = await nats.connect(nats_url, connect_timeout=NATS_TIMEOUT)
+    nc = await nats.connect(
+        nats_url,
+        connect_timeout=NATS_TIMEOUT,
+        max_reconnect_attempts=-1,  # 无限重连
+    )
 
     # ── JetStream 初始化 ──
     js = nc.jetstream()
@@ -231,32 +261,29 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
 
     # Durable Pull Consumer：重启后从上次消费位置继续
     consumer_name = f"swarm-listener-{bee_id}".replace(".", "-")
-    config = js_api.ConsumerConfig(
-        durable_name=consumer_name,
-        ack_policy=js_api.AckPolicy.EXPLICIT,
-        ack_wait=30,  # 30秒内没 ack 就重发
-        max_deliver=3,
-        deliver_policy=js_api.DeliverPolicy.ALL,
-    )
-
-    sub = await js.pull_subscribe(
-        subject,
-        durable=consumer_name,
-        stream=stream_name,
-        config=config,
-    )
+    sub = await _ensure_pull_subscription(js, subject, stream_name, consumer_name)
     print(f"[swarm-listener] 就绪 — 监听 {subject} → {MAILBOX_INBOX} (JetStream durable)")
 
     # 启动心跳
     heartbeat_task = asyncio.create_task(_heartbeat_loop(nc, bee_id))
 
     # 主循环：pull + 写文件 + ack
+    # 断线后自动重新创建 subscription
     try:
         while True:
             try:
                 msgs = await sub.fetch(batch=10, timeout=5)
-            except nats.errors.TimeoutError:
+            except NatsTimeoutError:
                 continue  # 空轮询，继续下一轮
+            except (ConnectionClosedError, NoServersError) as e:
+                print(f"[swarm-listener] ⚠️ NATS 连接中断 ({type(e).__name__})，等待重连...")
+                # 等待连接恢复
+                while nc.is_closed or not nc.is_connected:
+                    await asyncio.sleep(1)
+                print("[swarm-listener] 🔄 NATS 已重连，重新订阅...")
+                sub = await _ensure_pull_subscription(js, subject, stream_name, consumer_name)
+                print("[swarm-listener] ✅ 重新订阅完成")
+                continue
             for msg in msgs:
                 _write_envelope(msg.subject, msg.reply or "", msg.data)
                 if msg.subject == "swarm.notify.feishu":

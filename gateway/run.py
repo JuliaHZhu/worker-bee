@@ -5,7 +5,9 @@ incoming MessageEvents from them, dispatches to the Agent/NATS layer,
 and routes replies back to the originating platform.
 """
 import asyncio
+import json
 import logging
+import os
 import threading
 from typing import Any, Dict, Optional
 
@@ -14,6 +16,10 @@ from gateway.config import GatewayConfig
 from gateway.platform_registry import platform_registry
 
 logger = logging.getLogger("gateway")
+
+# NATS dispatch defaults — overridden by SWARM_NATS_URL env var
+DEFAULT_SWARM_NATS_URL = "nats://43.156.129.115:4222"
+SWARM_INCOMING_SUBJECT = "swarm.incoming.gateway"
 
 
 class GatewayRunner:
@@ -104,14 +110,48 @@ class GatewayRunner:
         except Exception as exc:
             logger.exception("Send error on %s: %s", event.platform, exc)
 
+    async def _dispatch_via_nats(self, event: MessageEvent) -> str:
+        """Forward the incoming event to the swarm via NATS request/reply."""
+        try:
+            import nats
+        except ModuleNotFoundError:
+            raise RuntimeError("nats-py not installed")
+
+        nats_url = os.getenv("SWARM_NATS_URL", DEFAULT_SWARM_NATS_URL)
+        nc = await nats.connect(nats_url, connect_timeout=10)
+        try:
+            payload = json.dumps(
+                {
+                    "source": event.platform,
+                    "sender": event.sender_id,
+                    "text": event.text,
+                    "chat_id": event.raw.get("chat_id", "") if hasattr(event, "raw") else "",
+                    "message_id": event.message_id,
+                    "timestamp": event.timestamp.isoformat() if hasattr(event.timestamp, "isoformat") else str(event.timestamp),
+                },
+                ensure_ascii=False,
+            ).encode("utf-8")
+
+            response = await nc.request(
+                SWARM_INCOMING_SUBJECT,
+                payload,
+                timeout=30,
+            )
+            return response.data.decode("utf-8")
+        finally:
+            await nc.close()
+
     def process_with_agent(self, event: MessageEvent) -> str:
         """Dispatch event to the Agent / NATS layer.
 
-        Override or monkey-patch this method to wire into worker-bee's
-        actual agent loop. Default implementation is an echo for testing.
+        First attempts NATS request/reply to the swarm; falls back to a
+        local echo if NATS is unavailable or nats-py is not installed.
         """
-        # TODO: wire into worker-bee Agent or NATS dispatcher
-        return f"Echo: {event.text}"
+        try:
+            return asyncio.run(self._dispatch_via_nats(event))
+        except Exception as exc:
+            logger.warning("NATS dispatch failed (%s), falling back to echo", exc)
+            return f"Echo: {event.text}"
 
     def send_to_platform(self, platform: str, event: MessageEvent, text: str) -> SendResult:
         """Cross-platform send — route a message to a specific platform adapter."""

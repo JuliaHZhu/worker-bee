@@ -80,9 +80,12 @@ def _send_reply(
 
 
 class _FeishuWebhookHandler(BaseHTTPRequestHandler):
-    """HTTP handler that parses Feishu events and forwards to adapter."""
+    """HTTP handler that parses Feishu events and forwards to adapter.
 
-    # Class-level reference to the parent adapter (injected by FeishuAdapter)
+    ``adapter`` and ``verification_token`` are injected per-instance
+    via a dynamically-created subclass (see ``FeishuAdapter.start()``).
+    """
+
     adapter: Optional["FeishuAdapter"] = None
     verification_token: str = ""
 
@@ -124,6 +127,8 @@ class _FeishuWebhookHandler(BaseHTTPRequestHandler):
         event_type = payload.get("header", {}).get("event_type", "")
         if event_type == "im.message.receive_v1":
             threading.Thread(target=self._handle_message, args=(payload,), daemon=True).start()
+        else:
+            logger.info("Ignoring unsupported Feishu event type: %s", event_type)
 
         self._respond_json({"code": 0, "msg": "ok"})
 
@@ -193,9 +198,14 @@ class FeishuAdapter(BasePlatformAdapter):
         self._base_url = extra.get("base_url", os.environ.get("FEISHU_BASE_URL", "https://open.feishu.cn"))
 
     def start(self) -> None:
-        _FeishuWebhookHandler.adapter = self
-        _FeishuWebhookHandler.verification_token = self._verification_token
-        self._server = HTTPServer((self._host, self._port), _FeishuWebhookHandler)
+        # Create a per-instance handler subclass so multiple adapters
+        # can coexist without stomping on class-level state.
+        handler_cls = type(
+            "_BoundFeishuHandler",
+            (_FeishuWebhookHandler,),
+            {"adapter": self, "verification_token": self._verification_token},
+        )
+        self._server = HTTPServer((self._host, self._port), handler_cls)
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
         logger.info("Feishu webhook server listening on %s:%d", self._host, self._port)
@@ -208,7 +218,6 @@ class FeishuAdapter(BasePlatformAdapter):
         if self._thread is not None:
             self._thread.join(timeout=5)
             self._thread = None
-        _FeishuWebhookHandler.adapter = None
         logger.info("Feishu webhook server stopped")
 
     def send(self, event: MessageEvent, text: str) -> SendResult:

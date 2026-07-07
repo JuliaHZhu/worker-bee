@@ -3,10 +3,13 @@
 Reads from ~/.worker-bee/config.json under the "gateway" key.
 """
 import json
+import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -54,5 +57,6 @@ class GatewayConfig:
             with open(path) as f:
                 data = json.load(f)
             return cls.from_dict(data.get("gateway"))
-        except Exception:
+        except Exception as exc:
+            logger.warning("Failed to load gateway config from %s: %s", path, exc)
             return cls(enabled=False)

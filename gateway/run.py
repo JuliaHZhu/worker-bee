@@ -31,6 +31,13 @@ class GatewayRunner:
         Synchronous entry point — each adapter decides internally whether
         it runs in a background thread or within the current event loop.
         """
+        # Lazy-load built-in adapters so import-time stays lightweight.
+        try:
+            from gateway import _ensure_adapters_loaded
+            _ensure_adapters_loaded()
+        except Exception:  # pragma: no cover
+            pass
+
         with self._lock:
             if self._running:
                 return

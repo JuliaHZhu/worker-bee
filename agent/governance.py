@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Any
+from typing import Any, Dict
 
 from agent.models import ModelProfile, TokenCounter, build_counter, estimate_tokens
 
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # Type alias
 # ---------------------------------------------------------------------------
 
-Message = dict[str, Any]
+Message = Dict[str, Any]
 
 
 # ---------------------------------------------------------------------------

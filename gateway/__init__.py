@@ -12,9 +12,7 @@ Usage:
     runner.start()
 """
 
-# Import adapters so they self-register
 from gateway import base, config, platform_registry, run
-from gateway.platforms import feishu  # noqa: F401
 
 __all__ = [
     "base",
@@ -22,3 +20,9 @@ __all__ = [
     "platform_registry",
     "run",
 ]
+
+
+def _ensure_adapters_loaded() -> None:
+    """Lazy-load built-in adapters so ``import gateway`` does not pull
+    heavy dependency chains (e.g. agent, LLM SDKs) at import time."""
+    from gateway.platforms import feishu  # noqa: F401

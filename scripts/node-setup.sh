@@ -31,7 +31,7 @@ fi
 # 2. 虚拟环境
 [[ -d .venv ]] || python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[swarm]" 2>/dev/null || pip install -e ".[swarm]" --break-system-packages 2>/dev/null
+pip install -e "." 2>/dev/null || pip install -e "." --break-system-packages 2>/dev/null
 echo "[OK] 依赖就绪"
 
 # 3. wb 命令

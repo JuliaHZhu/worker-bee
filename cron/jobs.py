@@ -13,7 +13,10 @@ import tempfile
 import threading
 import os
 import re
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows
+    fcntl = None  # type: ignore
 import contextlib
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -90,11 +93,13 @@ def _cross_process_lock():
     lock_file = CRON_DIR / ".jobs.lock"
     lock_file.touch(exist_ok=True)
     with open(lock_file, 'r+') as f:
-        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        if fcntl:
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
             yield
         finally:
-            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+            if fcntl:
+                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 OUTPUT_DIR = CRON_DIR / "output"
 ONESHOT_GRACE_SECONDS = 120
 

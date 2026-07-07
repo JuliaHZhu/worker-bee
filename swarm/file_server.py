@@ -48,6 +48,8 @@ def main():
     if not SERVE_DIR.exists():
         SERVE_DIR.mkdir(parents=True, exist_ok=True)
 
+    if not FILE_SERVER_TOKEN:
+        print("[FileServer] WARNING: FILE_SERVER_TOKEN not set — server is OPEN to all clients")
     auth_status = "token required" if FILE_SERVER_TOKEN else "no token (open)"
     print(f"[FileServer] Serving {SERVE_DIR} on port {PORT} ({auth_status})")
     with socketserver.TCPServer(("", PORT), MailboxHandler) as httpd:

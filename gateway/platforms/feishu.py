@@ -22,13 +22,15 @@ logger = logging.getLogger("gateway.feishu")
 
 _feishu_token: Optional[str] = None
 _feishu_token_expires: float = 0
+_token_lock = threading.Lock()
 
 
 def _get_feishu_token(app_id: str, app_secret: str, base_url: str = "https://open.feishu.cn") -> Optional[str]:
     global _feishu_token, _feishu_token_expires
     now = time.time()
-    if _feishu_token and now < _feishu_token_expires - 60:
-        return _feishu_token
+    with _token_lock:
+        if _feishu_token and now < _feishu_token_expires - 60:
+            return _feishu_token
     if not app_id or not app_secret:
         return None
     payload = json.dumps({"app_id": app_id, "app_secret": app_secret}).encode()
@@ -42,8 +44,9 @@ def _get_feishu_token(app_id: str, app_secret: str, base_url: str = "https://ope
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode())
         if data.get("code") == 0:
-            _feishu_token = data["tenant_access_token"]
-            _feishu_token_expires = now + data.get("expire", 7200)
+            with _token_lock:
+                _feishu_token = data["tenant_access_token"]
+                _feishu_token_expires = now + data.get("expire", 7200)
             return _feishu_token
     except Exception:
         pass

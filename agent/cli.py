@@ -27,6 +27,7 @@ Usage:
 """
 
 import argparse
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -1095,6 +1096,100 @@ def _add_cron_parser(sub):
 
 
 # ---------------------------------------------------------------------------
+# Skill sub-command (lint + test)
+# ---------------------------------------------------------------------------
+
+def _skill_lint(args):
+    import json
+    from agent.main import load_config
+    from agent.registry import registry
+    from agent.skill_lint import SkillLint
+    cfg = load_config() or {}
+    skills_dir = cfg.get("skills_dir", os.path.join(os.path.dirname(__file__), "..", "skills"))
+    linter = SkillLint(registry, skills_dir)
+
+    if args.skill:
+        report = linter.lint_skill(args.skill)
+        reports = [report]
+    else:
+        reports = linter.lint_all()
+
+    if args.json:
+        print(json.dumps([r.to_dict() for r in reports], ensure_ascii=False, indent=2))
+        return
+
+    for report in reports:
+        status = "✅" if report.ok else "❌"
+        print(f"\n{status} {report.skill_name}  score={report.score:.2f}")
+        for f in report.findings:
+            icon = {"ERROR": "🔴", "WARN": "🟡", "INFO": "🔵"}[f.level.name]
+            line_info = f":{f.line}" if f.line else ""
+            print(f"   {icon} [{f.code}] {f.message}{line_info}")
+
+
+def _skill_test(args):
+    import json
+    from agent.main import load_config
+    from agent.registry import registry
+    from agent.skill_test import SkillTestRunner, SkillTestLevel
+    cfg = load_config() or {}
+    skills_dir = cfg.get("skills_dir", os.path.join(os.path.dirname(__file__), "..", "skills"))
+    runner = SkillTestRunner(registry, skills_dir)
+
+    level_map = {
+        "unit": SkillTestLevel.UNIT,
+        "integration": SkillTestLevel.INTEGRATION,
+        "regression": SkillTestLevel.REGRESSION,
+        "stress": SkillTestLevel.STRESS,
+    }
+    levels = {level_map[l] for l in args.levels.split(",") if l in level_map}
+    if not levels:
+        levels = {SkillTestLevel.UNIT, SkillTestLevel.INTEGRATION}
+
+    if args.skill:
+        report = runner.run_skill(args.skill, levels=levels)
+        reports = [report]
+    else:
+        reports = runner.run_all(levels=levels)
+
+    if args.json:
+        print(json.dumps([r.to_dict() for r in reports], ensure_ascii=False, indent=2))
+        return
+
+    total_passed = 0
+    total_failed = 0
+    for report in reports:
+        status = "✅" if report.passed else "❌"
+        s = report.summary
+        total_passed += s["passed"]
+        total_failed += s["failed"]
+        print(f"\n{status} {report.skill_name}  score={report.score:.2f}  ({s['passed']}/{s['total']})")
+        for r in report.results:
+            if not r.passed:
+                print(f"   🔴 [{r.level.name}] {r.name}: {r.message}")
+
+    print(f"\n{'=' * 40}")
+    print(f"Total: {total_passed} passed, {total_failed} failed")
+
+
+def _add_skill_parser(sub):
+    skill = sub.add_parser("skill", help="Skill QA — lint (design) and test (execution)")
+    skill_sub = skill.add_subparsers(dest="skill_cmd", required=True)
+
+    p = skill_sub.add_parser("lint", help="Top-down lint: structure, deck compat, safety, contract")
+    p.add_argument("skill", nargs="?", default="", help="Skill name (omit to lint all)")
+    p.add_argument("--json", action="store_true", help="Output JSON")
+    p.set_defaults(func=_skill_lint)
+
+    p = skill_sub.add_parser("test", help="Bottom-up test: unit, integration, regression, stress")
+    p.add_argument("skill", nargs="?", default="", help="Skill name (omit to test all)")
+    p.add_argument("--levels", default="unit,integration",
+                   help="Comma-separated levels: unit,integration,regression,stress")
+    p.add_argument("--json", action="store_true", help="Output JSON")
+    p.set_defaults(func=_skill_test)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main(argv=None):
@@ -1122,6 +1217,8 @@ def main(argv=None):
             "  wb deck mode\n"
             "  wb deck focus\n"
             "  wb deck add fs_write_file\n"
+            "  wb skill lint web-research\n"
+            "  wb skill test web-research --levels unit,integration\n"
             "  wb cron install\n"
             "  wb cron status\n"
         ),
@@ -1133,6 +1230,7 @@ def main(argv=None):
     _add_workspace_parser(sub)
     _add_lark_parser(sub)
     _add_deck_parser(sub)
+    _add_skill_parser(sub)
     _add_cron_parser(sub)
 
     args = parser.parse_args(argv)

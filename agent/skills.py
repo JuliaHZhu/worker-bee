@@ -34,7 +34,10 @@ def _parse_yamlish(text: str) -> dict:
         key = key.strip()
         val = rest.strip()
         if val:
-            meta[key] = val
+            if val == "[]":
+                meta[key] = []
+            else:
+                meta[key] = val
             i += 1
             continue
         j = i + 1

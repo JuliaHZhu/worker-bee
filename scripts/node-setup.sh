@@ -63,10 +63,11 @@ if [[ "$ROLE" == "pm" ]]; then
 else
   mkdir -p ~/.worker-bee/mailbox/inbox
   if ! [[ -f ~/.worker-bee/listener.pid ]] || ! kill -0 "$(cat ~/.worker-bee/listener.pid)" 2>/dev/null; then
-    nohup ~/worker-bee/.venv/bin/python ~/worker-bee/swarm/listener.py "nats://${PM_IP}:4222" >> ~/.worker-bee/listener.log 2>&1 &
+    nohup python ~/worker-bee/swarm/listener.py "nats://${PM_IP}:4222" >> ~/.worker-bee/listener.log 2>&1 &
     sleep 2
   fi
-  echo "[OK] NATS→PM: $(nc -zv "$PM_IP" 4222 >/dev/null 2>&1 && echo OK || echo FAIL)"
+  # 用 python 内置 socket 检测端口（nc 可能不存在）
+  echo "[OK] NATS→PM: $(python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('$PM_IP', 4222)); s.close(); print('OK')" 2>/dev/null || echo FAIL)"
   echo "[OK] Listener: $( [[ -f ~/.worker-bee/listener.pid ]] && kill -0 "$(cat ~/.worker-bee/listener.pid)" 2>/dev/null && echo RUNNING || echo NOT_RUNNING)"
 fi
 
@@ -78,4 +79,4 @@ echo ""
 echo "=== $ROLE 完成 ==="
 echo "代码: $(git log --oneline -1 | cut -d' ' -f1)"
 echo "wb:   $(which wb 2>/dev/null || echo '未找到')"
-echo "NATS: $(nc -zv "$PM_IP" 4222 >/dev/null 2>&1 && echo 连通 || echo 不通)"
+echo "NATS: $(python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('$PM_IP', 4222)); s.close(); print('连通')" 2>/dev/null || echo 不通)"

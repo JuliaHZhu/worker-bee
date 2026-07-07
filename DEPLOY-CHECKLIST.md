@@ -1,6 +1,6 @@
 # Worker-Bee 蜂群装机检查清单
 
-> 逐台手动执行，不要批量跑。每完成一步打勾。
+> 逐台手动执行。PM（NATS 邮局）必须先通，其余 7 台顺序任意（listener 互不干扰，可以并行）。每完成一步打勾。
 
 ---
 
@@ -25,11 +25,11 @@
 
 ### A1 代码同步
 ```bash
-sudo -i
+# 用 ubuntu 用户执行（不要用 sudo -i，会改变 $HOME）
 cd ~/worker-bee 2>/dev/null || git clone https://github.com/JuliaHZhu/worker-bee.git ~/worker-bee
 cd ~/worker-bee
 git stash 2>/dev/null; git pull origin main
-git log --oneline -1   # 确认是 c64bb02 或更新
+git log --oneline -1   # 确认是 994fc21 或更新
 ```
 
 ### A2 虚拟环境 + wb
@@ -64,18 +64,23 @@ pgrep -x nats-server
 
 ### A4 验证 NATS 可对外连通
 ```bash
-nc -zv 43.156.129.115 4222
+python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('43.156.129.115', 4222)); s.close(); print('Connection succeeded')"
 # 期望输出：Connection succeeded
+# 若 python3 不可用，备选: nc -zv 43.156.129.115 4222
 ```
 
 ### A5 飞书 CLI 测试（PM 节点）
 ```bash
-wb lark who 2>/dev/null || echo "需配置: wb lark login"
+# 先确认 lark-cli 已安装
+command -v lark-cli && echo "lark-cli OK" || echo "需安装: pip install lark-cli"
+
+# 再确认已登录（auth 正常会返回搜索结果，未登录会报错）
+lark-cli contact +search-user --query test >/dev/null 2>&1 && echo "auth OK" || echo "需登录: lark-cli auth login"
 ```
 
 ---
 
-## 阶段 B：Worker 节点（逐台执行，不要并行）
+## 阶段 B：Worker 节点（逐台执行，可以并行）
 
 **以 Worker (43.134.10.180) 为例，其他6台同理。**
 
@@ -83,7 +88,6 @@ wb lark who 2>/dev/null || echo "需配置: wb lark login"
 
 ### B1 代码同步
 ```bash
-sudo -i
 cd ~/worker-bee 2>/dev/null || git clone https://github.com/JuliaHZhu/worker-bee.git ~/worker-bee
 cd ~/worker-bee
 git stash 2>/dev/null; git pull origin main
@@ -102,8 +106,8 @@ wb --version
 
 ### B3 连通性验证
 ```bash
-# NATS 通不通？
-nc -zv 43.156.129.115 4222
+# NATS 通不通？（python3 内置 socket，不依赖 nc）
+python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('43.156.129.115', 4222)); s.close(); print('NATS OK')"
 
 # SSH 免密到 PM？
 ssh -o ConnectTimeout=3 -o BatchMode=yes ubuntu@43.156.129.115 "echo OK" 2>/dev/null || echo "SSH FAIL — 需 ssh-copy-id"
@@ -138,7 +142,8 @@ ls ~/.worker-bee/mailbox/inbox/ | wc -l
 
 ### B6 飞书 CLI（Worker 节点）
 ```bash
-wb lark who 2>/dev/null || echo "需配置: wb lark login"
+command -v lark-cli && echo "lark-cli OK" || echo "需安装: pip install lark-cli"
+lark-cli contact +search-user --query test >/dev/null 2>&1 && echo "auth OK" || echo "需登录: lark-cli auth login"
 ```
 
 ---
@@ -147,7 +152,6 @@ wb lark who 2>/dev/null || echo "需配置: wb lark login"
 
 ### C1 NATS pub/sub 测试
 ```bash
-sudo -i
 cd ~/worker-bee
 source .venv/bin/activate
 
@@ -183,9 +187,9 @@ ssh ubuntu@43.134.10.180 'ls ~/.worker-bee/mailbox/inbox/ | wc -l'
 
 ### C3 飞书端到端
 ```bash
-# 从任意节点发送测试消息
-wb lark send --target ou_1244443176cd057b1a00a5b16d860873 \
-  --message "🐝 蜂群 $(hostname) $(date +%H:%M) 上线"
+# 从任意节点发送测试消息（需先 export LARK_NOTIFY_TARGET=ou_xxx）
+lark-cli im +messages-send --user-id "$LARK_NOTIFY_TARGET" \
+  --text "🐝 蜂群 $(hostname) $(date +%H:%M) 上线"
 ```
 
 ---
@@ -211,10 +215,10 @@ ssh -o BatchMode=yes ubuntu@43.156.129.115 "echo SSH_OK"
 
 | # | 检查项 | 验证命令 |
 |---|-------|---------|
-| 1 | NATS 在跑且可达 | `nc -zv 43.156.129.115 4222` |
+| 1 | NATS 在跑且可达 | `python3 -c "import socket; s.connect(('43.156.129.115',4222))"` |
 | 2 | 8 节点代码同步 | `git log --oneline -1` 一致 |
 | 3 | SSH 免密 | `ssh ubuntu@PM "echo OK"` |
-| 4 | wb / lark CLI 可用 | `wb --version && wb lark who` |
+| 4 | wb / lark CLI 可用 | `wb --version && lark-cli contact +search-user --query test` |
 | 5 | Listener 在跑 | `pgrep -f listener.py` |
 | 6 | NATS 端到端 | pub/sub 测试成功 |
 | 7 | 飞书通知 | 收到测试消息 |

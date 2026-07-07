@@ -108,8 +108,8 @@ EOF
     sleep 2
   fi
 
-  # 1.4 验证
-  if nc -zv "$PM_IP" "$NATS_PORT" 2>/dev/null; then
+  # 1.4 验证（用 python socket 替代 nc，避免 nc 未安装）
+  if python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('$PM_IP', $NATS_PORT)); s.close()" 2>/dev/null; then
     ok "NATS 监听 ${PM_IP}:${NATS_PORT} ✅"
   else
     err "NATS 端口未通，查看日志:"
@@ -150,7 +150,7 @@ phase2_sync() {
     fi
 
     # 安装/更新依赖
-    remote "$ip" "cd ~/worker-bee && pip install -e . >/dev/null 2>&1" || true
+    remote "$ip" "cd ~/worker-bee && (pip install -e . >/dev/null 2>&1 || pip install -e . --break-system-packages >/dev/null 2>&1)" || true
   done
 
   if ((${#failed[@]})); then
@@ -273,8 +273,17 @@ asyncio.run(main())
 phase6_lark() {
   sep; info "Phase 6 — 飞书通知链路"
   info "从 PM 节点尝试发送测试消息..."
-  remote "$PM_IP" "cd ~/worker-bee && $VENV_PYTHON -m agent.cli lark send --target ou_1244443176cd057b1a00a5b16d860873 --message '🐝 蜂群部署测试 $(date +%H:%M)'" 2>&1 || true
-  warn "飞书消息已发送，请检查是否收到（如未收到请检查各节点 lark token）"
+  # 优先用环境变量 $LARK_NOTIFY_TARGET 指定接收人 open_id，否则跳过
+  local target="${LARK_NOTIFY_TARGET:-}"
+  if [[ -z "$target" ]]; then
+    warn "未设置 LARK_NOTIFY_TARGET（export LARK_NOTIFY_TARGET=ou_xxx），跳过飞书通知测试"
+    return 0
+  fi
+  if remote "$PM_IP" "command -v lark-cli >/dev/null 2>&1" >/dev/null 2>&1; then
+    remote "$PM_IP" "lark-cli im +messages-send --user-id '$target' --text '🐝 蜂群部署测试 $(date +%H:%M)'" 2>&1 || warn "飞书消息发送失败，请检查 lark-cli auth"
+  else
+    warn "PM 上未安装 lark-cli，跳过飞书通知（安装: pip install lark-cli && lark-cli auth login）"
+  fi
 }
 
 # ── 主控 ────────────────────────────────────────────────────────────────────

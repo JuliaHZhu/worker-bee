@@ -106,7 +106,7 @@ EOF
   fi
 else
   # Worker: 检查 NATS 连通 + Listener
-  if nc -zv "$PM_IP" 4222 >/dev/null 2>&1; then
+  if python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('$PM_IP', 4222)); s.close()" >/dev/null 2>&1; then
     ok "NATS  broker 可连通"
   else
     err "NATS broker ($PM_IP:4222) 不可达！"
@@ -133,11 +133,16 @@ fi
 
 # ── 6. 飞书 CLI ─────────────────────────────────────────────────────────────
 sep; info "⑥ 飞书 CLI"
-if wb lark who >/dev/null 2>&1; then
-  ok "飞书 CLI 已配置"
+if command -v lark-cli >/dev/null 2>&1; then
+  ok "lark-cli 已安装"
+  # 轻量验证 auth（不实际发消息）
+  if lark-cli contact +search-user --query test >/dev/null 2>&1; then
+    ok "lark-cli auth 正常"
+  else
+    warn "lark-cli 未登录，运行: lark-cli auth login"
+  fi
 else
-  warn "飞书 CLI 未配置或 token 过期"
-  warn "如需要，运行: wb lark login"
+  warn "lark-cli 未安装（pip install lark-cli）"
 fi
 
 # ── 7. 汇总 ─────────────────────────────────────────────────────────────────
@@ -150,7 +155,7 @@ echo "  wb:     $(which wb 2>/dev/null || echo '未找到')"
 if [[ "$ROLE" == "pm" ]]; then
   echo "  NATS:   $(pgrep -x nats-server >/dev/null 2>&1 && echo '运行中' || echo '未运行')"
 else
-  echo "  NATS:   $(nc -zv "$PM_IP" 4222 >/dev/null 2>&1 && echo '连通' || echo '不可达')"
+  echo "  NATS:   $(python3 -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('$PM_IP', 4222)); s.close()" >/dev/null 2>&1 && echo '连通' || echo '不可达')"
   echo "  Listener: $( [[ -f ~/.worker-bee/listener.pid ]] && kill -0 "$(cat ~/.worker-bee/listener.pid)" 2>/dev/null && echo "运行中(PID $(cat ~/.worker-bee/listener.pid))" || echo '未运行')"
 fi
 echo "  SSH→PM: $(ssh -o ConnectTimeout=3 -o BatchMode=yes "ubuntu@${PM_IP}" "echo OK" 2>/dev/null || echo '失败')"

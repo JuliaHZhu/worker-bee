@@ -946,7 +946,9 @@ def _get_due_jobs_locked() -> List[Dict[str, Any]]:
 
 
 def save_job_output(job_id: str, output: str):
-    """Save job output to file."""
+    """Save job output to file (truncated to MAX_OUTPUT_BYTES)."""
+    MAX_OUTPUT_BYTES = 5 * 1024 * 1024  # 5 MB cap
+
     ensure_dirs()
     job_output_dir = OUTPUT_DIR / job_id
     job_output_dir.mkdir(parents=True, exist_ok=True)
@@ -954,6 +956,13 @@ def save_job_output(job_id: str, output: str):
 
     timestamp = _now().strftime("%Y-%m-%d_%H-%M-%S")
     output_file = job_output_dir / f"{timestamp}.md"
+
+    # Truncate oversized output before writing
+    encoded = output.encode("utf-8")
+    if len(encoded) > MAX_OUTPUT_BYTES:
+        truncated = encoded[:MAX_OUTPUT_BYTES].decode("utf-8", errors="replace")
+        output = truncated + f"\n\n[Output truncated: {len(encoded)} bytes total]"
+        logger.warning("Job %s output truncated (%d bytes)", job_id, len(encoded))
 
     fd, tmp_path = tempfile.mkstemp(dir=str(job_output_dir), suffix='.tmp', prefix='.output_')
     try:

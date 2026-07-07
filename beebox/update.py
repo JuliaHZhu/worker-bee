@@ -57,6 +57,18 @@ def update_bee(
         rc2, _, err2 = ssh_cmd(host, user, key_file, port, install_cmd)
         if rc2 != 0:
             print(f"  [WARN] {server_name}@{host} reinstall failed: {err2}")
+            # Rollback to previous commit on install failure
+            rollback_cmd = f"cd {app_dir} && git checkout $OLD_HEAD"
+            ssh_cmd(host, user, key_file, port, rollback_cmd)
+            print(f"  [ROLLBACK] {server_name}@{host} reverted to $OLD_HEAD")
+            return {
+                "host": host,
+                "name": server_name,
+                "changed": False,
+                "error": f"install failed: {err2}",
+                "rollback": True,
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
     else:
         print(f"  [OK] {server_name}@{host}: up to date")
 

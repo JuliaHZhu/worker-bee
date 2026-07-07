@@ -87,8 +87,21 @@ def main():
         config = gen_config(name, ip, IPS)
         print(f"\n── {name} ({ip}) ──")
 
-        # 1. 安装 nats-server
-        run_ssh(ip, "curl -sfL https://install.x.com/nats-server -o /tmp/install-nats.sh && sudo sh /tmp/install-nats.sh nats-server@latest && nats-server --version")
+        # 1. 安装 nats-server（官方 release + SHA256 校验）
+        #    使用前请将 NATS_SHA256 替换为对应版本的实际 checksum
+        NATS_VERSION = "2.10.24"
+        NATS_SHA256 = "REPLACE_WITH_ACTUAL_SHA256"  # <-- 从官方 release 页面获取
+        install_cmds = (
+            f"set -e && "
+            f"curl -sfL 'https://github.com/nats-io/nats-server/releases/download/v{NATS_VERSION}/nats-server-v{NATS_VERSION}-linux-amd64.tar.gz' "
+            f"-o /tmp/nats-server.tar.gz && "
+            f"echo '{NATS_SHA256}  /tmp/nats-server.tar.gz' | sha256sum -c - && "
+            f"tar -xzf /tmp/nats-server.tar.gz -C /tmp --strip-components=1 && "
+            f"sudo mv /tmp/nats-server /usr/local/bin/nats-server && "
+            f"sudo chmod +x /usr/local/bin/nats-server && "
+            f"nats-server --version"
+        )
+        run_ssh(ip, install_cmds)
 
         # 2. 写配置
         cfg_escaped = config.replace("'", "'\\''")

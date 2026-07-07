@@ -231,14 +231,16 @@ def _guard_path(path: str, write: bool = False) -> str:
     except Exception as e:
         return f"Error: invalid path '{path}': {e}"
 
+    # Read or write: always block sensitive paths
+    if is_write_denied(str(p)):
+        return f"Error: access to sensitive path disallowed: {p}"
+
+    # Write: additionally restrict to workspace and block self-modification
     if write and not _is_inside_workspace(str(p)):
         return (
             f"Error: write outside workspace disallowed. "
             f"Target: {p} | Workspace: {_WORKSPACE}"
         )
-
-    if write and is_write_denied(str(p)):
-        return f"Error: writing to sensitive path disallowed: {p}"
 
     if write and is_self_modify_target(str(p)):
         return (

@@ -23,7 +23,13 @@ echo "=== 角色: $ROLE ==="
 # 1. 代码
 cd ~
 if [[ -d worker-bee/.git ]]; then
-  cd worker-bee && git pull origin main && echo "[OK] 代码已更新"
+  cd worker-bee
+  # 如有本地修改，先 stash 避免 pull 冲突
+  if [[ -n $(git status --short 2>/dev/null) ]]; then
+    echo "[WARN] 本地有修改，stash 后拉取..."
+    git stash push -m "node-setup-auto-stash-$(date +%s)"
+  fi
+  git pull origin main && echo "[OK] 代码已更新"
 else
   git clone "$REPO" worker-bee && cd worker-bee && echo "[OK] 代码已克隆"
 fi

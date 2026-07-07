@@ -126,6 +126,51 @@ def _write_envelope(subject: str, reply_to: str, data: bytes):
     filepath.write_text(json.dumps(envelope, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _handle_feishu_notify(data: bytes):
+    """Handle swarm.notify.feishu message — send via lark-cli if available.
+
+    Only nodes with lark-cli configured (typically PM) will actually send.
+    Others silently skip.
+    """
+    import shutil
+    import subprocess
+
+    lark_cli = shutil.which("lark-cli")
+    if not lark_cli:
+        return  # No lark-cli on this node, silently skip
+
+    try:
+        payload = json.loads(data.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        print("[swarm-listener] ⚠️ Invalid feishu notify payload")
+        return
+
+    target_type = payload.get("target_type", "user")
+    target_id = payload.get("target_id", "")
+    text = payload.get("text", "")
+    sender = payload.get("sender", "unknown")
+
+    if not target_id or not text:
+        print("[swarm-listener] ⚠️ Feishu notify missing target_id or text")
+        return
+
+    if target_type == "group":
+        cmd = [lark_cli, "im", "+messages-send", "--chat-id", target_id, "--text", text]
+    else:
+        cmd = [lark_cli, "im", "+messages-send", "--user-id", target_id, "--text", text]
+
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    try:
+        data = json.loads(result.stdout)
+        if data.get("ok") or data.get("code") == 0:
+            print(f"[swarm-listener] 📨 Feishu notify sent → {target_id} (from {sender})")
+        else:
+            err = data.get("msg", data.get("error", {}).get("message", result.stdout[:200]))
+            print(f"[swarm-listener] ❌ Feishu notify failed: {err}")
+    except json.JSONDecodeError:
+        print(f"[swarm-listener] ❌ lark-cli output unreadable: {result.stdout[:200]}")
+
+
 # ── 主循环 ────────────────────────────────────────────
 
 def _setup_signal_handlers(loop):
@@ -214,6 +259,8 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
                 continue  # 空轮询，继续下一轮
             for msg in msgs:
                 _write_envelope(msg.subject, msg.reply or "", msg.data)
+                if msg.subject == "swarm.notify.feishu":
+                    _handle_feishu_notify(msg.data)
                 await msg.ack()
     except KeyboardInterrupt:
         print("\n[swarm-listener] 收到中断信号，正在 drain ...")

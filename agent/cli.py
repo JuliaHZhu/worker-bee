@@ -844,6 +844,83 @@ def _lark_inbox(args):
         print(f"[{ts}] {sender}: {body}")
 
 
+def _lark_notify(args):
+    """Send a Feishu notification — direct via lark-cli, or delegate via NATS to PM."""
+    import json
+    import subprocess
+    import asyncio
+    from datetime import datetime, timezone
+
+    text = " ".join(args.text) if isinstance(args.text, list) else (args.text or "")
+    if not text.strip():
+        print("Message is empty. Usage: wb lark notify --to <open_id> --text <message>")
+        return
+
+    # Try local lark-cli first
+    lark_cli = shutil.which("lark-cli")
+    if lark_cli:
+        if args.to:
+            cmd = [lark_cli, "im", "+messages-send", "--user-id", args.to, "--text", text]
+        elif args.group:
+            cmd = [lark_cli, "im", "+messages-send", "--chat-id", args.group, "--text", text]
+        else:
+            print("Specify --to <open_id> or --group <chat_id>")
+            return
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        try:
+            data = json.loads(result.stdout)
+            if data.get("ok") or data.get("code") == 0:
+                print("✅ Sent via lark-cli")
+                return
+            else:
+                err = data.get("msg", data.get("error", {}).get("message", result.stdout[:200]))
+                print(f"❌ lark-cli failed: {err}")
+                if args.no_fallback:
+                    return
+        except json.JSONDecodeError:
+            print(f"❌ lark-cli output: {result.stdout[:200]}")
+            if args.no_fallback:
+                return
+        print("Falling back to NATS delegation...")
+    else:
+        if args.no_fallback:
+            print("lark-cli not found and fallback disabled.")
+            return
+        print("lark-cli not found, delegating via NATS...")
+
+    # NATS delegation
+    try:
+        import nats
+    except ModuleNotFoundError:
+        print("nats-py not installed. Cannot delegate via NATS.")
+        return
+
+    nats_url = os.environ.get("SWARM_NATS_URL", "nats://localhost:4222")
+    bee_id = "unknown-bee"
+    try:
+        cfg = json.loads((Path.home() / ".worker-bee" / "config.json").read_text())
+        bee_id = cfg.get("bee_id", "unknown-bee")
+    except Exception:
+        pass
+
+    payload = {
+        "target_type": "user" if args.to else ("group" if args.group else "user"),
+        "target_id": args.to or args.group or "",
+        "text": text,
+        "sender": bee_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+    async def _publish():
+        nc = await nats.connect(nats_url, connect_timeout=5)
+        await nc.publish("swarm.notify.feishu", json.dumps(payload).encode())
+        await nc.drain()
+        print("📨 Delegated to PM via NATS (swarm.notify.feishu)")
+
+    asyncio.run(_publish())
+
+
 def _add_lark_parser(sub):
     lark = sub.add_parser("lark", help="Feishu/Lark operations — resolve names to IDs")
     lark_sub = lark.add_subparsers(dest="lark_cmd", required=True)
@@ -867,6 +944,13 @@ def _add_lark_parser(sub):
     p.add_argument("--group", default="", help="Group name")
     p.add_argument("--limit", type=int, default=20, help="Max messages (default: 20)")
     p.set_defaults(func=_lark_inbox)
+
+    p = lark_sub.add_parser("notify", help="Send notification — local lark-cli or NATS delegate to PM")
+    p.add_argument("--to", default="", help="Target user open_id")
+    p.add_argument("--group", default="", help="Target group chat_id")
+    p.add_argument("--text", nargs="+", required=True, help="Message text")
+    p.add_argument("--no-fallback", action="store_true", help="Disable NATS delegation when local lark-cli fails")
+    p.set_defaults(func=_lark_notify)
 
     p = lark_sub.add_parser("serve", help="Start Feishu Lark webhook bot server")
     p.add_argument("--port", type=int, default=8080, help="Webhook server port (default: 8080)")
@@ -1214,6 +1298,7 @@ def main(argv=None):
             "  wb lark who 张三\n"
             "  wb lark chats\n"
             "  wb lark send --to 张三 hello\n"
+            "  wb lark notify --to ou_xxx --text \"蜂群上线\"\n"
             "  wb deck mode\n"
             "  wb deck focus\n"
             "  wb deck add fs_write_file\n"

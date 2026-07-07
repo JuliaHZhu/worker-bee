@@ -7,16 +7,23 @@ PM_IP="43.156.129.115"
 ROLE="${1:-}"
 REPO="https://github.com/JuliaHZhu/worker-bee.git"
 
-# 自动识别角色
-[[ -z "$ROLE" ]] && ROLE=$(hostname -I | awk '{print $1}' | sed \
-  -e 's/43.156.129.115/pm/' \
-  -e 's/43.134.10.180/worker/' \
-  -e 's/43.134.232.158/aristotle/' \
-  -e 's/43.163.112.179/skeleton/' \
-  -e 's/129.226.202.39/world/' \
-  -e 's/43.163.91.125/cardmaster/' \
-  -e 's/43.134.68.111/strategy/' \
-  -e 's/43.160.206.124/centurion/')
+# 自动识别角色（遍历所有 IP，匹配任意一个）
+if [[ -z "$ROLE" ]]; then
+  ROLE="unknown"
+  for ip in $(hostname -I 2>/dev/null); do
+    case "$ip" in
+      43.156.129.115) ROLE="pm" ;;
+      43.134.10.180)  ROLE="worker" ;;
+      43.134.232.158) ROLE="aristotle" ;;
+      43.163.112.179) ROLE="skeleton" ;;
+      129.226.202.39) ROLE="world" ;;
+      43.163.91.125)  ROLE="cardmaster" ;;
+      43.134.68.111)  ROLE="strategy" ;;
+      43.160.206.124) ROLE="centurion" ;;
+    esac
+    [[ "$ROLE" != "unknown" ]] && break
+  done
+fi
 
 echo "=== 角色: $ROLE ==="
 

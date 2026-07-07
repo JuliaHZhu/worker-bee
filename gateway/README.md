@@ -1,84 +1,100 @@
-# Feishu Gateway
+# Gateway — External Messaging Bridge
 
-飞书 ↔ Worker-Bee 双向桥接。补全蜂群架构中缺失的"收消息"能力。
+Hermes-style minimal gateway for worker-bee. Bridges external messaging
+platforms (Feishu/Lark, etc.) into the internal Agent / NATS layer.
 
-## 背景
-
-- `lark-cli` 扫码认证 = **只能发消息**（客户端模式）
-- 飞书 webhook 事件订阅 = **能收消息**（服务端模式）
-- Gateway 把两者桥接起来，让蜂群可以"听到"飞书用户在说什么
-
-## 架构
+## Architecture
 
 ```
-[你在飞书发消息给 Bot]
-        ↓
-[飞书服务器] —HTTP POST→ [Gateway on PM:8080]
-        ↓
-[Gateway] publish → NATS: swarm.incoming.feishu
-        ↓
-[蜂群任意节点] subscribe → 走 Agent 循环处理
-        ↓
-[处理结果] publish → NATS: swarm.outgoing.feishu
-        ↓
-[Gateway] 调用飞书 API 发回复
-        ↓
-[飞书] 你收到回复
+┌─────────────┐     ┌───────────────┐     ┌─────────────────┐
+│   Feishu    │────▶│ FeishuAdapter │────▶│  MessageEvent   │
+│  Webhook    │     │  (web server) │     │ (normalized)    │
+└─────────────┘     └───────────────┘     └─────────────────┘
+                                                   │
+                                                   ▼
+                                          ┌─────────────────┐
+                                          │  GatewayRunner  │
+                                          │  route_incoming │
+                                          └─────────────────┘
+                                                   │
+                      ┌────────────────────────────┼────────────────────────────┐
+                      │                            ▼                            │
+                      ▼                    ┌─────────────────┐                  ▼
+              ┌───────────────┐            │ process_with_agent              ┌───────────────┐
+              │  NATS layer   │            │ (Agent / echo)  │               │  Reply back   │
+              │  (optional)   │            └─────────────────┘               │  to Feishu    │
+              └───────────────┘                      │                        └───────────────┘
+                                                     ▼
+                                          ┌─────────────────┐
+                                          │  SendResult     │
+                                          └─────────────────┘
 ```
 
-## 配置
+## Key Components
 
-创建 `~/.worker-bee/gateway.json`：
+| File | Role |
+|------|------|
+| `base.py` | `BasePlatformAdapter` ABC, `MessageEvent`, `SendResult` |
+| `platform_registry.py` | `PlatformRegistry` — self-registration pattern |
+| `run.py` | `GatewayRunner` — lifecycle + message routing |
+| `config.py` | `GatewayConfig` — loads from `~/.worker-bee/config.json` |
+| `platforms/feishu.py` | Feishu webhook receiver + API sender |
+
+## Adding a New Platform
+
+```python
+from gateway.base import BasePlatformAdapter, MessageEvent, SendResult
+from gateway.platform_registry import PlatformEntry, platform_registry
+
+class MyAdapter(BasePlatformAdapter):
+    def start(self): ...
+    def stop(self): ...
+    def send(self, event, text) -> SendResult: ...
+
+platform_registry.register(PlatformEntry(
+    name="myplatform",
+    label="My Platform",
+    adapter_factory=lambda cfg: MyAdapter(cfg),
+    check_fn=lambda: True,
+))
+```
+
+## Configuration
+
+In `~/.worker-bee/config.json`:
 
 ```json
 {
-  "app_id": "cli_xxxxxxxxxxxxxxxx",
-  "app_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  "gateway": {
+    "enabled": true,
+    "platforms": {
+      "feishu": {
+        "enabled": true,
+        "port": 8080,
+        "host": "0.0.0.0",
+        "extra": {
+          "verification_token": "your_feishu_token"
+        }
+      }
+    }
+  }
 }
 ```
 
-> 获取方式：飞书开放平台 https://open.feishu.cn/app/ → 创建企业自建应用（机器人）→ 凭证与基础信息
-
-## 运行
+## CLI
 
 ```bash
-python gateway/feishu_gateway.py
+wb gateway start   # Start the gateway server
 ```
 
-或后台运行：
+## Tests
 
 ```bash
-nohup python gateway/feishu_gateway.py >> ~/.worker-bee/gateway.log 2>&1 &
+python -m pytest tests/test_gateway.py -v
 ```
 
-## 飞书应用设置
+17 tests covering registry, config, runner lifecycle, and Feishu webhook smoke tests.
 
-1. 事件订阅 → 请求地址：`http://43.156.129.115:8080/webhook/feishu`
-2. 添加事件：`im.message.receive_v1`（单聊消息）
-3. 权限管理：开通 `im:message:send_as_bot`
-4. 发布版本 → 审核通过
-5. 在飞书里找到这个机器人，发消息测试
+## Design Reference
 
-## 测试
-
-发消息给机器人后，检查 PM 上的 Gateway 日志应有输出：
-
-```
-[GW] From ou_xxxxx: 你好
-```
-
-同时任意 listener 节点可查看 NATS 消息：
-
-```bash
-python -c "
-import asyncio, json
-from nats import connect
-
-async def t():
-    nc = await connect('nats://43.156.129.115:4222')
-    sub = await nc.subscribe('swarm.incoming.feishu')
-    async for m in sub.messages:
-        print(json.loads(m.data))
-asyncio.run(t())
-"
-```
+Architecture pattern adapted from [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) gateway layer.

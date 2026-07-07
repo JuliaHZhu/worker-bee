@@ -6,6 +6,7 @@ and routes replies back to the originating platform.
 """
 import asyncio
 import logging
+import threading
 from typing import Any, Dict, Optional
 
 from gateway.base import BasePlatformAdapter, MessageEvent, SendResult
@@ -22,6 +23,7 @@ class GatewayRunner:
         self.config = config
         self.adapters: Dict[str, BasePlatformAdapter] = {}
         self._running = False
+        self._lock = threading.Lock()
 
     def start(self) -> None:
         """Start all enabled adapters.
@@ -29,40 +31,44 @@ class GatewayRunner:
         Synchronous entry point — each adapter decides internally whether
         it runs in a background thread or within the current event loop.
         """
-        if self._running:
-            return
-        self._running = True
+        with self._lock:
+            if self._running:
+                return
+            self._running = True
 
-        for name, pcfg in self.config.platforms.items():
-            if not pcfg.enabled:
-                logger.info("Platform %s disabled, skipping", name)
-                continue
+            for name, pcfg in self.config.platforms.items():
+                if not pcfg.enabled:
+                    logger.info("Platform %s disabled, skipping", name)
+                    continue
 
-            adapter = platform_registry.create_adapter(name, pcfg)
-            if adapter is None:
-                logger.warning("Platform %s not available (check dependencies)", name)
-                continue
+                adapter = platform_registry.create_adapter(name, pcfg)
+                if adapter is None:
+                    logger.warning("Platform %s not available (check dependencies)", name)
+                    continue
 
-            adapter.gateway_runner = self
-            self.adapters[name] = adapter
-            try:
-                adapter.start()
-                logger.info("Platform adapter started: %s", name)
-            except Exception as exc:
-                logger.exception("Failed to start adapter %s: %s", name, exc)
+                adapter.gateway_runner = self
+                self.adapters[name] = adapter
+                try:
+                    adapter.start()
+                    logger.info("Platform adapter started: %s", name)
+                except Exception as exc:
+                    logger.exception("Failed to start adapter %s: %s", name, exc)
 
     def stop(self) -> None:
         """Gracefully stop all adapters."""
-        if not self._running:
-            return
-        self._running = False
-        for name, adapter in self.adapters.items():
+        with self._lock:
+            if not self._running:
+                return
+            self._running = False
+            adapters_snapshot = list(self.adapters.items())
+            self.adapters.clear()
+
+        for name, adapter in adapters_snapshot:
             try:
                 adapter.stop()
                 logger.info("Platform adapter stopped: %s", name)
             except Exception as exc:
                 logger.exception("Error stopping adapter %s: %s", name, exc)
-        self.adapters.clear()
 
     def route_incoming(self, event: MessageEvent) -> None:
         """Called by an adapter when a new message arrives.
@@ -78,7 +84,8 @@ class GatewayRunner:
             logger.exception("Agent processing failed: %s", exc)
             response = "⚠️ 处理失败，请稍后重试。"
 
-        source = self.adapters.get(event.platform)
+        with self._lock:
+            source = self.adapters.get(event.platform)
         if source is None:
             logger.error("No adapter for platform %s to send reply", event.platform)
             return
@@ -101,7 +108,8 @@ class GatewayRunner:
 
     def send_to_platform(self, platform: str, event: MessageEvent, text: str) -> SendResult:
         """Cross-platform send — route a message to a specific platform adapter."""
-        adapter = self.adapters.get(platform)
+        with self._lock:
+            adapter = self.adapters.get(platform)
         if adapter is None:
             return SendResult(success=False, error=f"Platform {platform} not loaded")
         return adapter.send(event, text)

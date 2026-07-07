@@ -1043,7 +1043,9 @@ def _deck_log(args):
 
 
 def _gateway_start(args):
-    import asyncio
+    import signal
+    import sys
+    import time
     from gateway.config import GatewayConfig
     from gateway.run import GatewayRunner
     cfg = GatewayConfig.load()
@@ -1051,15 +1053,24 @@ def _gateway_start(args):
         print("Gateway is disabled. Add 'gateway.enabled: true' to ~/.worker-bee/config.json")
         return
     runner = GatewayRunner(cfg)
+    _shutdown_requested = False
+
+    def _on_signal(signum, frame):
+        nonlocal _shutdown_requested
+        _shutdown_requested = True
+        print(f"\nReceived signal {signum}, shutting down...")
+
+    signal.signal(signal.SIGTERM, _on_signal)
+    signal.signal(signal.SIGINT, _on_signal)
+
     try:
         runner.start()
         print(f"Gateway started with platforms: {list(runner.adapters.keys())}")
-        print("Press Ctrl+C to stop")
-        while True:
-            import time
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("\nShutting down...")
+        print("Press Ctrl+C or send SIGTERM to stop")
+        while not _shutdown_requested:
+            time.sleep(0.5)
+    except Exception as exc:
+        print(f"Gateway error: {exc}")
     finally:
         runner.stop()
         print("Gateway stopped.")

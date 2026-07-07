@@ -36,9 +36,9 @@ platforms (Feishu/Lark, etc.) into the internal Agent / NATS layer.
 |------|------|
 | `base.py` | `BasePlatformAdapter` ABC, `MessageEvent`, `SendResult` |
 | `platform_registry.py` | `PlatformRegistry` — self-registration pattern |
-| `run.py` | `GatewayRunner` — lifecycle + message routing |
+| `run.py` | `GatewayRunner` — lifecycle + message routing (thread-safe) |
 | `config.py` | `GatewayConfig` — loads from `~/.worker-bee/config.json` |
-| `platforms/feishu.py` | Feishu webhook receiver + API sender |
+| `platforms/feishu.py` | Feishu webhook receiver + API sender (self-contained) |
 
 ## Adding a New Platform
 
@@ -73,7 +73,9 @@ In `~/.worker-bee/config.json`:
         "port": 8080,
         "host": "0.0.0.0",
         "extra": {
-          "verification_token": "your_feishu_token"
+          "verification_token": "your_feishu_token",
+          "app_id": "cli_xxx",
+          "app_secret": "xxx"
         }
       }
     }
@@ -84,7 +86,7 @@ In `~/.worker-bee/config.json`:
 ## CLI
 
 ```bash
-wb gateway start   # Start the gateway server
+wb gateway start   # Start the gateway server (handles SIGTERM + Ctrl+C)
 ```
 
 ## Tests

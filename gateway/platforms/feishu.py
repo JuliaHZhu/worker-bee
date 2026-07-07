@@ -1,12 +1,15 @@
 """Feishu/Lark platform adapter — webhook receiver + API sender.
 
-Uses stdlib http.server (zero new dependencies) and reuses token / reply
-logic from agent.lark_cli.
+Uses stdlib http.server (zero new dependencies) and self-implements
+token / reply logic so it has no dependency on agent.lark_cli internals.
 """
 import json
 import logging
 import os
 import threading
+import time
+import urllib.error
+import urllib.request
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Any, Dict, Optional
 
@@ -15,8 +18,65 @@ from gateway.platform_registry import PlatformEntry, platform_registry
 
 logger = logging.getLogger("gateway.feishu")
 
-# Reuse lark_cli utilities (token cache, reply helper)
-from agent.lark_cli import _get_feishu_token, _send_reply
+# ── Self-contained Feishu API helpers ────────────────────────────────────────
+
+_feishu_token: Optional[str] = None
+_feishu_token_expires: float = 0
+
+
+def _get_feishu_token(app_id: str, app_secret: str, base_url: str = "https://open.feishu.cn") -> Optional[str]:
+    global _feishu_token, _feishu_token_expires
+    now = time.time()
+    if _feishu_token and now < _feishu_token_expires - 60:
+        return _feishu_token
+    if not app_id or not app_secret:
+        return None
+    payload = json.dumps({"app_id": app_id, "app_secret": app_secret}).encode()
+    req = urllib.request.Request(
+        f"{base_url}/open-apis/auth/v3/tenant_access_token/internal",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+        if data.get("code") == 0:
+            _feishu_token = data["tenant_access_token"]
+            _feishu_token_expires = now + data.get("expire", 7200)
+            return _feishu_token
+    except Exception:
+        pass
+    return None
+
+
+def _send_reply(
+    receive_id: str,
+    receive_id_type: str,
+    content: str,
+    token: str,
+    msg_type: str = "text",
+    base_url: str = "https://open.feishu.cn",
+) -> dict:
+    api_content = json.dumps({"text": content}, ensure_ascii=False) if msg_type == "text" else content
+    body = json.dumps(
+        {"receive_id": receive_id, "msg_type": msg_type, "content": api_content},
+        ensure_ascii=False,
+    ).encode()
+
+    req = urllib.request.Request(
+        f"{base_url}/open-apis/im/v1/messages?receive_id_type={receive_id_type}",
+        data=body,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return {"status": resp.status, "data": json.loads(resp.read().decode())}
+    except urllib.error.HTTPError as e:
+        return {"error": f"HTTP {e.code}: {e.read().decode()}", "code": e.code}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 class _FeishuWebhookHandler(BaseHTTPRequestHandler):
@@ -126,10 +186,11 @@ class FeishuAdapter(BasePlatformAdapter):
         self._thread: Optional[threading.Thread] = None
         self._port = getattr(config, "port", 8080)
         self._host = getattr(config, "host", "0.0.0.0")
-        self._verification_token = os.environ.get("FEISHU_VERIFICATION_TOKEN", "")
         extra = getattr(config, "extra", {}) or {}
-        if "verification_token" in extra:
-            self._verification_token = extra["verification_token"]
+        self._verification_token = extra.get("verification_token", os.environ.get("FEISHU_VERIFICATION_TOKEN", ""))
+        self._app_id = extra.get("app_id", os.environ.get("FEISHU_APP_ID", ""))
+        self._app_secret = extra.get("app_secret", os.environ.get("FEISHU_APP_SECRET", ""))
+        self._base_url = extra.get("base_url", os.environ.get("FEISHU_BASE_URL", "https://open.feishu.cn"))
 
     def start(self) -> None:
         _FeishuWebhookHandler.adapter = self
@@ -163,7 +224,11 @@ class FeishuAdapter(BasePlatformAdapter):
         if not rid:
             return SendResult(success=False, error="Missing recipient ID")
 
-        result = _send_reply(rid, rid_type, text)
+        token = _get_feishu_token(self._app_id, self._app_secret, self._base_url)
+        if not token:
+            return SendResult(success=False, error="Unable to obtain tenant_access_token")
+
+        result = _send_reply(rid, rid_type, text, token, base_url=self._base_url)
         if "error" in result:
             return SendResult(success=False, error=result["error"])
         return SendResult(success=True, message_id=result.get("data", {}).get("message_id"))

@@ -1042,6 +1042,36 @@ def _deck_log(args):
     print(json.dumps(dm.get_log(), ensure_ascii=False, indent=2))
 
 
+def _gateway_start(args):
+    import asyncio
+    from gateway.config import GatewayConfig
+    from gateway.run import GatewayRunner
+    cfg = GatewayConfig.load()
+    if not cfg.enabled:
+        print("Gateway is disabled. Add 'gateway.enabled: true' to ~/.worker-bee/config.json")
+        return
+    runner = GatewayRunner(cfg)
+    try:
+        runner.start()
+        print(f"Gateway started with platforms: {list(runner.adapters.keys())}")
+        print("Press Ctrl+C to stop")
+        while True:
+            import time
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\nShutting down...")
+    finally:
+        runner.stop()
+        print("Gateway stopped.")
+
+
+def _add_gateway_parser(sub):
+    gw = sub.add_parser("gateway", help="Gateway — external messaging platform bridge")
+    gw_sub = gw.add_subparsers(dest="gateway_cmd", required=True)
+    p = gw_sub.add_parser("start", help="Start the gateway server")
+    p.set_defaults(func=_gateway_start)
+
+
 def _add_deck_parser(sub):
     deck = sub.add_parser("deck", help="Deck management — tool boundary control")
     deck_sub = deck.add_subparsers(dest="deck_cmd", required=True)
@@ -1314,6 +1344,7 @@ def main(argv=None):
     _add_swarm_parser(sub)
     _add_workspace_parser(sub)
     _add_lark_parser(sub)
+    _add_gateway_parser(sub)
     _add_deck_parser(sub)
     _add_skill_parser(sub)
     _add_cron_parser(sub)

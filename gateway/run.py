@@ -30,6 +30,18 @@ class GatewayRunner:
         self.adapters: Dict[str, BasePlatformAdapter] = {}
         self._running = False
         self._lock = threading.Lock()
+        self._agent = None
+        # Load agent config from the same source as the rest of worker-bee
+        self._agent_config = self._load_agent_config()
+
+    def _load_agent_config(self) -> dict:
+        import json
+        from pathlib import Path
+        cfg_path = Path.home() / ".worker-bee" / "config.json"
+        try:
+            return json.loads(cfg_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
 
     def start(self) -> None:
         """Start all enabled adapters.
@@ -145,13 +157,25 @@ class GatewayRunner:
         """Dispatch event to the Agent / NATS layer.
 
         First attempts NATS request/reply to the swarm; falls back to a
-        local echo if NATS is unavailable or nats-py is not installed.
+        local agent if NATS is unavailable or nats-py is not installed.
         """
         try:
             return asyncio.run(self._dispatch_via_nats(event))
         except Exception as exc:
-            logger.warning("NATS dispatch failed (%s), falling back to echo", exc)
-            return f"Echo: {event.text}"
+            logger.warning("NATS dispatch failed (%s), falling back to local agent", exc)
+            return self._run_local_agent(event)
+
+    def _run_local_agent(self, event: MessageEvent) -> str:
+        """Run local AIAgent and return reply text."""
+        try:
+            if self._agent is None:
+                from agent.agent import AIAgent
+                self._agent = AIAgent(self._agent_config)
+            reply = self._agent.run([{"role": "user", "content": event.text}])
+            return reply
+        except Exception as exc:
+            logger.error("Local agent failed: %s", exc, exc_info=True)
+            return f"[agent error] {exc}"
 
     def send_to_platform(self, platform: str, event: MessageEvent, text: str) -> SendResult:
         """Cross-platform send — route a message to a specific platform adapter."""

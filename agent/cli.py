@@ -1043,11 +1043,13 @@ def _deck_log(args):
 
 
 def _gateway_start(args):
+    import logging
     import signal
     import sys
     import time
     from gateway.config import GatewayConfig
     from gateway.run import GatewayRunner
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     cfg = GatewayConfig.load()
     if not cfg.enabled:
         print("Gateway is disabled. Add 'gateway.enabled: true' to ~/.worker-bee/config.json")

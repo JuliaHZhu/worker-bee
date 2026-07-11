@@ -234,7 +234,12 @@ class FeishuAdapter(BasePlatformAdapter):
         rid = sender_open_id if chat_type == "p2p" else chat_id
 
         if not rid:
+            logger.warning("Feishu send failed: missing recipient ID (chat_type=%s chat_id=%s sender_open_id=%s)", chat_type, chat_id, sender_open_id)
             return SendResult(success=False, error="Missing recipient ID")
+
+        if not self._app_id or not self._app_secret:
+            logger.warning("Feishu send failed: app_id or app_secret not configured")
+            return SendResult(success=False, error="Missing app_id or app_secret")
 
         token = _get_feishu_token(self._app_id, self._app_secret, self._base_url)
         if not token:

@@ -172,6 +172,7 @@ class GatewayRunner:
                 from agent.agent import AIAgent
                 self._agent = AIAgent(self._agent_config)
             reply = self._agent.run([{"role": "user", "content": event.text}])
+            logger.info("Local agent reply: %.200s", reply)
             return reply
         except Exception as exc:
             logger.error("Local agent failed: %s", exc, exc_info=True)

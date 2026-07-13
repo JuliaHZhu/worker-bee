@@ -1,18 +1,48 @@
 #!/bin/bash
 # 两台机的 NATS 集群配置
 # 配置来源：环境变量 BEE_01_IP / BEE_02_IP（默认 127.0.0.1）
+# 推荐：使用 beebox/setup_nats.py 生成完整集群配置（支持 8 台机）
 
 BEE_01_IP="${BEE_01_IP:-127.0.0.1}"
 BEE_02_IP="${BEE_02_IP:-127.0.0.1}"
 
-# NATS 认证（可选，未设置则允许匿名）
+# NATS 认证：优先从 config.yaml 读取，回退到环境变量
+_read_yaml_auth() {
+  python3 -c "
+import yaml, sys
+from pathlib import Path
+for p in [Path('config.yaml'), Path.home() / '.worker-bee' / 'config.yaml']:
+    if p.exists():
+        try:
+            cfg = yaml.safe_load(p.read_text()) or {}
+            auth = cfg.get('nats_auth', {})
+            user = auth.get('user', '')
+            password = auth.get('password', '')
+            if user:
+                print(user)
+                print(password)
+                sys.exit(0)
+        except Exception:
+            pass
+sys.exit(1)
+" 2>/dev/null
+}
+
+if [[ -z "${NATS_USER:-}" ]]; then
+  mapfile -t _auth < <(_read_yaml_auth)
+  if [[ ${#_auth[@]} -ge 2 ]]; then
+    NATS_USER="${_auth[0]}"
+    NATS_PASSWORD="${_auth[1]}"
+  fi
+fi
+
 NATS_USER="${NATS_USER:-}"
 NATS_PASSWORD="${NATS_PASSWORD:-}"
 
 if [[ -n "$NATS_USER" && -n "$NATS_PASSWORD" ]]; then
-  AUTH_BLOCK="authorization {\n  user: $NATS_USER\n  password: $NATS_PASSWORD\n  timeout: 2\n}"
+  AUTH_BLOCK="authorization {\\n  user: $NATS_USER\\n  password: $NATS_PASSWORD\\n  timeout: 2\\n}"
 else
-  AUTH_BLOCK="# authorization 未配置（NATS_USER / NATS_PASSWORD 未设置）"
+  AUTH_BLOCK="# authorization 未配置（config.yaml 的 nats_auth 或环境变量 NATS_USER / NATS_PASSWORD 未设置）"
 fi
 
 echo "生成 NATS 配置 — bee-01: $BEE_01_IP, bee-02: $BEE_02_IP"

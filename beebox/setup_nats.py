@@ -9,6 +9,7 @@
 """
 
 import subprocess, sys, os
+from pathlib import Path
 
 # Load IPs from beebox.nodes configuration (env -> yaml -> fallback)
 def _load_ips() -> list[str]:
@@ -37,8 +38,41 @@ def _load_ips() -> list[str]:
 IPS = _load_ips()
 SSH_USER = "ubuntu"
 
+def _load_nats_auth() -> tuple[str | None, str | None]:
+    """Read NATS credentials from config.yaml or env vars."""
+    import yaml
+    for p in [Path("config.yaml"), Path.home() / ".worker-bee" / "config.yaml"]:
+        if not p.exists():
+            continue
+        try:
+            with open(p) as f:
+                cfg = yaml.safe_load(f) or {}
+            auth = cfg.get("nats_auth", {})
+            user = auth.get("user", "")
+            password = auth.get("password", "")
+            if user:
+                return user, password
+        except Exception:
+            pass
+    user = os.getenv("NATS_USER", "")
+    password = os.getenv("NATS_PASSWORD", "")
+    if user:
+        return user, password
+    return None, None
+
+
 def gen_config(node_name: str, node_ip: str, all_ips: list[str]) -> str:
     routes = ",\n    ".join(f"nats://{ip}:6222" for ip in all_ips)
+    nats_user, nats_pass = _load_nats_auth()
+    auth_block = ""
+    if nats_user and nats_pass:
+        auth_block = f"""authorization {{
+  user: {nats_user}
+  password: {nats_pass}
+  timeout: 2
+}}
+
+"""
     return f"""# NATS 集群 — {node_name}
 server_name: "{node_name}"
 port: 4222
@@ -46,7 +80,7 @@ http_port: 8222
 max_payload: 1MB
 max_pending: 10MB
 
-cluster {{
+{auth_block}cluster {{
   name: worker-bee-cluster
   listen: 0.0.0.0:6222
   routes = [

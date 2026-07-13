@@ -58,14 +58,43 @@ class GatewayConfig:
 
     @classmethod
     def load(cls, path: Optional[Path] = None) -> "GatewayConfig":
-        """Load from ~/.worker-bee/config.json or the given path."""
-        if path is None:
-            path = Path.home() / ".worker-bee" / "config.json"
-        if not path.exists():
-            return cls(enabled=False)
+        """Load gateway config.
+
+        Resolution order:
+          1. Explicit ``path`` if given.
+          2. ``config.yaml`` (cwd or ~/.worker-bee/) containing a ``gateway`` key.
+          3. ``~/.worker-bee/config.json`` legacy fallback.
+        """
+        if path is not None:
+            return cls._load_from_path(path)
+
+        # 1. Try unified config.yaml
+        yaml_path = _find_config_yaml()
+        if yaml_path is not None:
+            try:
+                with open(yaml_path) as f:
+                    data = yaml.safe_load(f) or {}
+                if "gateway" in data:
+                    logger.info("Loaded gateway config from %s", yaml_path)
+                    return cls.from_dict(data["gateway"])
+            except Exception as exc:
+                logger.warning("Failed to load gateway config from %s: %s", yaml_path, exc)
+
+        # 2. Legacy fallback: ~/.worker-bee/config.json
+        json_path = Path.home() / ".worker-bee" / "config.json"
+        if json_path.exists():
+            return cls._load_from_path(json_path)
+
+        return cls(enabled=False)
+
+    @classmethod
+    def _load_from_path(cls, path: Path) -> "GatewayConfig":
         try:
             with open(path) as f:
-                data = json.load(f)
+                if path.suffix in (".yaml", ".yml"):
+                    data = yaml.safe_load(f) or {}
+                else:
+                    data = json.load(f)
             return cls.from_dict(data.get("gateway"))
         except Exception as exc:
             logger.warning("Failed to load gateway config from %s: %s", path, exc)

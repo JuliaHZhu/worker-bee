@@ -1055,7 +1055,7 @@ def _gateway_start(args):
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     cfg = GatewayConfig.load()
     if not cfg.enabled:
-        print("Gateway is disabled. Add 'gateway.enabled: true' to ~/.worker-bee/config.json")
+        print("Gateway is disabled. Add 'gateway.enabled: true' to config.yaml (or ~/.worker-bee/config.json)")
         return
     runner = GatewayRunner(cfg)
     _shutdown_requested = False

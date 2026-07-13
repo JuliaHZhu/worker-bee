@@ -22,6 +22,29 @@ DEFAULT_SWARM_NATS_URL = os.getenv("SWARM_NATS_URL", "nats://localhost:4222")
 SWARM_INCOMING_SUBJECT = "swarm.incoming.gateway"
 
 
+def _nats_auth_from_config() -> tuple[Optional[str], Optional[str]]:
+    """Read NATS credentials from config.yaml (nats_auth section)."""
+    from pathlib import Path
+    try:
+        import yaml
+    except ModuleNotFoundError:
+        return None, None
+    for p in [Path("config.yaml"), Path.home() / ".worker-bee" / "config.yaml"]:
+        if not p.exists():
+            continue
+        try:
+            with open(p) as f:
+                cfg = yaml.safe_load(f) or {}
+            auth = cfg.get("nats_auth", {})
+            user = auth.get("user", "")
+            password = auth.get("password", "")
+            if user:
+                return user, password
+        except Exception:
+            pass
+    return None, None
+
+
 class GatewayRunner:
     """Manages the lifecycle of all platform adapters and routes messages."""
 
@@ -130,10 +153,14 @@ class GatewayRunner:
             raise RuntimeError("nats-py not installed")
 
         nats_url = os.getenv("SWARM_NATS_URL", DEFAULT_SWARM_NATS_URL)
-        connect_kwargs = {"connect_timeout": 10}
-        if os.getenv("NATS_USER"):
-            connect_kwargs["user"] = os.getenv("NATS_USER")
-            connect_kwargs["password"] = os.getenv("NATS_PASSWORD", "")
+        connect_kwargs: Dict[str, Any] = {"connect_timeout": 10}
+        nats_user = os.getenv("NATS_USER")
+        nats_password = os.getenv("NATS_PASSWORD", "")
+        if not nats_user:
+            nats_user, nats_password = _nats_auth_from_config()
+        if nats_user:
+            connect_kwargs["user"] = nats_user
+            connect_kwargs["password"] = nats_password or ""
         nc = await nats.connect(nats_url, **connect_kwargs)
         try:
             payload = json.dumps(

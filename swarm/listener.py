@@ -73,7 +73,26 @@ def _get_bee_id() -> str:
     except Exception:
         return "unknown-bee"
 
-# ── 心跳 ────────────────────────────────────────────────────
+
+def _load_nats_auth_from_config() -> tuple[str | None, str | None]:
+    """Read nats_auth from config.yaml if present."""
+    for p in [Path("config.yaml"), Path.home() / ".worker-bee" / "config.yaml"]:
+        if not p.exists():
+            continue
+        try:
+            import yaml
+            with open(p) as f:
+                cfg = yaml.safe_load(f) or {}
+            auth = cfg.get("nats_auth", {})
+            user = auth.get("user", "")
+            password = auth.get("password", "")
+            if user:
+                return user, password
+        except Exception:
+            pass
+    return None, None
+
+# ── 心跳 ────────────────────────────────────────────────────────────────────
 
 async def _heartbeat_loop(nc, bee_id: str):
     """每 30 秒发送一次心跳，包含当前能力清单。"""
@@ -242,9 +261,16 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
         "connect_timeout": NATS_TIMEOUT,
         "max_reconnect_attempts": -1,  # 无限重连
     }
-    if os.environ.get("NATS_USER"):
-        connect_kwargs["user"] = os.environ["NATS_USER"]
-        connect_kwargs["password"] = os.environ.get("NATS_PASSWORD", "")
+    nats_user = os.environ.get("NATS_USER")
+    nats_password = os.environ.get("NATS_PASSWORD", "")
+    if not nats_user:
+        cfg_user, cfg_pass = _load_nats_auth_from_config()
+        if cfg_user:
+            nats_user = cfg_user
+            nats_password = cfg_pass
+    if nats_user:
+        connect_kwargs["user"] = nats_user
+        connect_kwargs["password"] = nats_password
     nc = await nats.connect(nats_url, **connect_kwargs)
 
     # ── JetStream 初始化 ──

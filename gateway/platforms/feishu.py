@@ -207,10 +207,9 @@ class FeishuAdapter(BasePlatformAdapter):
 
     def start(self) -> None:
         if not self._verification_token:
-            logger.error(
-                "Feishu webhook started WITHOUT verification_token! "
-                "Any client can send forged events. Set FEISHU_VERIFICATION_TOKEN env var or "
-                "config.extra.verification_token to fix this."
+            raise RuntimeError(
+                "Feishu webhook cannot start without verification_token. "
+                "Set FEISHU_VERIFICATION_TOKEN env var or config.extra.verification_token."
             )
         # Create a per-instance handler subclass so multiple adapters
         # can coexist without stomping on class-level state.

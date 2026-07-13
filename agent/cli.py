@@ -31,6 +31,8 @@ import os
 import shutil
 import sys
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
 # Ensure repo root is importable when running in dev mode
 _REPO_ROOT = Path(__file__).parent.parent
@@ -50,37 +52,37 @@ def _job_create(args):
         description=args.description or "",
         estimated_cycles=args.cycles,
     )
-    print(out)
+    logger.info(out)
 
 
 def _job_ls(args):
     from tools.job_probe import probe_status
     out = probe_status()
-    print(out)
+    logger.info(out)
 
 
 def _job_status(args):
     from tools.job_probe import probe_status
     out = probe_status(job_id=args.job_id)
-    print(out)
+    logger.info(out)
 
 
 def _job_handoff(args):
     from tools.job_probe import probe_handoff
     out = probe_handoff(job_id=args.job_id)
-    print(out)
+    logger.info(out)
 
 
 def _job_audit(args):
     from tools.job_probe import probe_status
     out = probe_status(job_id=args.job_id)
-    print(out)
+    logger.info(out)
 
 
 def _job_tick(args):
     from tools.job_probe import probe_tick
     out = probe_tick()
-    print(out)
+    logger.info(out)
 
 
 def _job_run(args):
@@ -96,7 +98,7 @@ def _job_run(args):
     job_id = args.job_id
     meta, body = _read_meta(job_id)
     if meta is None:
-        print(f"Error: {job_id} not found.")
+        logger.info(f"Error: {job_id} not found.")
         sys.exit(1)
 
     title = meta.get("title", "")
@@ -126,8 +128,8 @@ def _job_run(args):
     else:
         skill = "general"
 
-    print(f"[{job_id}] Detected skill: {skill}")
-    print(f"[{job_id}] Title: {title}")
+    logger.info(f"[{job_id}] Detected skill: {skill}")
+    logger.info(f"[{job_id}] Title: {title}")
 
     # --- Research skill execution ---
     if skill == "research":
@@ -144,17 +146,17 @@ def _job_run(args):
         # NOTE: We intentionally do NOT append description to the search query.
         # Title already contains the core entity; description is human-readable
         # context that may confuse search engines with meta-verbs.
-        print(f"[{job_id}] Searching: {query}")
+        logger.info(f"[{job_id}] Searching: {query}")
 
         results = registry.call("net_web_search", {"query": query, "num_results": 5})
-        print(f"[{job_id}] Search returned {len(results)} chars")
+        logger.info(f"[{job_id}] Search returned {len(results)} chars")
 
         # Extract top URLs
         import re
         urls = re.findall(r"https?://[^\s\n]+", results)
         extracts = []
         for url in urls[:3]:
-            print(f"[{job_id}] Extracting: {url}")
+            logger.info(f"[{job_id}] Extracting: {url}")
             text = registry.call("net_web_extract", {"url": url})
             extracts.append(f"## Source: {url}\n\n{text[:1500]}\n")
 
@@ -196,7 +198,7 @@ def _job_run(args):
                 domain = m.group(1).replace(".", "_")
             extract_path = artifacts_dir / f"{skill}-{today}-extract-{domain}.md"
             _atomic_write(extract_path, extract)
-            print(f"[{job_id}] Extract written: {extract_path.name}")
+            logger.info(f"[{job_id}] Extract written: {extract_path.name}")
 
         # Save main report
         report_path = artifacts_dir / f"{skill}-{today}-report.md"
@@ -205,17 +207,17 @@ def _job_run(args):
         tmp.replace(report_path)
 
         _append_event(job_id, f"JOB_RUN skill={skill} query='{query}' artifacts={len(extracts)+1}")
-        print(f"[{job_id}] Report written: {report_path.name}")
+        logger.info(f"[{job_id}] Report written: {report_path.name}")
 
     else:
-        print(f"[{job_id}] Skill '{skill}' execution not yet implemented.")
+        logger.info(f"[{job_id}] Skill '{skill}' execution not yet implemented.")
         sys.exit(1)
 
     # Update meta
     meta["current_cycle"] = meta.get("current_cycle", 0) + 1
     from tools.job_probe import _write_meta
     _write_meta(job_id, meta, body)
-    print(f"[{job_id}] Cycle {meta['current_cycle']}/{meta.get('estimated_cycles', 1)} complete.")
+    logger.info(f"[{job_id}] Cycle {meta['current_cycle']}/{meta.get('estimated_cycles', 1)} complete.")
 
 
 def _add_job_parser(sub):
@@ -256,60 +258,60 @@ def _add_job_parser(sub):
 # ---------------------------------------------------------------------------
 def _todo_dashboard(args):
     from tools.todo_ball_machine import todo_ball_machine
-    print(todo_ball_machine(action="dashboard"))
+    logger.info(todo_ball_machine(action="dashboard"))
 
 
 def _todo_today(args):
     from tools.todo_ball_machine import todo_ball_machine
-    print(todo_ball_machine(action="today"))
+    logger.info(todo_ball_machine(action="today"))
 
 
 def _todo_draw(args):
     from tools.todo_ball_machine import todo_ball_machine
-    print(todo_ball_machine(action="draw", session=args.session))
+    logger.info(todo_ball_machine(action="draw", session=args.session))
 
 
 def _todo_quick(args):
     from tools.todo_ball_machine import todo_ball_machine
-    print(todo_ball_machine(action="quick_draw"))
+    logger.info(todo_ball_machine(action="quick_draw"))
 
 
 def _todo_complete(args):
     from tools.todo_ball_machine import todo_ball_machine
-    print(todo_ball_machine(action="complete", session=args.session))
+    logger.info(todo_ball_machine(action="complete", session=args.session))
 
 
 def _todo_history(args):
     from tools.todo_ball_machine import todo_ball_machine
     n = str(args.days) if args.days else None
-    print(todo_ball_machine(action="history", content=n))
+    logger.info(todo_ball_machine(action="history", content=n))
 
 
 def _todo_stats(args):
     from tools.todo_ball_machine import todo_ball_machine
     n = str(args.days) if args.days else None
-    print(todo_ball_machine(action="stats", content=n))
+    logger.info(todo_ball_machine(action="stats", content=n))
 
 
 def _todo_day(args):
     from tools.todo_ball_machine import todo_ball_machine
     d = args.date or None
-    print(todo_ball_machine(action="day", content=d))
+    logger.info(todo_ball_machine(action="day", content=d))
 
 
 def _todo_box(args):
     from tools.todo_ball_machine import todo_ball_machine
-    print(todo_ball_machine(action="box_list"))
+    logger.info(todo_ball_machine(action="box_list"))
 
 
 def _todo_cycle(args):
     from tools.todo_ball_machine import todo_ball_machine
-    print(todo_ball_machine(action="cycle_status"))
+    logger.info(todo_ball_machine(action="cycle_status"))
 
 
 def _todo_new_cycle(args):
     from tools.todo_ball_machine import todo_ball_machine
-    print(todo_ball_machine(action="new_cycle", content=args.name))
+    logger.info(todo_ball_machine(action="new_cycle", content=args.name))
 
 
 def _add_todo_parser(sub):
@@ -391,18 +393,18 @@ def _swarm_listen(args):
 
     running, pid = _listener_is_running()
     if running:
-        print(f"⚠️  Listener already running (PID {pid}). Stop it first: wb swarm menu → 3")
+        logger.info(f"⚠️  Listener already running (PID {pid}). Stop it first: wb swarm menu → 3")
         sys.exit(1)
 
     listener_path = Path(__file__).parent.parent / "swarm" / "listener.py"
     if not listener_path.exists():
-        print(f"Error: listener not found at {listener_path}")
+        logger.info(f"Error: listener not found at {listener_path}")
         sys.exit(1)
 
     nats_url = args.url or os.environ.get("SWARM_NATS_URL", "nats://localhost:4222")
-    print(f"[wb swarm listen] Starting listener → {nats_url}")
-    print("[wb swarm listen] Writing messages to ~/.worker-bee/mailbox/inbox/")
-    print("[wb swarm listen] Press Ctrl+C to stop")
+    logger.info(f"[wb swarm listen] Starting listener → {nats_url}")
+    logger.info("[wb swarm listen] Writing messages to ~/.worker-bee/mailbox/inbox/")
+    logger.info("[wb swarm listen] Press Ctrl+C to stop")
     sys.stdout.flush()
 
     try:
@@ -411,7 +413,7 @@ def _swarm_listen(args):
             check=True,
         )
     except KeyboardInterrupt:
-        print("\n[wb swarm listen] Stopped.")
+        logger.info("\n[wb swarm listen] Stopped.")
 
 
 def _swarm_status(args):
@@ -431,24 +433,24 @@ def _swarm_status(args):
             await nc.drain()
             return url
         connected = asyncio.run(_check())
-        print(f"✅ NATS: connected to {connected}")
+        logger.info(f"✅ NATS: connected to {connected}")
     except Exception as e:
-        print(f"❌ NATS: {e}")
+        logger.info(f"❌ NATS: {e}")
 
     # Check mailbox
     inbox = Path.home() / ".worker-bee" / "mailbox" / "inbox"
     if inbox.exists():
         unread = len(list(inbox.glob("*.json")))
-        print(f"📬 Mailbox: {unread} unread, inbox={inbox}")
+        logger.info(f"📬 Mailbox: {unread} unread, inbox={inbox}")
     else:
-        print("📭 Mailbox: not initialized (no messages yet)")
+        logger.info("📭 Mailbox: not initialized (no messages yet)")
 
     # Check if listener process is running
     running, pid = _listener_is_running()
     if running:
-        print(f"🟢 Listener: running (PID {pid})")
+        logger.info(f"🟢 Listener: running (PID {pid})")
     else:
-        print("🔴 Listener: not running (start with: wb swarm listen)")
+        logger.info("🔴 Listener: not running (start with: wb swarm listen)")
 
 
 def _add_swarm_parser(sub):
@@ -485,10 +487,10 @@ def _swarm_menu(args):
         pass
 
     def _print_header():
-        print("\n" + "=" * 50)
-        print(f"  🐝 Swarm Control Menu  |  {bee_id} ({role})")
-        print(f"  NATS: {nats_url}")
-        print("=" * 50)
+        logger.info("\n" + "=" * 50)
+        logger.info(f"  🐝 Swarm Control Menu  |  {bee_id} ({role})")
+        logger.info(f"  NATS: {nats_url}")
+        logger.info("=" * 50)
 
     def _menu_items():
         # Listener status
@@ -513,61 +515,61 @@ def _swarm_menu(args):
     def _start_listener():
         running, pid = _listener_is_running()
         if running:
-            print(f"⚠️  Listener already running (PID {pid}). Stop it first (menu option 3).")
+            logger.info(f"⚠️  Listener already running (PID {pid}). Stop it first (menu option 3).")
             return
         listener_path = Path(__file__).parent.parent / "swarm" / "listener.py"
         if not listener_path.exists():
-            print("❌ listener.py not found")
+            logger.info("❌ listener.py not found")
             return
         subprocess.Popen(
             [sys.executable, str(listener_path), nats_url],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
-        print("🟢 Listener spawned (background). Check status in a few seconds.")
+        logger.info("🟢 Listener spawned (background). Check status in a few seconds.")
 
     def _stop_listener():
         running, pid = _listener_is_running()
         if running and pid is not None:
             subprocess.run(["kill", str(pid)])
-            print(f"🔴 Listener stopped (PID {pid})")
+            logger.info(f"🔴 Listener stopped (PID {pid})")
             return
         # Fallback: 模糊匹配（兼容旧进程没有 PID 文件的情况）
         pg = subprocess.run(["pgrep", "-f", "swarm/listener.py"], capture_output=True, text=True)
         if not pg.stdout.strip():
-            print("🔴 Listener not running")
+            logger.info("🔴 Listener not running")
             return
         for p in pg.stdout.strip().split():
             subprocess.run(["kill", p])
-        print("🔴 Listener stopped")
+        logger.info("🔴 Listener stopped")
 
     def _send_test():
         try:
             result = swarm_publish("swarm.test.hello", {"from": bee_id, "msg": "ping"})
             data = json.loads(result)
-            print("✅" if data.get("ok") else "❌", result)
+            logger.info("✅" if data.get("ok") else "❌", result)
         except Exception as e:
-            print(f"❌ {e}")
+            logger.info(f"❌ {e}")
 
     def _read_mailbox():
         inbox = Path.home() / ".worker-bee" / "mailbox" / "inbox"
         if not inbox.exists():
-            print("📭 Mailbox empty")
+            logger.info("📭 Mailbox empty")
             return
         files = sorted(inbox.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:10]
-        print(f"\n📬 Latest {len(files)} messages:")
+        logger.info(f"\n📬 Latest {len(files)} messages:")
         for f in files:
             try:
                 msg = json.loads(f.read_text())
                 ts = msg.get("timestamp", "?")[:19]
                 subj = msg.get("subject", "?")
                 sender = msg.get("sender", "?")
-                print(f"  [{ts}] {subj:30s} from {sender}")
+                logger.info(f"  [{ts}] {subj:30s} from {sender}")
             except Exception:
-                print(f"  (unreadable) {f.name}")
+                logger.info(f"  (unreadable) {f.name}")
 
     def _set_role():
-        print("\nRoles: strategy | pm | centurion | worker | world | aristotle | skeleton | cardmaster | seed")
+        logger.info("\nRoles: strategy | pm | centurion | worker | world | aristotle | skeleton | cardmaster | seed")
         new_role = input("Enter role: ").strip().lower()
         if not new_role:
             return
@@ -583,16 +585,16 @@ def _swarm_menu(args):
         tmp_path.replace(cfg_path)
         nonlocal role
         role = new_role
-        print(f"✅ Role set to '{new_role}' in {cfg_path}")
+        logger.info(f"✅ Role set to '{new_role}' in {cfg_path}")
 
     while True:
         _print_header()
         for key, desc in _menu_items():
-            print(f"  [{key}] {desc}")
+            logger.info(f"  [{key}] {desc}")
         choice = input("\nSelect: ").strip()
 
         if choice == "0":
-            print("Bye.")
+            logger.info("Bye.")
             break
         elif choice == "1":
             _swarm_status(args)
@@ -607,7 +609,7 @@ def _swarm_menu(args):
         elif choice == "6":
             _set_role()
         else:
-            print("Invalid choice")
+            logger.info("Invalid choice")
         input("\nPress Enter to continue...")
 
 
@@ -616,7 +618,7 @@ def _swarm_menu(args):
 # ---------------------------------------------------------------------------
 def _workspace_show(args):
     from agent.workspace import get_workspace
-    print(get_workspace())
+    logger.info(get_workspace())
 
 
 def _add_workspace_parser(sub):
@@ -638,17 +640,17 @@ def _lark_who(args):
         data = json.loads(result.stdout)
         users = data.get("items", data.get("data", {}).get("items", []))
     except json.JSONDecodeError:
-        print(result.stdout[:500])
+        logger.info(result.stdout[:500])
         return
     if not users:
-        print(f"No results for '{args.name}'")
+        logger.info(f"No results for '{args.name}'")
         return
     for u in users[:5]:
         name = u.get("name", "?")
         uid = u.get("open_id", u.get("user_id", "?"))
         email = u.get("email", "")
         dept = ", ".join(u.get("department_names", []))
-        print(f"{name:20s}  {uid}  {email}  {dept}")
+        logger.info(f"{name:20s}  {uid}  {email}  {dept}")
 
 
 def _lark_chats(args):
@@ -662,16 +664,16 @@ def _lark_chats(args):
         data = json.loads(result.stdout)
         chats = data.get("items", data.get("data", {}).get("items", []))
     except json.JSONDecodeError:
-        print(result.stdout[:500])
+        logger.info(result.stdout[:500])
         return
     if not chats:
-        print(f"No chats found" + (f" for '{args.query}'" if args.query else ""))
+        logger.info(f"No chats found" + (f" for '{args.query}'" if args.query else ""))
         return
     for c in chats[:20]:
         name = c.get("name", "?")
         cid = c.get("chat_id", "?")
         members = c.get("member_count", "?")
-        print(f"{name:30s}  {cid}  ({members} members)")
+        logger.info(f"{name:30s}  {cid}  ({members} members)")
 
 
 def _lark_send(args):
@@ -683,10 +685,10 @@ def _lark_send(args):
     try:
         cfg = json.loads(config_path.read_text())
         if not cfg.get("lark_allow_write", False):
-            print("Write operations are disabled. Enable with: wb setup → lark_allow_write: true")
+            logger.info("Write operations are disabled. Enable with: wb setup → lark_allow_write: true")
             return
     except (FileNotFoundError, json.JSONDecodeError):
-        print("Write operations are disabled (no config or invalid). Run: wb setup")
+        logger.info("Write operations are disabled (no config or invalid). Run: wb setup")
         return
 
     if args.group:
@@ -699,24 +701,24 @@ def _lark_send(args):
             data = json.loads(r.stdout)
             chats = data.get("items", data.get("data", {}).get("items", []))
         except json.JSONDecodeError:
-            print(f"Error searching groups: {r.stdout[:200]}")
+            logger.info(f"Error searching groups: {r.stdout[:200]}")
             return
         exact = [c for c in chats if c.get("name", "").lower() == args.group.lower()]
         if exact:
             chat = exact[0]
         elif chats:
-            print(f"Group '{args.group}' not found exactly. Did you mean:")
+            logger.info(f"Group '{args.group}' not found exactly. Did you mean:")
             for c in chats[:5]:
-                print(f"  - {c.get('name', '?')}")
+                logger.info(f"  - {c.get('name', '?')}")
             return
         else:
-            print(f"Group not found: {args.group}")
+            logger.info(f"Group not found: {args.group}")
             return
         cid = chat["chat_id"]
         name = chat.get("name", args.group)
         text = " ".join(args.msg) if isinstance(args.msg, list) else (args.msg or "")
         if not text.strip():
-            print("Message is empty. Usage: wb lark send --group <name> <message text>")
+            logger.info("Message is empty. Usage: wb lark send --group <name> <message text>")
             return
         cmd = [_LARK_CLI, "im", "+messages-send", "--chat-id", cid, "--text", text]
     elif args.to:
@@ -729,29 +731,29 @@ def _lark_send(args):
             data = json.loads(r.stdout)
             users = data.get("items", data.get("data", {}).get("items", []))
         except json.JSONDecodeError:
-            print(f"Error searching users: {r.stdout[:200]}")
+            logger.info(f"Error searching users: {r.stdout[:200]}")
             return
         exact = [u for u in users if u.get("name", "").lower() == args.to.lower()]
         if exact:
             user = exact[0]
         elif users:
-            print(f"User '{args.to}' not found exactly. Did you mean:")
+            logger.info(f"User '{args.to}' not found exactly. Did you mean:")
             for u in users[:5]:
-                print(f"  - {u.get('name', '?')}")
+                logger.info(f"  - {u.get('name', '?')}")
             return
         else:
-            print(f"User not found: {args.to}")
+            logger.info(f"User not found: {args.to}")
             return
         uid = user.get("open_id", user.get("user_id"))
         uname = user.get("name", args.to)
         text = " ".join(args.msg) if isinstance(args.msg, list) else (args.msg or "")
         if not text.strip():
-            print("Message is empty. Usage: wb lark send --to <name> <message text>")
+            logger.info("Message is empty. Usage: wb lark send --to <name> <message text>")
             return
         cmd = [_LARK_CLI, "im", "+messages-send", "--user-id", uid, "--text", text]
         name = uname
     else:
-        print("Specify --to <name> or --group <name>")
+        logger.info("Specify --to <name> or --group <name>")
         return
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
@@ -759,12 +761,12 @@ def _lark_send(args):
         data = json.loads(result.stdout)
         if data.get("ok"):
             msg_id = data.get("data", {}).get("message_id", "?")
-            print(f"✅ Sent to {name} (msg_id: {msg_id})")
+            logger.info(f"✅ Sent to {name} (msg_id: {msg_id})")
         else:
             err = data.get("error", {}).get("message", result.stdout[:200])
-            print(f"❌ {err}")
+            logger.info(f"❌ {err}")
     except json.JSONDecodeError:
-        print(result.stdout[:500])
+        logger.info(result.stdout[:500])
 
 
 def _lark_inbox(args):
@@ -780,18 +782,18 @@ def _lark_inbox(args):
             data = json.loads(r.stdout)
             chats = data.get("items", data.get("data", {}).get("items", []))
         except json.JSONDecodeError:
-            print(f"Error: {r.stdout[:200]}")
+            logger.info(f"Error: {r.stdout[:200]}")
             return
         exact = [c for c in chats if c.get("name", "").lower() == args.group.lower()]
         if exact:
             chat = exact[0]
         elif chats:
-            print(f"Group '{args.group}' not found exactly. Did you mean:")
+            logger.info(f"Group '{args.group}' not found exactly. Did you mean:")
             for c in chats[:5]:
-                print(f"  - {c.get('name', '?')}")
+                logger.info(f"  - {c.get('name', '?')}")
             return
         else:
-            print(f"Group not found: {args.group}")
+            logger.info(f"Group not found: {args.group}")
             return
         cid = chat["chat_id"]
         label = chat.get("name", args.group)
@@ -805,24 +807,24 @@ def _lark_inbox(args):
             data = json.loads(r.stdout)
             users = data.get("items", data.get("data", {}).get("items", []))
         except json.JSONDecodeError:
-            print(f"Error: {r.stdout[:200]}")
+            logger.info(f"Error: {r.stdout[:200]}")
             return
         exact = [u for u in users if u.get("name", "").lower() == args.from_user.lower()]
         if exact:
             user = exact[0]
         elif users:
-            print(f"User '{args.from_user}' not found exactly. Did you mean:")
+            logger.info(f"User '{args.from_user}' not found exactly. Did you mean:")
             for u in users[:5]:
-                print(f"  - {u.get('name', '?')}")
+                logger.info(f"  - {u.get('name', '?')}")
             return
         else:
-            print(f"User not found: {args.from_user}")
+            logger.info(f"User not found: {args.from_user}")
             return
         uid = user.get("open_id", user.get("user_id"))
         label = user.get("name", args.from_user)
         cmd = [_LARK_CLI, "im", "+chat-messages-list", "--user-id", uid, "--limit", str(args.limit)]
     else:
-        print("Specify --from <name> or --group <name>")
+        logger.info("Specify --from <name> or --group <name>")
         return
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
@@ -830,10 +832,10 @@ def _lark_inbox(args):
         data = json.loads(result.stdout)
         msgs = data.get("items", data.get("data", {}).get("items", []))
     except json.JSONDecodeError:
-        print(result.stdout[:500])
+        logger.info(result.stdout[:500])
         return
 
-    print(f"📬 {label} — last {len(msgs)} messages:\n")
+    logger.info(f"📬 {label} — last {len(msgs)} messages:\n")
     for m in reversed(msgs):
         sender = m.get("sender", {}).get("name", m.get("sender_name", "?"))
         body = m.get("body", {}).get("content", "")
@@ -844,7 +846,7 @@ def _lark_inbox(args):
         if len(body) > 200:
             body = body[:200] + "…"
         ts = m.get("create_time", "")
-        print(f"[{ts}] {sender}: {body}")
+        logger.info(f"[{ts}] {sender}: {body}")
 
 
 def _lark_notify(args):
@@ -856,7 +858,7 @@ def _lark_notify(args):
 
     text = " ".join(args.text) if isinstance(args.text, list) else (args.text or "")
     if not text.strip():
-        print("Message is empty. Usage: wb lark notify --to <open_id> --text <message>")
+        logger.info("Message is empty. Usage: wb lark notify --to <open_id> --text <message>")
         return
 
     # Try local lark-cli first
@@ -867,36 +869,36 @@ def _lark_notify(args):
         elif args.group:
             cmd = [lark_cli, "im", "+messages-send", "--chat-id", args.group, "--text", text]
         else:
-            print("Specify --to <open_id> or --group <chat_id>")
+            logger.info("Specify --to <open_id> or --group <chat_id>")
             return
 
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
         try:
             data = json.loads(result.stdout)
             if data.get("ok") or data.get("code") == 0:
-                print("✅ Sent via lark-cli")
+                logger.info("✅ Sent via lark-cli")
                 return
             else:
                 err = data.get("msg", data.get("error", {}).get("message", result.stdout[:200]))
-                print(f"❌ lark-cli failed: {err}")
+                logger.info(f"❌ lark-cli failed: {err}")
                 if args.no_fallback:
                     return
         except json.JSONDecodeError:
-            print(f"❌ lark-cli output: {result.stdout[:200]}")
+            logger.info(f"❌ lark-cli output: {result.stdout[:200]}")
             if args.no_fallback:
                 return
-        print("Falling back to NATS delegation...")
+        logger.info("Falling back to NATS delegation...")
     else:
         if args.no_fallback:
-            print("lark-cli not found and fallback disabled.")
+            logger.info("lark-cli not found and fallback disabled.")
             return
-        print("lark-cli not found, delegating via NATS...")
+        logger.info("lark-cli not found, delegating via NATS...")
 
     # NATS delegation
     try:
         import nats
     except ModuleNotFoundError:
-        print("nats-py not installed. Cannot delegate via NATS.")
+        logger.info("nats-py not installed. Cannot delegate via NATS.")
         return
 
     nats_url = os.environ.get("SWARM_NATS_URL", "nats://localhost:4222")
@@ -919,7 +921,7 @@ def _lark_notify(args):
         nc = await nats.connect(nats_url, connect_timeout=5)
         await nc.publish("swarm.notify.feishu", json.dumps(payload).encode())
         await nc.drain()
-        print("📨 Delegated to PM via NATS (swarm.notify.feishu)")
+        logger.info("📨 Delegated to PM via NATS (swarm.notify.feishu)")
 
     asyncio.run(_publish())
 
@@ -975,9 +977,9 @@ def _deck_mode(args):
     from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
-    print(f"Mode: {dm.mode}")
+    logger.info(f"Mode: {dm.mode}")
     tools = dm.list_tools()
-    print(f"Tools ({len(tools)}): {', '.join(tools) if tools else '(none)'}")
+    logger.info(f"Tools ({len(tools)}): {', '.join(tools) if tools else '(none)'}")
 
 
 def _deck_full(args):
@@ -986,7 +988,7 @@ def _deck_full(args):
     from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
-    print(dm.set_mode("full"))
+    logger.info(dm.set_mode("full"))
 
 
 def _deck_focus(args):
@@ -995,7 +997,7 @@ def _deck_focus(args):
     from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
-    print(dm.set_mode("focus"))
+    logger.info(dm.set_mode("focus"))
 
 
 def _deck_add(args):
@@ -1004,7 +1006,7 @@ def _deck_add(args):
     from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
-    print(dm.add_tool(args.tool))
+    logger.info(dm.add_tool(args.tool))
 
 
 def _deck_drop(args):
@@ -1013,7 +1015,7 @@ def _deck_drop(args):
     from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
-    print(dm.drop_tool(args.tool))
+    logger.info(dm.drop_tool(args.tool))
 
 
 def _deck_reset(args):
@@ -1022,7 +1024,7 @@ def _deck_reset(args):
     from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
-    print(dm.reset())
+    logger.info(dm.reset())
 
 
 def _deck_list(args):
@@ -1032,7 +1034,7 @@ def _deck_list(args):
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
     tools = dm.list_tools()
-    print(f"Tools ({len(tools)}): {', '.join(tools) if tools else '(none)'}")
+    logger.info(f"Tools ({len(tools)}): {', '.join(tools) if tools else '(none)'}")
 
 
 def _deck_log(args):
@@ -1042,7 +1044,7 @@ def _deck_log(args):
     from agent.registry import registry
     cfg = load_config() or {}
     dm = DeckManager(cfg.get("tools", []), registry)
-    print(json.dumps(dm.get_log(), ensure_ascii=False, indent=2))
+    logger.info(json.dumps(dm.get_log(), ensure_ascii=False, indent=2))
 
 
 def _gateway_start(args):
@@ -1055,7 +1057,7 @@ def _gateway_start(args):
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     cfg = GatewayConfig.load()
     if not cfg.enabled:
-        print("Gateway is disabled. Add 'gateway.enabled: true' to config.yaml (or ~/.worker-bee/config.json)")
+        logger.info("Gateway is disabled. Add 'gateway.enabled: true' to config.yaml (or ~/.worker-bee/config.json)")
         return
     runner = GatewayRunner(cfg)
     _shutdown_requested = False
@@ -1063,22 +1065,22 @@ def _gateway_start(args):
     def _on_signal(signum, frame):
         nonlocal _shutdown_requested
         _shutdown_requested = True
-        print(f"\nReceived signal {signum}, shutting down...")
+        logger.info(f"\nReceived signal {signum}, shutting down...")
 
     signal.signal(signal.SIGTERM, _on_signal)
     signal.signal(signal.SIGINT, _on_signal)
 
     try:
         runner.start()
-        print(f"Gateway started with platforms: {list(runner.adapters.keys())}")
-        print("Press Ctrl+C or send SIGTERM to stop")
+        logger.info(f"Gateway started with platforms: {list(runner.adapters.keys())}")
+        logger.info("Press Ctrl+C or send SIGTERM to stop")
         while not _shutdown_requested:
             time.sleep(0.5)
     except Exception as exc:
-        print(f"Gateway error: {exc}")
+        logger.info(f"Gateway error: {exc}")
     finally:
         runner.stop()
-        print("Gateway stopped.")
+        logger.info("Gateway stopped.")
 
 
 def _add_gateway_parser(sub):
@@ -1145,7 +1147,7 @@ def _cron_install(args):
     else:
         existing = result.stdout.rstrip("\n")
     if _CRON_MARKER in existing:
-        print("✅ Cron job already installed.")
+        logger.info("✅ Cron job already installed.")
         return
 
     # Build the entry
@@ -1158,8 +1160,8 @@ def _cron_install(args):
         ["crontab", "-"],
         input=new_crontab, text=True, check=True,
     )
-    print("✅ Installed daily auto-update (runs at 03:00 UTC daily).")
-    print(f"   Command: pip install --upgrade worker-bee")
+    logger.info("✅ Installed daily auto-update (runs at 03:00 UTC daily).")
+    logger.info(f"   Command: pip install --upgrade worker-bee")
 
 
 def _cron_uninstall(args):
@@ -1170,7 +1172,7 @@ def _cron_uninstall(args):
         ["crontab", "-l"], capture_output=True, text=True,
     )
     if result.returncode != 0 or _CRON_MARKER not in result.stdout:
-        print("ℹ️  No worker-bee cron job found.")
+        logger.info("ℹ️  No worker-bee cron job found.")
         return
 
     lines = result.stdout.split("\n")
@@ -1193,7 +1195,7 @@ def _cron_uninstall(args):
         )
     else:
         subprocess.run(["crontab", "-r"], check=True)
-    print("🗑️  Removed worker-bee auto-update cron job.")
+    logger.info("🗑️  Removed worker-bee auto-update cron job.")
 
 
 def _cron_status(args):
@@ -1204,11 +1206,11 @@ def _cron_status(args):
         ["crontab", "-l"], capture_output=True, text=True,
     )
     if result.returncode != 0:
-        print("🔴 No crontab configured.")
+        logger.info("🔴 No crontab configured.")
     elif _CRON_MARKER in result.stdout:
-        print("🟢 Auto-update cron job is installed (daily at 03:00 UTC).")
+        logger.info("🟢 Auto-update cron job is installed (daily at 03:00 UTC).")
     else:
-        print("🔴 Worker-bee auto-update cron job is NOT installed.")
+        logger.info("🔴 Worker-bee auto-update cron job is NOT installed.")
 
 
 def _add_cron_parser(sub):
@@ -1245,16 +1247,16 @@ def _skill_lint(args):
         reports = linter.lint_all()
 
     if args.json:
-        print(json.dumps([r.to_dict() for r in reports], ensure_ascii=False, indent=2))
+        logger.info(json.dumps([r.to_dict() for r in reports], ensure_ascii=False, indent=2))
         return
 
     for report in reports:
         status = "✅" if report.ok else "❌"
-        print(f"\n{status} {report.skill_name}  score={report.score:.2f}")
+        logger.info(f"\n{status} {report.skill_name}  score={report.score:.2f}")
         for f in report.findings:
             icon = {"ERROR": "🔴", "WARN": "🟡", "INFO": "🔵"}[f.level.name]
             line_info = f":{f.line}" if f.line else ""
-            print(f"   {icon} [{f.code}] {f.message}{line_info}")
+            logger.info(f"   {icon} [{f.code}] {f.message}{line_info}")
 
 
 def _skill_test(args):
@@ -1283,7 +1285,7 @@ def _skill_test(args):
         reports = runner.run_all(levels=levels)
 
     if args.json:
-        print(json.dumps([r.to_dict() for r in reports], ensure_ascii=False, indent=2))
+        logger.info(json.dumps([r.to_dict() for r in reports], ensure_ascii=False, indent=2))
         return
 
     total_passed = 0
@@ -1293,13 +1295,13 @@ def _skill_test(args):
         s = report.summary
         total_passed += s["passed"]
         total_failed += s["failed"]
-        print(f"\n{status} {report.skill_name}  score={report.score:.2f}  ({s['passed']}/{s['total']})")
+        logger.info(f"\n{status} {report.skill_name}  score={report.score:.2f}  ({s['passed']}/{s['total']})")
         for r in report.results:
             if not r.passed:
-                print(f"   🔴 [{r.level.name}] {r.name}: {r.message}")
+                logger.info(f"   🔴 [{r.level.name}] {r.name}: {r.message}")
 
-    print(f"\n{'=' * 40}")
-    print(f"Total: {total_passed} passed, {total_failed} failed")
+    logger.info(f"\n{'=' * 40}")
+    logger.info(f"Total: {total_passed} passed, {total_failed} failed")
 
 
 def _add_skill_parser(sub):

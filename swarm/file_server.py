@@ -14,8 +14,11 @@ import sys
 from pathlib import Path
 
 SERVE_DIR = Path.home() / ".worker-bee" / "mailbox"
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 9999
 FILE_SERVER_TOKEN = os.environ.get("FILE_SERVER_TOKEN", "")
+
+# PORT is resolved at main() time, not import time, so tests can import safely.
+def _get_port() -> int:
+    return int(sys.argv[1]) if len(sys.argv) > 1 else 9999
 
 
 class MailboxHandler(http.server.SimpleHTTPRequestHandler):
@@ -55,8 +58,8 @@ def main():
         print("[FileServer] ERROR: FILE_SERVER_TOKEN not set. Set it via environment variable to start the server.")
         sys.exit(1)
     auth_status = "token required"
-    print(f"[FileServer] Serving {SERVE_DIR} on port {PORT} ({auth_status})")
-    with socketserver.TCPServer(("", PORT), MailboxHandler) as httpd:
+    print(f"[FileServer] Serving {SERVE_DIR} on port {_get_port()} ({auth_status})")
+    with socketserver.TCPServer(("", _get_port()), MailboxHandler) as httpd:
         httpd.serve_forever()
 
 

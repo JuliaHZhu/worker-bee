@@ -6,18 +6,25 @@ Usage:
 
 Defaults to ~/wiki-worker-bee or $WIKI_PATH env var.
 """
+import logging
 import os
 import sys
 from pathlib import Path
 
 
+logger = logging.getLogger(__name__)
+
+
 def main():
+    if not logging.getLogger().handlers:
+        logging.basicConfig(level=logging.INFO, format="%(message)s")
+
     wiki_path = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("WIKI_PATH", str(Path.home() / "wiki-worker-bee"))
     wiki = Path(wiki_path)
 
     if wiki.exists() and any(wiki.iterdir()):
-        print(f"⚠️  Wiki already exists at {wiki}. Skipping initialization.")
-        print("   To re-initialize, remove the directory first.")
+        logger.warning("⚠️  Wiki already exists at %s. Skipping initialization.", wiki)
+        logger.warning("   To re-initialize, remove the directory first.")
         return
 
     # Create structure
@@ -135,8 +142,8 @@ When new info conflicts:
 - Structure created with SCHEMA.md, index.md, log.md
 """, encoding="utf-8")
 
-    print(f"✅ Wiki initialized at {wiki}")
-    print(f"   Set WIKI_PATH={wiki} in your environment to use this wiki.")
+    logger.info("✅ Wiki initialized at %s", wiki)
+    logger.info("   Set WIKI_PATH=%s in your environment to use this wiki.", wiki)
 
 
 if __name__ == "__main__":

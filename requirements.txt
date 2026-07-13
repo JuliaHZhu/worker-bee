@@ -1,5 +1,6 @@
 anthropic>=0.30
 openai>=1.0
 croniter>=1.4
+pyyaml>=6.0
 tiktoken>=0.8.0
 nats-py>=2.0

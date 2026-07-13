@@ -53,15 +53,16 @@ def _remove_pid() -> None:
     """清理 PID 文件。"""
     try:
         PID_FILE.unlink(missing_ok=True)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Failed to remove PID file: %s", exc, exc_info=True)
 
 
 def read_listener_pid() -> int | None:
     """读取已记录的 listener PID（供 CLI 使用）。"""
     try:
         return int(PID_FILE.read_text(encoding="utf-8").strip())
-    except Exception:
+    except Exception as exc:
+        logger.debug("Failed to read listener PID: %s", exc)
         return None
 
 # ── bee_id 读取 ──────────────────────────────────────────────
@@ -88,9 +89,9 @@ def _load_nats_auth_from_config() -> tuple[str | None, str | None]:
             password = auth.get("password", "")
             if user:
                 return user, password
-        except Exception:
-            pass
-    return None, None
+        except Exception as exc:
+            logger.debug("Failed to load NATS auth from config: %s", exc)
+            return None, None
 
 # ── 心跳 ────────────────────────────────────────────────────────────────────
 
@@ -169,7 +170,7 @@ def _handle_feishu_notify(data: bytes):
     try:
         payload = json.loads(data.decode("utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError):
-        print("[swarm-listener] ⚠️ Invalid feishu notify payload")
+        logger.warning("[swarm-listener] ⚠️ Invalid feishu notify payload")
         return
 
     target_type = payload.get("target_type", "user")
@@ -178,7 +179,7 @@ def _handle_feishu_notify(data: bytes):
     sender = payload.get("sender", "unknown")
 
     if not target_id or not text:
-        print("[swarm-listener] ⚠️ Feishu notify missing target_id or text")
+        logger.warning("[swarm-listener] ⚠️ Feishu notify missing target_id or text")
         return
 
     if target_type == "group":
@@ -190,12 +191,12 @@ def _handle_feishu_notify(data: bytes):
     try:
         data = json.loads(result.stdout)
         if data.get("ok") or data.get("code") == 0:
-            print(f"[swarm-listener] 📨 Feishu notify sent → {target_id} (from {sender})")
+            logger.info("[swarm-listener] 📨 Feishu notify sent → %s (from %s)", target_id, sender)
         else:
             err = data.get("msg", data.get("error", {}).get("message", result.stdout[:200]))
-            print(f"[swarm-listener] ❌ Feishu notify failed: {err}")
+            logger.warning("[swarm-listener] ❌ Feishu notify failed: %s", err)
     except json.JSONDecodeError:
-        print(f"[swarm-listener] ❌ lark-cli output unreadable: {result.stdout[:200]}")
+        logger.warning("[swarm-listener] ❌ lark-cli output unreadable: %s", result.stdout[:200])
 
 
 # ── 主循环 ────────────────────────────────────────────
@@ -208,7 +209,8 @@ def _setup_signal_handlers(loop):
                 getattr(__import__("signal"), sig),
                 lambda: asyncio.create_task(_graceful_shutdown()),
             )
-        except Exception:
+        except Exception as exc:
+            logger.debug("Failed to set up signal handler: %s", exc)
             pass
 
 
@@ -256,7 +258,7 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
     loop = asyncio.get_running_loop()
     _setup_signal_handlers(loop)
     bee_id = _get_bee_id()
-    print(f"[swarm-listener] 连接 {nats_url} ... (身份: {bee_id})")
+    logger.info("[swarm-listener] 连接 %s ... (身份: %s)", nats_url, bee_id)
     connect_kwargs = {
         "connect_timeout": NATS_TIMEOUT,
         "max_reconnect_attempts": -1,  # 无限重连
@@ -285,17 +287,18 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
             storage=js_api.StorageType.FILE,
             retention=js_api.RetentionPolicy.LIMITS,
         )
-        print(f"[swarm-listener] 创建 JetStream Stream: {stream_name}")
-    except Exception as e:
-        if "already exists" in str(e).lower():
+        logger.info("[swarm-listener] 创建 JetStream Stream: %s", stream_name)
+    except Exception as exc:
+        if "already exists" in str(exc).lower():
             pass
         else:
+            logger.warning("[swarm-listener] JetStream stream creation failed: %s", exc)
             raise
 
     # Durable Pull Consumer：重启后从上次消费位置继续
     consumer_name = f"swarm-listener-{bee_id}".replace(".", "-")
     sub = await _ensure_pull_subscription(js, subject, stream_name, consumer_name)
-    print(f"[swarm-listener] 就绪 — 监听 {subject} → {MAILBOX_INBOX} (JetStream durable)")
+    logger.info("[swarm-listener] 就绪 — 监听 %s → %s (JetStream durable)", subject, MAILBOX_INBOX)
 
     # 启动心跳
     heartbeat_task = asyncio.create_task(_heartbeat_loop(nc, bee_id))
@@ -309,13 +312,13 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
             except NatsTimeoutError:
                 continue  # 空轮询，继续下一轮
             except (ConnectionClosedError, NoServersError) as e:
-                print(f"[swarm-listener] ⚠️ NATS 连接中断 ({type(e).__name__})，等待重连...")
+                logger.warning("[swarm-listener] ⚠️ NATS 连接中断 (%s)，等待重连...", type(e).__name__)
                 # 等待连接恢复
                 while nc.is_closed or not nc.is_connected:
                     await asyncio.sleep(1)
-                print("[swarm-listener] 🔄 NATS 已重连，重新订阅...")
+                logger.info("[swarm-listener] 🔄 NATS 已重连，重新订阅...")
                 sub = await _ensure_pull_subscription(js, subject, stream_name, consumer_name)
-                print("[swarm-listener] ✅ 重新订阅完成")
+                logger.info("[swarm-listener] ✅ 重新订阅完成")
                 continue
             for msg in msgs:
                 _write_envelope(msg.subject, msg.reply or "", msg.data)
@@ -323,7 +326,7 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
                     _handle_feishu_notify(msg.data)
                 await msg.ack()
     except KeyboardInterrupt:
-        print("\n[swarm-listener] 收到中断信号，正在 drain ...")
+        logger.info("\n[swarm-listener] 收到中断信号，正在 drain ...")
     finally:
         heartbeat_task.cancel()
         try:
@@ -332,10 +335,11 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
             pass
         try:
             await nc.drain()
-        except Exception:
+        except Exception as exc:
+            logger.debug("NATS drain failed: %s", exc)
             pass
         _remove_pid()
-        print("[swarm-listener] 已断开")
+        logger.info("[swarm-listener] 已断开")
 
 
 # ── 入口 ──────────────────────────────────────────────

@@ -4,9 +4,34 @@ import uuid
 import threading
 import os
 import time
+import stat
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, List, Optional
+
+
+# Keys whose values are redacted before storage to avoid credential leakage.
+_SENSITIVE_KEYS = frozenset({"api_key", "password", "token", "secret", "key", "credential"})
+
+
+def _redact_value(obj: Any) -> Any:
+    """Recursively redact sensitive string values in dicts/lists."""
+    if isinstance(obj, dict):
+        return {
+            k: "***" if (isinstance(v, str) and any(sk in k.lower() for sk in _SENSITIVE_KEYS)) else _redact_value(v)
+            for k, v in obj.items()
+        }
+    if isinstance(obj, list):
+        return [_redact_value(item) for item in obj]
+    return obj
+
+
+def _redact_tool_calls(tool_calls: Optional[List[dict]]) -> Optional[str]:
+    """Return JSON string with sensitive arguments redacted, or None."""
+    if not tool_calls:
+        return None
+    redacted = _redact_value(tool_calls)
+    return json.dumps(redacted)
 
 
 class SessionDB:
@@ -25,6 +50,9 @@ class SessionDB:
             # Reset thread-local so _get_conn creates a new connection
             self._local = threading.local()
             self._init_schema()
+        # Ensure DB file is readable only by owner (contains tool calls / messages)
+        if os.path.exists(self.db_path):
+            os.chmod(self.db_path, stat.S_IRUSR | stat.S_IWUSR)
 
     def _get_conn(self):
         """Return a connection bound to the current thread."""
@@ -162,7 +190,7 @@ class SessionDB:
         tags_json = json.dumps(tags) if tags else None
         conn.execute(
             "INSERT INTO messages (session_id, role, content, tool_calls, tags, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (session_id, role, content, json.dumps(tool_calls) if tool_calls else None, tags_json, datetime.now().isoformat())
+            (session_id, role, content, _redact_tool_calls(tool_calls), tags_json, datetime.now().isoformat())
         )
         conn.commit()
 

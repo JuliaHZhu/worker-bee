@@ -25,6 +25,7 @@ import json
 import logging
 import os
 import sys
+import getpass
 import threading
 from pathlib import Path
 
@@ -134,7 +135,7 @@ def setup():
     logger.info("=" * 45)
     logger.info("  Worker Bee — Setup")
     logger.info("=" * 45)
-    logger.info()
+    
 
     # Provider
     logger.info("Provider:")
@@ -151,14 +152,14 @@ def setup():
         default_base = "https://api.moonshot.cn/v1"
 
     # API Key
-    logger.info()
-    key = input("API Key: ").strip()
+    
+    key = getpass.getpass("API Key: ").strip()
     if not key:
         logger.info("❌ API key required.")
         sys.exit(1)
 
     # Optional overrides
-    logger.info()
+    
     model = input(f"Model [{default_model}]: ").strip() or default_model
     base = input(f"Base URL [{default_base}]: ").strip() or default_base
     temp_str = input("Temperature [0.0]: ").strip()
@@ -170,11 +171,11 @@ def setup():
     # Bee ID (for swarm identification)
     import socket
     default_bee = socket.gethostname().lower().replace(".", "-")
-    logger.info()
+    
     bee_id = input(f"Bee ID (for swarm) [{default_bee}]: ").strip() or default_bee
 
     # Lark / Feishu write permission
-    logger.info()
+    
     lark_write = input("Allow lark-cli write operations? (send messages, upload files, edit docs) [y/N]: ").strip().lower()
     lark_allow_write = lark_write == "y"
 
@@ -186,7 +187,7 @@ def setup():
         json.dump(config, f, indent=2, ensure_ascii=False)
     import stat
     os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)  # 0o600
-    logger.info()
+    
     logger.info(f"✅ Saved to {path}")
     logger.info(f"   Provider: {provider} | Model: {model} | Temperature: {temperature}")
 
@@ -208,11 +209,11 @@ def setup():
     else:
         logger.info(f"⏭️  {soul_md} already exists — skipped")
 
-    logger.info()
+    
     logger.info("📝  Edit these files to customize the agent's behavior:")
     logger.info(f"    {agent_md}")
     logger.info(f"    {soul_md}")
-    logger.info()
+    
 
     # ── Verify: confirm files are readable ──
     agent_size = len(agent_md.read_text())

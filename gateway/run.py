@@ -62,9 +62,15 @@ class GatewayRunner:
         from pathlib import Path
         cfg_path = Path.home() / ".worker-bee" / "config.json"
         try:
-            return json.loads(cfg_path.read_text(encoding="utf-8"))
+            cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
         except Exception:
-            return {}
+            cfg = {}
+        if not cfg.get("api_key"):
+            raise RuntimeError(
+                "GatewayRunner requires an API key. "
+                "Run `worker-bee setup` to create ~/.worker-bee/config.json with api_key."
+            )
+        return cfg
 
     def start(self) -> None:
         """Start all enabled adapters.

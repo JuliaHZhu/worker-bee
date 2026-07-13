@@ -17,9 +17,11 @@ fi
 
 echo "生成 NATS 配置 — bee-01: $BEE_01_IP, bee-02: $BEE_02_IP"
 
-# 机 1
-cat > /tmp/nats-bee01.conf << EOF
-server_name: "bee-01"
+_generate_nats_conf() {
+  local name="$1"
+  local peer_ip="$2"
+  cat << EOF
+server_name: "$name"
 port: 4222
 http_port: 8222
 max_payload: 1MB
@@ -31,7 +33,7 @@ cluster {
   name: worker-bee-cluster
   listen: 0.0.0.0:6222
   routes = [
-    nats://\${BEE_02_IP}:6222
+    nats://\${peer_ip}:6222
   ]
 }
 
@@ -45,35 +47,10 @@ debug: false
 trace: false
 logtime: true
 EOF
-
-# 机 2
-cat > /tmp/nats-bee02.conf << EOF
-server_name: "bee-02"
-port: 4222
-http_port: 8222
-max_payload: 1MB
-max_pending: 10MB
-
-$AUTH_BLOCK
-
-cluster {
-  name: worker-bee-cluster
-  listen: 0.0.0.0:6222
-  routes = [
-    nats://\${BEE_01_IP}:6222
-  ]
 }
 
-jetstream {
-  store_dir: "~/.worker-bee/nats-jetstream"
-  max_memory_store: 256MB
-  max_file_store: 2GB
-}
-
-debug: false
-trace: false
-logtime: true
-EOF
+_generate_nats_conf "bee-01" "$BEE_02_IP" > /tmp/nats-bee01.conf
+_generate_nats_conf "bee-02" "$BEE_01_IP" > /tmp/nats-bee02.conf
 
 echo "✅ 配置已生成到 /tmp/nats-bee01.conf 和 /tmp/nats-bee02.conf"
 echo ""

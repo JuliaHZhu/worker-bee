@@ -38,92 +38,8 @@ logger = logging.getLogger(__name__)
 Message = Dict[str, Any]
 
 
-def _estimate_message_tokens(m: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls if present."""
-    text = str(m.get("content", ""))
-    tokens = estimate_tokens(text, counter)
-    tool_calls = m.get("tool_calls")
-    if tool_calls:
-        # tool_calls JSON also consumes tokens; approximate by serialising.
-        tokens += estimate_tokens(json.dumps(tool_calls, separators=(",", ":")), counter)
-    return tokens
-
-
 # ---------------------------------------------------------------------------
-# Token estimation helper (includes tool_calls)
-# ---------------------------------------------------------------------------
-
-def _message_token_estimate(m: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls if present."""
-    content = str(m.get("content", ""))
-    tokens = estimate_tokens(content, counter)
-    tool_calls = m.get("tool_calls")
-    if tool_calls:
-        # Rough estimate: JSON-serialised tool_calls also consume context tokens
-        tokens += estimate_tokens(json.dumps(tool_calls), counter)
-    return tokens
-
-
-# ---------------------------------------------------------------------------
-# Token estimation helpers
-# ---------------------------------------------------------------------------
-
-def _estimate_message_tokens(message: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls if present."""
-    content = message.get("content", "")
-    tokens = estimate_tokens(str(content) if content is not None else "", counter)
-    # tool_calls also consume tokens (function name + JSON arguments)
-    for tc in message.get("tool_calls", []):
-        fn = tc.get("function", {})
-        tokens += estimate_tokens(fn.get("name", ""), counter)
-        tokens += estimate_tokens(str(fn.get("arguments", "")), counter)
-    return tokens
-# ---------------------------------------------------------------------------
-
-def _message_tokens(message: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls payload."""
-    tokens = estimate_tokens(str(message.get("content", "")), counter)
-    for tc in message.get("tool_calls", []):
-        # function name + arguments JSON are both sent to the model
-        func = tc.get("function", tc)
-        tokens += estimate_tokens(func.get("name", ""), counter)
-        tokens += estimate_tokens(str(func.get("arguments", "")), counter)
-    return tokens
-
-
-# ---------------------------------------------------------------------------
-# Token estimation helpers
-# ---------------------------------------------------------------------------
-
-def _message_tokens(m: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls."""
-    tokens = estimate_tokens(str(m.get("content", "")), counter)
-    # tool_calls also consume tokens (function name + arguments JSON)
-    for tc in m.get("tool_calls", []):
-        name = tc.get("function", {}).get("name", "") if "function" in tc else tc.get("name", "")
-        args = tc.get("function", {}).get("arguments", "") if "function" in tc else tc.get("arguments", "")
-        tokens += estimate_tokens(name, counter)
-        tokens += estimate_tokens(str(args), counter)
-    return tokens
-
-
-# ---------------------------------------------------------------------------
-# Token estimation helpers
-# ---------------------------------------------------------------------------
-
-def _message_tokens(m: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls."""
-    text = str(m.get("content", ""))
-    tokens = estimate_tokens(text, counter)
-    # tool_calls also consume tokens (id, name, arguments JSON)
-    if m.get("role") == "assistant" and "tool_calls" in m:
-        for tc in m["tool_calls"]:
-            tokens += estimate_tokens(tc.get("id", ""), counter)
-            tokens += estimate_tokens(tc.get("type", ""), counter)
-            fn = tc.get("function", {})
-            tokens += estimate_tokens(fn.get("name", ""), counter)
-            tokens += estimate_tokens(str(fn.get("arguments", "")), counter)
-    return tokens
+# 1. Orphan cleanup
 # ---------------------------------------------------------------------------
 
 def _drop_orphans(messages: list[Message]) -> list[Message]:
@@ -230,16 +146,13 @@ def _microcompact(
     return out
 
 
+# ---------------------------------------------------------------------------
+# 4. Hard trim — discard oldest messages to fit budget
+# ---------------------------------------------------------------------------
+
 def _message_tokens(m: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls content."""
-def _estimate_message_tokens(m: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls content."""
+    """Estimate tokens for a single message, including tool_calls if present."""
     total = estimate_tokens(str(m.get("content", "")), counter)
-    for tc in m.get("tool_calls", []):
-        fn = tc.get("function", {})
-        total += estimate_tokens(str(fn.get("name", "")), counter)
-        total += estimate_tokens(str(fn.get("arguments", "")), counter)
-    return total
     for tc in m.get("tool_calls", []):
         func = tc.get("function", tc)
         total += estimate_tokens(func.get("name", ""), counter)
@@ -247,153 +160,60 @@ def _estimate_message_tokens(m: Message, counter: TokenCounter) -> int:
     return total
 
 
-# ---------------------------------------------------------------------------
-# Token estimation helpers (include tool_calls in the count)
-# ---------------------------------------------------------------------------
+def _hard_trim(
+    messages: list[Message],
+    profile: ModelProfile,
+    counter: TokenCounter | None = None,
+) -> list[Message]:
+    """Remove oldest messages until total token count <= usable_context.
 
-def _message_tokens(m: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls if present."""
-    text = str(m.get("content", ""))
-    tool_calls = m.get("tool_calls")
-    if tool_calls:
-        for tc in tool_calls:
-            text += tc.get("function", {}).get("name", "")
-            text += tc.get("function", {}).get("arguments", "")
-    return estimate_tokens(text, counter)
+    Preserves the system message (role="system") if present.
+    Never breaks an assistant/tool pair: if an assistant message with
+    tool_calls is kept, all matching tool_results are kept too.
+    """
+    if counter is None:
+        counter = build_counter(profile.encoding_name)
 
+    usable = profile.usable_context
+    total = sum(_message_tokens(m, counter) for m in messages)
 
-# ---------------------------------------------------------------------------
-# Token estimation helpers
-# ---------------------------------------------------------------------------
+    if total <= usable:
+        return messages
 
-def _estimate_message_tokens(message: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls."""
-    total = estimate_tokens(str(message.get("content", "")), counter)
-    for tc in message.get("tool_calls", []):
-        # tool_call tokens: name + arguments JSON
-        func = tc.get("function", tc)
-        total += estimate_tokens(func.get("name", ""), counter)
-        total += estimate_tokens(json.dumps(func.get("arguments", "")), counter)
-    return total
+    out = copy.deepcopy(messages)
+    system_msg: Message | None = None
+    if out and out[0].get("role") == "system":
+        system_msg = out.pop(0)
 
-def _estimate_message_tokens(m: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls if present."""
-    text = str(m.get("content", ""))
-    tool_calls = m.get("tool_calls")
-    if tool_calls:
-        # ---------------------------------------------------------------------------
-        # 4. Hard trim — discard oldest messages to fit budget
-        # ---------------------------------------------------------------------------
-
-        def _message_tokens(m: Message, counter: TokenCounter) -> int:
-            """Estimate tokens for a single message, including tool_calls."""
-            total = estimate_tokens(str(m.get("content", "")), counter)
-            for tc in m.get("tool_calls", []):
-                total += estimate_tokens(tc.get("name", ""), counter)
-                total += estimate_tokens(str(tc.get("arguments", "")), counter)
-            return total
-
-
-        def _message_tokens(m: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls."""
-    content = str(m.get("content", ""))
-    total = estimate_tokens(content, counter)
-    # ---------------------------------------------------------------------------
-    # 4. Hard trim — discard oldest messages to fit budget
-    # ---------------------------------------------------------------------------
-
-    def _message_tokens(m: Message, counter: TokenCounter) -> int:
-        """Estimate tokens for a single message, including tool_calls if present."""
-        content = str(m.get("content", ""))
-        total = estimate_tokens(content, counter)
-        tool_calls = m.get("tool_calls")
-        if tool_calls:
-            # Approximate: JSON-serialised tool_calls also consume context tokens.
-            total += estimate_tokens(json.dumps(tool_calls, ensure_ascii=False), counter)
-        return total
-
-
-    def _message_tokens(m: Message, counter: TokenCounter) -> int:
-    """Estimate tokens for a single message, including tool_calls."""
-    tokens = estimate_tokens(str(m.get("content", "")), counter)
-    tcs = m.get("tool_calls")
-    if tcs:
-        tokens += estimate_tokens(json.dumps(tcs), counter)
-    return tokens
-        messages: list[Message],
-        profile: ModelProfile,
-        counter: TokenCounter | None = None,
-    ) -> list[Message]:
-        """Remove oldest messages until total token count <= usable_context.
-
-        Preserves the system message (role="system") if present.
-        Never breaks an assistant/tool pair: if an assistant message with
-        tool_calls is kept, all matching tool_results are kept too.
-        """
-        if counter is None:
-            counter = build_counter(profile.encoding_name)
-
-        def _msg_tokens(m: Message) -> int:
-            """Estimate tokens for a single message, including tool_calls."""
-            total = estimate_tokens(str(m.get("content", "")), counter)
-            # tool_calls carry tokens too (OpenAI charges for function name + arguments)
-            for tc in m.get("tool_calls", []):
-                total += estimate_tokens(tc.get("function", {}).get("name", ""), counter)
-                total += estimate_tokens(str(tc.get("function", {}).get("arguments", "")), counter)
-            return total
-
-        usable = profile.usable_context
-
-        def _msg_tokens(m: Message) -> int:
-            """Estimate tokens for a message, including tool_calls if present."""
-            tokens = estimate_tokens(str(m.get("content", "")), counter)
-            # Tool calls consume tokens too (function name + arguments JSON).
-            # We serialise the whole tool_calls list for a rough estimate.
-            if m.get("role") == "assistant" and "tool_calls" in m:
-                try:
-                    tool_json = json.dumps(m["tool_calls"], ensure_ascii=False)
-                    tokens += estimate_tokens(tool_json, counter)
-                except (TypeError, ValueError):
-                    pass
-            return tokens
-        usable = profile.usable_context
-        total = sum(
-            _estimate_message_tokens(m, counter) for m in messages
+    while out:
+        # Estimate current total
+        current = sum(
+            _message_tokens(m, counter) for m in out
         )
-
-        if total <= usable:
-            return messages
-
-        out = copy.deepcopy(messages)
-        system_msg: Message | None = None
-        if out and out[0].get("role") == "system":
-            system_msg = out.pop(0)
-
-        while out:
-            # Estimate current total
-            current = sum(
-                _estimate_message_tokens(m, counter) for m in out
-            )
-            if system_msg:
-                current += _estimate_message_tokens(system_msg, counter)
-            if current <= usable:
-                break
-                drop_ids = {tc["id"] for tc in oldest["tool_calls"]}
-                out = [m for m in out if not (m.get("role") == "tool" and m.get("tool_call_id") in drop_ids)]
-            elif oldest.get("role") == "tool":
-                # If we drop a tool_result, mark its call as unprotected
-                pass  # the assistant message will still exist; LLM may retry
-
         if system_msg:
-            out.insert(0, system_msg)
+            current += _message_tokens(system_msg, counter)
+        if current <= usable:
+            break
 
-        logger.info(
-            "Hard-trimmed messages: %d → %d (token budget %d)",
-            len(messages),
-            len(out),
-            usable,
-        )
-        return out
+        oldest = out.pop(0)
+        # If we're dropping an assistant with tool_calls, also drop matching results
+        if oldest.get("role") == "assistant" and "tool_calls" in oldest:
+            drop_ids = {tc["id"] for tc in oldest["tool_calls"]}
+            out = [m for m in out if not (m.get("role") == "tool" and m.get("tool_call_id") in drop_ids)]
+        elif oldest.get("role") == "tool":
+            # If we drop a tool_result, mark its call as unprotected
+            pass  # the assistant message will still exist; LLM may retry
+
+    if system_msg:
+        out.insert(0, system_msg)
+
+    logger.info(
+        "Hard-trimmed messages: %d → %d (token budget %d)",
+        len(messages),
+        len(out),
+        usable,
+    )
+    return out
 
 
 # ---------------------------------------------------------------------------

@@ -367,10 +367,12 @@ def run_server(port: int = 8080):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Worker Bee Lark Bot")
-    parser.add_argument("--port", type=int, default=8080, help="Webhook server port (default: 8080)")
-    args = parser.parse_args()
-    run_server(args.port)
+    """Deprecated standalone entry-point; use `wb lark serve` instead."""
+    import sys
+    from agent.cli import main as cli_main
+    # Forward to the unified CLI
+    sys.argv = ["wb", "lark", "serve"] + sys.argv[1:]
+    cli_main()
 
 
 if __name__ == "__main__":

@@ -10,20 +10,31 @@
 
 import subprocess, sys, os
 
-# ═══════════════════════════════════════════
-# 改这行：8 台机的内网 IP
-IPS = [
-    "192.168.1.101",
-    "192.168.1.102",
-    "192.168.1.103",
-    "192.168.1.104",
-    "192.168.1.105",
-    "192.168.1.106",
-    "192.168.1.107",
-    "192.168.1.108",
-]
-# ═══════════════════════════════════════════
+# Load IPs from beebox.nodes configuration (env -> yaml -> fallback)
+def _load_ips() -> list[str]:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from beebox.nodes import all_nodes
+    ips = [ip for _role, ip in all_nodes()]
+    # Filter out duplicates and loopback unless it's the only node
+    unique = []
+    seen = set()
+    for ip in ips:
+        if ip not in seen:
+            seen.add(ip)
+            unique.append(ip)
+    # If all are 127.0.0.1, user hasn't configured nodes yet
+    if set(unique) <= {"127.0.0.1"}:
+        env_ips = os.getenv("NATS_CLUSTER_IPS", "").strip()
+        if env_ips:
+            return [ip.strip() for ip in env_ips.split(",") if ip.strip()]
+        print("⚠️  未配置集群 IP。请选择一种方式：")
+        print("  1. 设置环境变量 NATS_CLUSTER_IPS=192.168.1.101,192.168.1.102,...")
+        print("  2. 创建 ~/.worker-bee/nodes.yaml （参考 config/nodes.yaml.sample）")
+        sys.exit(1)
+    return unique
 
+
+IPS = _load_ips()
 SSH_USER = "ubuntu"
 
 def gen_config(node_name: str, node_ip: str, all_ips: list[str]) -> str:

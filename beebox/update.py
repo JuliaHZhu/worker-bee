@@ -19,14 +19,18 @@ def update_bee(
     """Update worker-bee seed on a remote host. All servers run the same code."""
     app_dir = "~/.beebox/worker-bee"
     venv_dir = "~/.beebox/venv"
+    # Capture OLD_HEAD in Python so rollback can use it later
+    old_head_cmd = f"cd {app_dir} && git rev-parse HEAD"
+    rc0, old_head, _ = ssh_cmd(host, user, key_file, port, old_head_cmd)
+    old_head = old_head.strip() if rc0 == 0 else ""
+
     cmd = (
         f"cd {app_dir} && "
-        "OLD_HEAD=$(git rev-parse HEAD) && "
         "git fetch origin && "
         "git pull origin $(git rev-parse --abbrev-ref HEAD) && "
         "NEW_HEAD=$(git rev-parse HEAD) && "
-        "if [ \"$OLD_HEAD\" != \"$NEW_HEAD\" ]; then "
-        "  echo 'CHANGED' && echo \"$OLD_HEAD -> $NEW_HEAD\" && git log --oneline $OLD_HEAD..$NEW_HEAD; "
+        f"if [ \"{old_head}\" != \"$NEW_HEAD\" ]; then "
+        f"  echo 'CHANGED' && echo \"{old_head} -> $NEW_HEAD\" && git log --oneline {old_head}..$NEW_HEAD; "
         "else echo 'NO_CHANGE'; fi"
     )
 
@@ -58,9 +62,9 @@ def update_bee(
         if rc2 != 0:
             print(f"  [WARN] {server_name}@{host} reinstall failed: {err2}")
             # Rollback to previous commit on install failure
-            rollback_cmd = f"cd {app_dir} && git checkout $OLD_HEAD"
+            rollback_cmd = f"cd {app_dir} && git checkout {old_head}"
             ssh_cmd(host, user, key_file, port, rollback_cmd)
-            print(f"  [ROLLBACK] {server_name}@{host} reverted to $OLD_HEAD")
+            print(f"  [ROLLBACK] {server_name}@{host} reverted to {old_head}")
             return {
                 "host": host,
                 "name": server_name,

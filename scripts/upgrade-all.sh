@@ -3,7 +3,7 @@
 # 前提：每台机 ~/worker-bee 是 git clone（不是 pip install）
 set -euo pipefail
 
-PM_IP="${BEE_PM_IP:-127.0.0.1}"
+source "$(dirname "$0")/common.sh"
 REPO_URL="https://github.com/JuliaHZhu/worker-bee.git"
 
 # 从 Python 配置加载节点列表

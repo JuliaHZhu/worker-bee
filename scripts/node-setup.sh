@@ -3,7 +3,7 @@
 # 用法: 保存为 node-setup.sh，然后 bash node-setup.sh
 set -e
 
-PM_IP="${BEE_PM_IP:-127.0.0.1}"
+source "$(dirname "$0")/common.sh"
 ROLE="${1:-}"
 REPO="https://github.com/JuliaHZhu/worker-bee.git"
 

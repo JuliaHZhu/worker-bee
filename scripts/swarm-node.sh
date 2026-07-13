@@ -5,7 +5,7 @@
 # =============================================================================
 set -euo pipefail
 
-PM_IP="${BEE_PM_IP:-127.0.0.1}"
+source "$(dirname "$0")/common.sh"
 ROLE="${1:-}"  # 手动传入 role，如 pm, worker, centurion 等
 REPO_URL="https://github.com/JuliaHZhu/worker-bee.git"
 

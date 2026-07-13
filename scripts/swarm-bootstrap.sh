@@ -10,8 +10,7 @@
 # =============================================================================
 set -euo pipefail
 
-# ── 配置 ────────────────────────────────────────────────────────────────────
-PM_IP="${BEE_PM_IP:-127.0.0.1}"
+source "$(dirname "$0")/common.sh"
 NATS_PORT=4222
 NATS_CONF="${NATS_CONF:-$HOME/.worker-bee/nats-server.conf}"
 STORE_DIR="${STORE_DIR:-$HOME/.worker-bee/nats-jetstream}"

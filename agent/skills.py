@@ -34,6 +34,9 @@ def _parse_yamlish(text: str) -> dict:
         key = key.strip()
         val = rest.strip()
         if val:
+            # Strip YAML quotes ("value" or 'value')
+            if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+                val = val[1:-1]
             if val == "[]":
                 meta[key] = []
             else:

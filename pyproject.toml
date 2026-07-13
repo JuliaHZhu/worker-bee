@@ -42,13 +42,13 @@ test = [
 packages = ["agent", "cron", "swarm", "tools", "todo_ball_machine"]
 
 [tool.setuptools.package-data]
-agent = ["*.py", "skills/*.md"]
+agent = ["*.py"]
 cron = ["*.py"]
 tools = ["*.py"]
 todo_ball_machine = ["*.py", "*.json", "*.md"]
-skills = ["*.md"]
-templates = ["*.md"]
-jobs = ["*.md", "*.json"]
+
+[tool.setuptools.data-files]
+skills = ["skills/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""Simple HTTP file server for inter-node file sharing.
+
+Serves files from the node's ~/.worker-bee/mailbox directory.
+Other nodes can fetch files via HTTP GET with an X-Token header.
+
+Usage:
+    FILE_SERVER_TOKEN=secret python swarm/file_server.py [port]
+"""
+import http.server
+import os
+import socketserver
+import sys
+from pathlib import Path
+
+SERVE_DIR = Path.home() / ".worker-bee" / "mailbox"
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 9999
+FILE_SERVER_TOKEN = os.environ.get("FILE_SERVER_TOKEN", "")
+
+
+class MailboxHandler(http.server.SimpleHTTPRequestHandler):
+    """Serve files from the mailbox directory (token-gated)."""
+
+    def do_GET(self):
+        if FILE_SERVER_TOKEN:
+            client_token = self.headers.get("X-Token", "")
+            if client_token != FILE_SERVER_TOKEN:
+                self.send_error(403, "Forbidden: Invalid or missing token")
+                return
+        super().do_GET()
+
+    def translate_path(self, path):
+        """Restrict access to the mailbox directory."""
+        rel = Path(path).relative_to("/")
+        target = SERVE_DIR / rel
+        # Use os.path.realpath to resolve symlinks before checking containment
+        try:
+            real_target = Path(os.path.realpath(target))
+            real_serve = Path(os.path.realpath(SERVE_DIR))
+            real_target.relative_to(real_serve)
+        except (ValueError, OSError):
+            return str(SERVE_DIR / "forbidden")
+        return str(target)
+
+    def log_message(self, format, *args):
+        """Prefix logs."""
+        print(f"[FileServer] {self.client_address[0]} - {format % args}")
+
+
+def main():
+    if not SERVE_DIR.exists():
+        SERVE_DIR.mkdir(parents=True, exist_ok=True)
+
+    if not FILE_SERVER_TOKEN:
+        print("[FileServer] WARNING: FILE_SERVER_TOKEN not set — server is OPEN to all clients")
+    auth_status = "token required" if FILE_SERVER_TOKEN else "no token (open)"
+    print(f"[FileServer] Serving {SERVE_DIR} on port {PORT} ({auth_status})")
+    with socketserver.TCPServer(("", PORT), MailboxHandler) as httpd:
+        httpd.serve_forever()
+
+
+if __name__ == "__main__":
+    main()

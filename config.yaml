@@ -1,0 +1,19 @@
+# worker-bee 种子配置
+# 每台机 clone 后自行修改
+
+role: seed           # 当前角色：seed | strategy | pm | centurion | world | aristotle | skeleton | cardmaster
+bee_id: auto         # 自动生成 UUID，或手动指定（如 "centurion-east-1"）
+nats_url: "nats://localhost:4222"
+
+# 改装状态
+evolution:
+  stage: seed              # seed | observing | evolving | evolved
+  tasks_completed: 0       # 完成的任务计数
+  task_types: {}           # 任务类型统计（如 {"dispatch": 5, "verify": 3}）
+  evolve_threshold: 10     # 连续做同一类任务超过此次数 → 建议演化
+  evolved_at: null         # 改装完成时间
+  evolved_to: null         # 改装成的角色
+
+# skill 仓库
+skills_repo: "https://github.com/JuliaHZhu/skills.git"
+skills_branch: main

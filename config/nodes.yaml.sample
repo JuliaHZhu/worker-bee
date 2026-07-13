@@ -1,0 +1,11 @@
+# Copy to ~/.worker-bee/nodes.yaml and fill in real IPs.
+# This file is git-ignored and never committed.
+nodes:
+  pm:         "<PM_IP>"
+  worker:     "<WORKER_IP>"
+  aristotle:  "<ARISTOTLE_IP>"
+  skeleton:   "<SKELETON_IP>"
+  world:      "<WORLD_IP>"
+  cardmaster: "<CARDMASTER_IP>"
+  strategy:   "<STRATEGY_IP>"
+  centurion:  "<CENTURION_IP>"

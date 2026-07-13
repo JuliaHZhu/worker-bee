@@ -49,7 +49,8 @@ echo "生成 NATS 配置 — bee-01: $BEE_01_IP, bee-02: $BEE_02_IP"
 
 _generate_nats_conf() {
   local name="$1"
-  local peer_ip="$2"
+  local self_ip="$2"
+  local peer_ip="$3"
   cat << EOF
 server_name: "$name"
 port: 4222
@@ -61,9 +62,9 @@ $AUTH_BLOCK
 
 cluster {
   name: worker-bee-cluster
-  listen: 0.0.0.0:6222
+  listen: $self_ip:6222
   routes = [
-    nats://\${peer_ip}:6222
+    nats://$peer_ip:6222
   ]
 }
 
@@ -79,8 +80,8 @@ logtime: true
 EOF
 }
 
-_generate_nats_conf "bee-01" "$BEE_02_IP" > /tmp/nats-bee01.conf
-_generate_nats_conf "bee-02" "$BEE_01_IP" > /tmp/nats-bee02.conf
+_generate_nats_conf "bee-01" "$BEE_01_IP" "$BEE_02_IP" > /tmp/nats-bee01.conf
+_generate_nats_conf "bee-02" "$BEE_02_IP" "$BEE_01_IP" > /tmp/nats-bee02.conf
 
 echo "✅ 配置已生成到 /tmp/nats-bee01.conf 和 /tmp/nats-bee02.conf"
 echo ""

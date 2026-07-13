@@ -17,6 +17,7 @@ import json
 import os
 import sys
 import time
+import threading
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -37,13 +38,15 @@ FEISHU_BASE_URL = os.environ.get("FEISHU_BASE_URL", "https://open.feishu.cn")
 
 _feishu_token: Optional[str] = None
 _feishu_token_expires: float = 0
+_token_lock = threading.Lock()
 
 
 def _get_feishu_token() -> Optional[str]:
     global _feishu_token, _feishu_token_expires
     now = time.time()
-    if _feishu_token and now < _feishu_token_expires - 60:
-        return _feishu_token
+    with _token_lock:
+        if _feishu_token and now < _feishu_token_expires - 60:
+            return _feishu_token
     if not FEISHU_APP_ID or not FEISHU_APP_SECRET:
         return None
     payload = json.dumps({"app_id": FEISHU_APP_ID, "app_secret": FEISHU_APP_SECRET}).encode()
@@ -57,8 +60,9 @@ def _get_feishu_token() -> Optional[str]:
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode())
         if data.get("code") == 0:
-            _feishu_token = data["tenant_access_token"]
-            _feishu_token_expires = now + data.get("expire", 7200)
+            with _token_lock:
+                _feishu_token = data["tenant_access_token"]
+                _feishu_token_expires = now + data.get("expire", 7200)
             return _feishu_token
     except Exception:
         pass

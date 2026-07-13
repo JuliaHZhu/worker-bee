@@ -236,8 +236,6 @@ registry.register(
             },
             "model": {"type": "string", "description": "Override model for this sub-agent", "default": ""},
             "provider": {"type": "string", "description": "Override provider (anthropic|openai)", "default": ""},
-            "api_key": {"type": "string", "description": "Override API key", "default": ""},
-            "base_url": {"type": "string", "description": "Override base URL", "default": ""},
             "max_iterations": {"type": "integer", "description": "Max tool-use iterations", "default": 10}
         },
         "required": ["goal"]
@@ -266,8 +264,6 @@ registry.register(
                         "tools": {"type": "array", "items": {"type": "string"}, "default": []},
                         "model": {"type": "string", "default": ""},
                         "provider": {"type": "string", "default": ""},
-                        "api_key": {"type": "string", "default": ""},
-                        "base_url": {"type": "string", "default": ""},
                         "max_iterations": {"type": "integer", "default": 10}
                     },
                     "required": ["goal"]

@@ -5,14 +5,13 @@
 | 文件 | 说明 |
 |------|------|
 | [01-aristotle-bee.md](01-aristotle-bee.md) | 定义大师 — 术语守护 |
-| [02-architecture-bee.md](02-architecture-bee.md) | 结构规约器 — 从模糊想法到不可再分约束 |
-| [03-project-manager-bee.md](03-project-manager-bee.md) | 编排优化器 — 现实材料分解与排期 |
-| [04-worldbee.md](04-worldbee.md) | 环境引擎 — 现实检查、数据验证 |
-| [05-commander-worker-io.md](05-commander-worker-io.md) | CommanderBee + WorkerBee：代理店长与日结工 |
-| [06-worldbee-pheromone.md](06-worldbee-pheromone.md) | WorldBee：信息素与全局感知 |
+| [02-skeleton-bee.md](02-skeleton-bee.md) | 结构规约器 — 从模糊想法到不可再分约束 |
+| [03-pm-bee.md](03-pm-bee.md) | 编排优化器 — 现实材料分解与排期 |
+| [04-world-bee.md](04-world-bee.md) | 环境引擎 — 现实检查、数据验证 |
+| [05-centurion-bee.md](05-centurion-bee.md) | CommanderBee + WorkerBee：代理店长与日结工 |
 | [07-full-agent-ecosystem.md](07-full-agent-ecosystem.md) | 全 Agent 蜂群：分层架构与双仓库 |
-| [exogenous-pheromone-formats.md](exogenous-pheromone-formats.md) | 每个 fork 的外部状态 Markdown 格式 |
-| [beebox.md](beebox.md) | 蜂群架构认知轨迹——随分析积累，每次追记 |
+| [08-strategy-bee.md](08-strategy-bee.md) | Strategy Bee：长期规划、方向选择与蜂群目标约束 |
+| [09-cardmaster-bee.md](09-cardmaster-bee.md) | Cardmaster：卡片化上下文与工作记忆编排 |
 
 ## 外部架构研究
 
@@ -25,4 +24,4 @@
 
 ## 核心架构
 
-见仓库根目录的 [DESIGN.md](../DESIGN.md) — Deck、Registry、Skill 系统、Batch Handoff。
+见仓库根目录的 [README.md](../README.md) — Deck、Registry、Skill 系统、Batch Handoff。

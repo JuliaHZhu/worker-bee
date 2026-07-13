@@ -70,6 +70,17 @@ def _guard_url(raw_url: str) -> None:
         raise ValueError(f"Disallowed host: {hostname}")
 
 
+class _GuardedRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Redirect handler that validates every hop against the SSRF guard."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _guard_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_guarded_opener = urllib.request.build_opener(_GuardedRedirectHandler)
+
+
 def net_web_search(query: str, num_results: int = 5) -> str:
     """Search the web using Bing HTML endpoint (no API key needed)."""
     try:
@@ -84,7 +95,7 @@ def net_web_search(query: str, num_results: int = 5) -> str:
                 ),
             },
         )
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with _guarded_opener.open(req, timeout=15) as resp:
             html = resp.read().decode("utf-8", errors="replace")
 
         # Detect Bing anti-bot / CAPTCHA pages early
@@ -130,7 +141,7 @@ def net_web_extract(url: str) -> str:
     try:
         _guard_url(url)
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with _guarded_opener.open(req, timeout=15) as resp:
             html = resp.read().decode("utf-8", errors="replace")
         text = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL)
         text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL)

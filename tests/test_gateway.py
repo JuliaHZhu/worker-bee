@@ -253,6 +253,21 @@ class TestGatewayRunner(unittest.TestCase):
 
 # ── FeishuAdapter (integration smoke) ────────────────────────────────────────
 
+import socket
+
+
+def _wait_for_server(host: str, port: int, timeout: float = 5.0) -> None:
+    """Poll until *host:port* accepts connections or *timeout* expires."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=0.5):
+                return
+        except OSError:
+            time.sleep(0.05)
+    raise TimeoutError(f"Server {host}:{port} did not start within {timeout}s")
+
+
 class TestFeishuAdapter(unittest.TestCase):
     """Lightweight smoke tests for FeishuAdapter webhook server."""
 
@@ -265,7 +280,7 @@ class TestFeishuAdapter(unittest.TestCase):
         adapter = FeishuAdapter(cfg)
         adapter.start()
         try:
-            time.sleep(0.3)  # Let server bind
+            _wait_for_server("127.0.0.1", 18081)
             conn = HTTPConnection("127.0.0.1", 18081)
             payload = json.dumps({"type": "url_verification", "challenge": "abc123"})
             conn.request("POST", "/webhook", body=payload, headers={"Content-Type": "application/json"})
@@ -295,7 +310,7 @@ class TestFeishuAdapter(unittest.TestCase):
         adapter.handle_incoming = capture
         adapter.start()
         try:
-            time.sleep(0.3)
+            _wait_for_server("127.0.0.1", 18082)
             conn = HTTPConnection("127.0.0.1", 18082)
             payload = json.dumps({
                 "header": {"event_type": "im.message.receive_v1", "token": ""},
@@ -314,7 +329,11 @@ class TestFeishuAdapter(unittest.TestCase):
             resp = conn.getresponse()
             self.assertEqual(resp.status, 200)
             conn.close()
-            time.sleep(0.5)  # Wait for daemon thread
+            # Wait for daemon thread to process the event
+            for _ in range(50):
+                if received_events:
+                    break
+                time.sleep(0.05)
             self.assertEqual(len(received_events), 1)
             ev = received_events[0]
             self.assertEqual(ev.platform, "feishu")

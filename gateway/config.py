@@ -28,7 +28,7 @@ class PlatformConfig:
 
     enabled: bool = True
     port: int = 8080
-    host: str = "0.0.0.0"
+    host: str = os.getenv("WORKER_BEE_HOST", "127.0.0.1")
     extra: Dict[str, Any] = field(default_factory=dict)
 
 

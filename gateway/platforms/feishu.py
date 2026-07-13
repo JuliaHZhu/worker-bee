@@ -10,6 +10,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import hmac
 from concurrent.futures import ThreadPoolExecutor
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Any, Dict, Optional
@@ -126,7 +127,7 @@ class _FeishuWebhookHandler(BaseHTTPRequestHandler):
 
         # 2. Token verification
         header_token = payload.get("header", {}).get("token", "")
-        if self.verification_token and header_token != self.verification_token:
+        if self.verification_token and not hmac.compare_digest(header_token, self.verification_token):
             self._respond_json({"error": "forbidden"}, 403)
             return
 
@@ -197,7 +198,7 @@ class FeishuAdapter(BasePlatformAdapter):
         self._server: Optional[HTTPServer] = None
         self._thread: Optional[threading.Thread] = None
         self._port = getattr(config, "port", 8080)
-        self._host = getattr(config, "host", "0.0.0.0")
+        self._host = getattr(config, "host", os.getenv("WORKER_BEE_HOST", "127.0.0.1"))
         extra = getattr(config, "extra", {}) or {}
         self._verification_token = extra.get("verification_token", os.environ.get("FEISHU_VERIFICATION_TOKEN", ""))
         self._app_id = extra.get("app_id", os.environ.get("FEISHU_APP_ID", ""))
@@ -205,6 +206,12 @@ class FeishuAdapter(BasePlatformAdapter):
         self._base_url = extra.get("base_url", os.environ.get("FEISHU_BASE_URL", "https://open.feishu.cn"))
 
     def start(self) -> None:
+        if not self._verification_token:
+            logger.error(
+                "Feishu webhook started WITHOUT verification_token! "
+                "Any client can send forged events. Set FEISHU_VERIFICATION_TOKEN env var or "
+                "config.extra.verification_token to fix this."
+            )
         # Create a per-instance handler subclass so multiple adapters
         # can coexist without stomping on class-level state.
         handler_cls = type(

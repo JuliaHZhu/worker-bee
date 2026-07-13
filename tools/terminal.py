@@ -13,6 +13,24 @@ _matches_allowlist = allow_command
 _is_dangerous = is_dangerous_command
 
 
+# Patterns that may leak credentials in terminal output.
+_REDACT_PATTERNS = [
+    re.compile(r'(api[_-]?key\s*[:=]\s*)(\S+)', re.IGNORECASE),
+    re.compile(r'(password\s*[:=]\s*)(\S+)', re.IGNORECASE),
+    re.compile(r'(token\s*[:=]\s*)(\S+)', re.IGNORECASE),
+    re.compile(r'(secret\s*[:=]\s*)(\S+)', re.IGNORECASE),
+    re.compile(r'(Authorization\s*[:\s]+\S+\s+)(\S+)', re.IGNORECASE),
+    re.compile(r'(bearer\s+)(\S+)', re.IGNORECASE),
+]
+
+
+def _redact_output(text: str) -> str:
+    """Mask likely credentials in command output."""
+    for pat in _REDACT_PATTERNS:
+        text = pat.sub(r'\1***', text)
+    return text
+
+
 def _run_command(command: Union[str, list], timeout: int, shell: bool) -> str:
     """Execute command and return trimmed output."""
     result = subprocess.run(
@@ -20,6 +38,7 @@ def _run_command(command: Union[str, list], timeout: int, shell: bool) -> str:
         text=True, timeout=timeout
     )
     output = result.stdout + result.stderr
+    output = _redact_output(output)
     return (output[:5000] + "\n... (truncated)" if len(output) > 5000 else output) or "(no output)"
 
 

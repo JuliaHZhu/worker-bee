@@ -226,7 +226,10 @@ registry.register(
     ),
     parameters={
         "properties": {
-            "goal": {"type": "string", "description": "Clear description of what the sub-agent should accomplish"},
+            "goal": {
+                "type": "string",
+                "description": "Clear description of what the sub-agent should accomplish",
+            },
             "context": {"type": "string", "description": "Additional context the sub-agent needs", "default": ""},
             "tools": {"type": "array", "items": {"type": "string"}, "description": "List of tool names the sub-agent may use", "default": []},
             "model": {"type": "string", "description": "Override model for this sub-agent", "default": ""},
@@ -285,8 +288,18 @@ registry.register(
         "properties": {
             "goal": {"type": "string", "description": "The task to validate"},
             "context": {"type": "string", "description": "Additional context", "default": ""},
-            "models": {"type": "array", "items": {"type": "string"}, "description": "List of model names to compare", "default": []},
-            "tools": {"type": "array", "items": {"type": "string"}, "description": "Tool names available to sub-agents", "default": []},
+            "models": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "List of model names to compare",
+                "default": [],
+            },
+            "tools": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Tool names available to sub-agents",
+                "default": [],
+            },
             "judge": {
                 "type": "boolean",
                 "description": (

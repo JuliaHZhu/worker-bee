@@ -9,7 +9,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import yaml
+
 logger = logging.getLogger(__name__)
+
+
+def _find_config_yaml() -> Optional[Path]:
+    """Look for config.yaml in cwd or ~/.worker-bee/."""
+    for p in [Path("config.yaml"), Path.home() / ".worker-bee" / "config.yaml"]:
+        if p.exists():
+            return p
+    return None
 
 
 @dataclass

@@ -40,13 +40,20 @@ def _now() -> datetime:
 
 def atomic_replace(src: Union[str, Path], dst: Union[str, Path]):
     """Atomically replace dst with src (cross-platform best-effort)."""
+    src_path = Path(src)
+    dst_path = Path(dst)
     try:
-        os.replace(str(src), str(dst))
+        # os.replace is atomic on Unix; on Windows it uses MoveFileExW
+        # which is atomic within the same volume.
+        os.replace(str(src_path), str(dst_path))
     except OSError:
-        # Fallback: copy then delete
-        shutil.copy2(str(src), str(dst))
+        # Fallback for cross-device or permission issues:
+        # copy to a temp file in the same directory as dst, then atomic rename.
+        tmp = dst_path.with_suffix(dst_path.suffix + ".tmp")
+        shutil.copy2(str(src_path), str(tmp))
+        os.replace(str(tmp), str(dst_path))
         try:
-            os.unlink(str(src))
+            src_path.unlink()
         except OSError:
             pass
 

@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from pathlib import Path
 
 from .core import ssh_cmd
+
+logger = logging.getLogger(__name__)
 
 
 def update_bee(
@@ -35,7 +38,7 @@ def update_bee(
     )
 
     if dry_run:
-        print(f"  [DRY-RUN] {server_name}@{host}: git pull")
+        logger.info("  [DRY-RUN] %s@%s: git pull", server_name, host)
         return {"host": host, "name": server_name, "changed": False, "dry_run": True}
 
     rc, out, _ = ssh_cmd(host, user, key_file, port, cmd)
@@ -45,13 +48,13 @@ def update_bee(
     head_change = next((l for l in lines if " -> " in l), "")
 
     if rc != 0:
-        print(f"  [ERROR] {server_name}@{host} update failed")
+        logger.error("  [ERROR] %s@%s update failed", server_name, host)
         return {"host": host, "name": server_name, "changed": False, "error": out}
 
     if changed:
-        print(f"  [UPDATED] {server_name}@{host}: {head_change}")
+        logger.info("  [UPDATED] %s@%s: %s", server_name, host, head_change)
         for c in commits:
-            print(f"    {c}")
+            logger.info("    %s", c)
         install_cmd = (
             f"source {venv_dir}/bin/activate && "
             "pip install --upgrade pip -q && "
@@ -60,11 +63,11 @@ def update_bee(
         )
         rc2, _, err2 = ssh_cmd(host, user, key_file, port, install_cmd)
         if rc2 != 0:
-            print(f"  [WARN] {server_name}@{host} reinstall failed: {err2}")
+            logger.warning("  [WARN] %s@%s reinstall failed: %s", server_name, host, err2)
             # Rollback to previous commit on install failure
             rollback_cmd = f"cd {app_dir} && git checkout {old_head}"
             ssh_cmd(host, user, key_file, port, rollback_cmd)
-            print(f"  [ROLLBACK] {server_name}@{host} reverted to {old_head}")
+            logger.warning("  [ROLLBACK] %s@%s reverted to %s", server_name, host, old_head)
             return {
                 "host": host,
                 "name": server_name,
@@ -74,7 +77,7 @@ def update_bee(
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
     else:
-        print(f"  [OK] {server_name}@{host}: up to date")
+        logger.info("  [OK] %s@%s: up to date", server_name, host)
 
     return {
         "host": host,
@@ -92,5 +95,5 @@ def save_log(log_dir: Path, entries: list[dict]) -> Path:
     log_file = log_dir / f"update-{timestamp}.json"
     with open(log_file, "w", encoding="utf-8") as f:
         json.dump({"timestamp": timestamp, "entries": entries}, f, ensure_ascii=False, indent=2)
-    print(f"\n[LOG] update log saved: {log_file}")
+    logger.info("[LOG] update log saved: %s", log_file)
     return log_file

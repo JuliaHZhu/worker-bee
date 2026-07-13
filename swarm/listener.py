@@ -238,11 +238,14 @@ async def listen(nats_url: str = DEFAULT_NATS_URL, subject: str = "swarm.>"):
     _setup_signal_handlers(loop)
     bee_id = _get_bee_id()
     print(f"[swarm-listener] 连接 {nats_url} ... (身份: {bee_id})")
-    nc = await nats.connect(
-        nats_url,
-        connect_timeout=NATS_TIMEOUT,
-        max_reconnect_attempts=-1,  # 无限重连
-    )
+    connect_kwargs = {
+        "connect_timeout": NATS_TIMEOUT,
+        "max_reconnect_attempts": -1,  # 无限重连
+    }
+    if os.environ.get("NATS_USER"):
+        connect_kwargs["user"] = os.environ["NATS_USER"]
+        connect_kwargs["password"] = os.environ.get("NATS_PASSWORD", "")
+    nc = await nats.connect(nats_url, **connect_kwargs)
 
     # ── JetStream 初始化 ──
     js = nc.jetstream()

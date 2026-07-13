@@ -86,12 +86,24 @@ def net_web_search(query: str, num_results: int = 5) -> str:
         )
         with urllib.request.urlopen(req, timeout=15) as resp:
             html = resp.read().decode("utf-8", errors="replace")
+
+        # Detect Bing anti-bot / CAPTCHA pages early
+        lower_html = html.lower()
+        if any(k in lower_html for k in ("captcha", "verify", "security check", "unusual traffic")):
+            return "Search error: Bing blocked the request (CAPTCHA/anti-bot). Try again later."
+
         results = []
+        # Primary selector: b_algo list items
         blocks = re.findall(
             r'<li[^>]*class=["\'][^"\']*b_algo[^"\']*["\'][^>]*>(.*?)</li>',
             html,
             re.DOTALL,
         )
+        if not blocks:
+            # Fallback: any <li> containing an <h2> and an <a href="http...">
+            blocks = re.findall(r'<li[^>]*>(.*?)</li>', html, re.DOTALL)
+
+        parsed = 0
         for block in blocks:
             title_m = re.search(r"<h2[^>]*>(.*?)</h2>", block, re.DOTALL)
             title = re.sub(r"<[^>]+>", "", title_m.group(1)).strip() if title_m else ""
@@ -99,8 +111,15 @@ def net_web_search(query: str, num_results: int = 5) -> str:
             href = href_m.group(1) if href_m else ""
             if title and href.startswith("http") and "bing.com" not in href:
                 results.append(f"- {title}\n  {href}")
+                parsed += 1
                 if len(results) >= num_results:
                     break
+
+        if not results and not parsed:
+            # Nothing parsed at all — likely HTML structure changed
+            snippet = re.sub(r"\s+", " ", html[:500]).strip()
+            return f"Search error: Unable to parse Bing results (page structure changed?). Snippet: {snippet}"
+
         return "\n".join(results) or "No results found."
     except Exception as e:
         return f"Search error: {e}"

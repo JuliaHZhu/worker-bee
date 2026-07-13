@@ -1,9 +1,25 @@
-# worker-bee 种子配置
-# 每台机 clone 后自行修改
-
+# worker-bee 主配置 — 每台机器独立一份，根据角色修改
 role: seed           # 当前角色：seed | strategy | pm | centurion | world | aristotle | skeleton | cardmaster
 bee_id: auto         # 自动生成 UUID，或手动指定（如 "centurion-east-1"）
 nats_url: "nats://localhost:4222"
+
+# NATS 认证（建议所节点统一，防止未授权访问）
+nats_auth:
+  user: ""           # 与 nats-server.conf 的 authorization 对应
+  password: ""
+
+# Gateway 配置（通常只在 PM/堡垒机开启，对外提供 Feishu Webhook 回调）
+gateway:
+  enabled: false
+  platforms:
+    feishu:
+      enabled: false
+      port: 8081
+      host: "0.0.0.0"
+      extra:
+        verification_token: ""   # Feishu 事件订阅校验 token
+        app_id: ""               # 发消息所需 App ID（可从环境变量 FEISHU_APP_ID 覆盖）
+        app_secret: ""           # 发消息所需 App Secret（可从环境变量 FEISHU_APP_SECRET 覆盖）
 
 # 改装状态
 evolution:

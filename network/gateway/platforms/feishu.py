@@ -219,7 +219,11 @@ class FeishuAdapter(BasePlatformAdapter):
             {"adapter": self, "verification_token": self._verification_token},
         )
         self._server = HTTPServer((self._host, self._port), handler_cls)
-        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
+        self._thread = threading.Thread(
+            target=self._server.serve_forever,
+            name="feishu-webhook-server",
+            daemon=True,
+        )
         self._thread.start()
         logger.info("Feishu webhook server listening on %s:%d", self._host, self._port)
 
@@ -244,7 +248,13 @@ class FeishuAdapter(BasePlatformAdapter):
         rid = sender_open_id if chat_type == "p2p" else chat_id
 
         if not rid:
-            logger.warning("Feishu send failed: missing recipient ID (chat_type=%s chat_id=%s sender_open_id=%s)", chat_type, chat_id, sender_open_id)
+            logger.warning(
+                "Feishu send failed: missing recipient ID "
+                "(chat_type=%s chat_id=%s sender_open_id=%s)",
+                chat_type,
+                chat_id,
+                sender_open_id,
+            )
             return SendResult(success=False, error="Missing recipient ID")
 
         if not self._app_id or not self._app_secret:

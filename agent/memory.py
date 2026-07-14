@@ -185,7 +185,14 @@ class SessionDB:
             }
         return None
 
-    def save_message(self, session_id: str, role: str, content: str, tool_calls: Optional[list] = None, tags: Optional[list] = None):
+    def save_message(
+        self,
+        session_id: str,
+        role: str,
+        content: str,
+        tool_calls: Optional[list] = None,
+        tags: Optional[list] = None,
+    ):
         conn = self._get_conn()
         tags_json = json.dumps(tags) if tags else None
         conn.execute(
@@ -313,17 +320,31 @@ class SessionDB:
         conn.commit()
 
     # ── Tasks ──
-    def add_task(self, session_id: str, content: str, assigned_to: Optional[str] = None, priority: int = 0) -> int:
+    def add_task(
+        self,
+        session_id: str,
+        content: str,
+        assigned_to: Optional[str] = None,
+        priority: int = 0,
+    ) -> int:
         conn = self._get_conn()
         now = datetime.now().isoformat()
         cur = conn.execute(
-            "INSERT INTO tasks (session_id, content, assigned_to, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                "INSERT INTO tasks (session_id, content, assigned_to, priority, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)"
+            ),
             (session_id, content, assigned_to, priority, now, now)
         )
         conn.commit()
         return cur.lastrowid
 
-    def list_tasks(self, session_id: Optional[str] = None, status: Optional[str] = None, assigned_to: Optional[str] = None):
+    def list_tasks(
+        self,
+        session_id: Optional[str] = None,
+        status: Optional[str] = None,
+        assigned_to: Optional[str] = None,
+    ):
         conn = self._get_conn()
         sql = "SELECT id, session_id, content, status, assigned_to, priority, created_at FROM tasks WHERE 1=1"
         params = []
@@ -365,7 +386,11 @@ class SessionDB:
     def get_pending_tasks_for_job(self, assigned_to: str):
         conn = self._get_conn()
         return conn.execute(
-            "SELECT id, content, priority FROM tasks WHERE assigned_to = ? AND status IN ('todo', 'in_progress') ORDER BY priority DESC, created_at ASC",
+            (
+                "SELECT id, content, priority FROM tasks "
+                "WHERE assigned_to = ? AND status IN ('todo', 'in_progress') "
+                "ORDER BY priority DESC, created_at ASC"
+            ),
             (assigned_to,)
         ).fetchall()
 

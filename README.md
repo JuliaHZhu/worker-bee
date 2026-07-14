@@ -240,9 +240,11 @@ worker-bee/
 │   ├─── job_probe.py      # Background job monitoring + probe tick
 │   ├─── swarm.py          # NATS publish + request
 │   └─── ...
-├─── swarm/                # NATS swarm communication
-│   ├─── server.conf       # NATS server config (single-node, cluster-ready)
-│   └─── listener.py       # Background listener: NATS -> mailbox/inbox/
+├─── network/              # Communication layer
+│   ├─── gateway/          # Protocol gateway (Feishu webhook, etc.)
+│   └─── transport/        # NATS transport layer
+│       ├─── server.conf   # NATS server config (single-node, cluster-ready)
+│       └─── listener.py   # Background listener: NATS -> mailbox/inbox/
 ├─── cron/                 # Background scheduler
 │   ├─── scheduler.py      # Tick loop (integrated with job probe)
 │   └─── jobs.py           # Job definitions
@@ -476,7 +478,7 @@ Agent says "check inbox" -> swarm-receive skill -> reads mailbox -> processes
 ```
 
 - **Send**: `swarm_publish` (broadcast) or `swarm_request` (query with reply)
-- **Receive**: Background `swarm/listener.py` subscribes NATS -> writes `~/.worker-bee/mailbox/inbox/`
+- **Receive**: Background `network/transport/listener.py` subscribes NATS -> writes `~/.worker-bee/mailbox/inbox/`
 - **CLI**: `wb swarm status`, `wb swarm listen`
 
 Agents never subscribe directly. They read the mailbox — same philosophy as the Job Board: all state in files.

@@ -494,7 +494,7 @@ def _swarm_menu(args):
 
     def _menu_items():
         # Listener status
-        pg = subprocess.run(["pgrep", "-f", "swarm/listener.py"], capture_output=True, text=True)
+        pg = subprocess.run(["pgrep", "-f", "network/transport/listener.py"], capture_output=True, text=True)
         listener_pid = pg.stdout.strip().split()[0] if pg.stdout.strip() else None
         listener_status = f"🟢 PID {listener_pid}" if listener_pid else "🔴 stopped"
 
@@ -505,7 +505,7 @@ def _swarm_menu(args):
         return [
             ("1", f"Status overview       ({listener_status}, 📬 {unread} unread)"),
             ("2", "Start listener        (spawn background NATS subscriber)"),
-            ("3", "Stop listener         (kill swarm/listener.py process)"),
+            ("3", "Stop listener         (kill network/transport/listener.py process)"),
             ("4", "Send test message     (fire-and-forget to swarm.test.hello)"),
             ("5", "Read mailbox          (show latest inbox messages)"),
             ("6", "Set role              (write role to config.json)"),
@@ -535,7 +535,7 @@ def _swarm_menu(args):
             logger.info(f"🔴 Listener stopped (PID {pid})")
             return
         # Fallback: 模糊匹配（兼容旧进程没有 PID 文件的情况）
-        pg = subprocess.run(["pgrep", "-f", "swarm/listener.py"], capture_output=True, text=True)
+        pg = subprocess.run(["pgrep", "-f", "network/transport/listener.py"], capture_output=True, text=True)
         if not pg.stdout.strip():
             logger.info("🔴 Listener not running")
             return
@@ -1052,8 +1052,8 @@ def _gateway_start(args):
     import signal
     import sys
     import time
-    from gateway.config import GatewayConfig
-    from gateway.run import GatewayRunner
+    from network.gateway.config import GatewayConfig
+    from network.gateway.run import GatewayRunner
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     cfg = GatewayConfig.load()
     if not cfg.enabled:

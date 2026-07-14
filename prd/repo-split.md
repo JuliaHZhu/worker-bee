@@ -16,7 +16,7 @@
 |------|---------|---------|
 | 单机 Agent 核心 | `agent/`, `tools/`, `skills/`, `cron/`, `todo_ball_machine/` | 留在 `worker-bee` |
 | 多机部署工具 | `beebox/`, `beebox-deploy/` | 新建 `beebox` 仓库 |
-| 消息总线 | `swarm/` | 新建 `swarm` 仓库 |
+| 消息总线 | `network/transport/` | 新建 `swarm` 仓库 |
 | 设计文档 | `design_notes/` | 留在 `worker-bee` |
 
 ### 1.2 beebox 使用的 Bee 角色名已过时
@@ -60,7 +60,7 @@
 │   todo_ball_machine/  任务追踪                    │
 │   design_notes/  架构设计文档                     │
 │                                                  │
-│   ⚠️ 不包含: beebox/, beebox-deploy/, swarm/     │
+│   ⚠️ 不包含: beebox/, beebox-deploy/, network/transport/     │
 │   ⚠️ 不被 beebox 作为"角色"部署                  │
 └──────────────────────────────────────────────────┘
             ↑ import by all bee repos
@@ -140,9 +140,9 @@ beebox ──uses────────→ swarm (作为通信层)
 
 #### 1c. 迁移到新 `swarm` 仓库
 
-- `swarm/listener.py` → `swarm/listener.py`
-- `swarm/file_server.py` → `swarm/file_server.py`（如有）
-- 创建 `swarm/pyproject.toml`
+- `network/transport/listener.py` → `network/transport/listener.py`
+- `network/transport/file_server.py` → `network/transport/file_server.py`（如有）
+- 创建 `network/transport/pyproject.toml`
 - 独立可运行，不依赖 worker-bee 的 agent 部分
 
 ### Task 2: 更新 `beebox/config/bees.yaml`
@@ -293,7 +293,7 @@ strategy-bee/          # 以 strategy-bee 为例
 
 ## 五、验收标准
 
-- [ ] `worker-bee` repo 不再包含 `beebox/`、`beebox-deploy/`、`swarm/` 目录
+- [ ] `worker-bee` repo 不再包含 `beebox/`、`beebox-deploy/`、`network/transport/` 目录
 - [ ] 新 `beebox` repo 包含完整的 deploy/update/logs/sync-skills 功能
 - [ ] 新 `swarm` repo 包含 listener + file_server
 - [ ] `beebox/config/bees.yaml` 使用新 Bee 名称

@@ -110,7 +110,7 @@ else
   else
     warn "启动 Listener..."
     mkdir -p ~/.worker-bee/mailbox/inbox ~/.worker-bee/mailbox/outbox
-    nohup ~/worker-bee/.venv/bin/python ~/worker-bee/swarm/listener.py "nats://${PM_IP}:4222" >> ~/.worker-bee/listener.log 2>&1 &
+    nohup ~/worker-bee/.venv/bin/python ~/worker-bee/network/transport/listener.py "nats://${PM_IP}:4222" >> ~/.worker-bee/listener.log 2>&1 &
     sleep 2
     [[ -f ~/.worker-bee/listener.pid ]] && kill -0 "$(cat ~/.worker-bee/listener.pid)" 2>/dev/null && ok "Listener 启动成功" || err "Listener 启动失败"
   fi

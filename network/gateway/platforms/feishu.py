@@ -15,10 +15,10 @@ from concurrent.futures import ThreadPoolExecutor
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Any, Dict, Optional
 
-from gateway.base import BasePlatformAdapter, MessageEvent, SendResult
-from gateway.platform_registry import PlatformEntry, platform_registry
+from network.gateway.base import BasePlatformAdapter, MessageEvent, SendResult
+from network.gateway.platform_registry import PlatformEntry, platform_registry
 
-logger = logging.getLogger("gateway.feishu")
+logger = logging.getLogger("network.gateway.feishu")
 
 _MAX_WEBHOOK_WORKERS = 20
 _webhook_executor = ThreadPoolExecutor(max_workers=_MAX_WEBHOOK_WORKERS, thread_name_prefix="feishu-webhook")

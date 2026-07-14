@@ -8,7 +8,7 @@ swarm tools — NATS 蜂群通信的 Agent 工具。
 依赖：nats-py（需安装到 worker-bee venv）
 环境变量：SWARM_NATS_URL（默认 nats://localhost:4222）
 
-Agent 不直接 subscribe——收消息由 swarm/listener.py 后台进程负责，
+Agent 不直接 subscribe——收消息由 network/transport/listener.py 后台进程负责，
 写入 mailbox/inbox/，Agent 用 fs_read_file 读取。
 """
 import asyncio

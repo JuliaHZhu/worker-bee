@@ -118,10 +118,10 @@ ssh -o ConnectTimeout=3 -o BatchMode=yes ubuntu@<NODE_IP> "echo OK" 2>/dev/null 
 mkdir -p ~/.worker-bee/mailbox/inbox
 
 # 杀掉旧 listener（如有）
-pkill -f "swarm/listener.py" 2>/dev/null || true
+pkill -f "network/transport/listener.py" 2>/dev/null || true
 
 # 启动新 listener
-nohup ~/worker-bee/.venv/bin/python ~/worker-bee/swarm/listener.py \
+nohup ~/worker-bee/.venv/bin/python ~/worker-bee/network/transport/listener.py \
   nats://<NODE_IP>:4222 >> ~/.worker-bee/listener.log 2>&1 &
 
 sleep 2

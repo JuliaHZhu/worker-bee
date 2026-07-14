@@ -56,7 +56,7 @@ if [[ "$ROLE" == "pm" ]]; then
 else
   mkdir -p ~/.worker-bee/mailbox/inbox
   if ! [[ -f ~/.worker-bee/listener.pid ]] || ! kill -0 "$(cat ~/.worker-bee/listener.pid)" 2>/dev/null; then
-    nohup python ~/worker-bee/swarm/listener.py "nats://${PM_IP}:4222" >> ~/.worker-bee/listener.log 2>&1 &
+    nohup python ~/worker-bee/network/transport/listener.py "nats://${PM_IP}:4222" >> ~/.worker-bee/listener.log 2>&1 &
     sleep 2
   fi
   # 用 python 内置 socket 检测端口（nc 可能不存在）

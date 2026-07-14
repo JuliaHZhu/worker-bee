@@ -4,7 +4,7 @@ swarm listener — NATS 订阅进程，将蜂群消息写入 mailbox。
 职责单一：sub → 写文件。不做业务逻辑，不做路由决策。
 
 启动方式：
-    python swarm/listener.py [nats_url]
+    python network/transport/listener.py [nats_url]
     # 默认 nats://localhost:4222
 
 进程模型：

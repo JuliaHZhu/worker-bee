@@ -3,13 +3,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from swarm.file_server import MailboxHandler
+from network.transport.file_server import MailboxHandler
 
 
 class TestPathTraversal(unittest.TestCase):
     def test_translate_path_restricted_to_serve_dir(self):
         """translate_path must reject paths outside SERVE_DIR."""
-        with patch("swarm.file_server.SERVE_DIR", Path("/tmp/test-mailbox")):
+        with patch("network.transport.file_server.SERVE_DIR", Path("/tmp/test-mailbox")):
             handler = MailboxHandler.__new__(MailboxHandler)
             # Path inside serve dir is OK
             result = handler.translate_path("/file.txt")
@@ -31,7 +31,7 @@ class TestPathTraversal(unittest.TestCase):
                 link.symlink_to(outside)
             except OSError:
                 self.skipTest("Cannot create symlink in /tmp/test-mailbox")
-            with patch("swarm.file_server.SERVE_DIR", Path("/tmp/test-mailbox")):
+            with patch("network.transport.file_server.SERVE_DIR", Path("/tmp/test-mailbox")):
                 handler = MailboxHandler.__new__(MailboxHandler)
                 result = handler.translate_path("/escaped.txt")
                 self.assertIn("forbidden", result)

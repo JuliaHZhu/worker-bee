@@ -11,9 +11,9 @@ import os
 import threading
 from typing import Any, Dict, Optional
 
-from gateway.base import BasePlatformAdapter, MessageEvent, SendResult
-from gateway.config import GatewayConfig
-from gateway.platform_registry import platform_registry
+from network.gateway.base import BasePlatformAdapter, MessageEvent, SendResult
+from network.gateway.config import GatewayConfig
+from network.gateway.platform_registry import platform_registry
 
 logger = logging.getLogger("gateway")
 

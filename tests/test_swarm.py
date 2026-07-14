@@ -74,11 +74,11 @@ class TestSwarmTools:
 
 
 class TestSwarmListener:
-    """Tests for swarm/listener.py mailbox writing."""
+    """Tests for network/transport/listener.py mailbox writing."""
 
     def test_write_envelope_uses_message_id_as_filename(self, tmp_path):
         """Listener should write file using message_id as filename."""
-        import swarm.listener as listener
+        import network.transport.listener as listener
         listener.MAILBOX_INBOX = tmp_path / "inbox"
 
         msg_id = str(uuid.uuid4())
@@ -96,7 +96,7 @@ class TestSwarmListener:
 
     def test_write_envelope_generates_message_id_if_missing(self, tmp_path):
         """If incoming message lacks message_id, listener should generate one."""
-        import swarm.listener as listener
+        import network.transport.listener as listener
         listener.MAILBOX_INBOX = tmp_path / "inbox"
 
         data = json.dumps({"foo": "bar"}).encode()

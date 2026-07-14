@@ -68,8 +68,8 @@ li{margin:4px 0}
 
 <table>
   <tr><th>组件</th><th>文件</th><th>职责</th></tr>
-  <tr><td>NATS Server</td><td><code>swarm/server.conf</code></td><td>轻量消息总线，端口 4222。手动配置集群（routes、cluster_name），支持跨机器路由。NATS at-least-once 保证消息送达</td></tr>
-  <tr><td>swarm_listener</td><td><code>swarm/listener.py</code></td><td>独立 asyncio 进程。订阅 NATS → 收消息 → 写 JSON 到 <code>mailbox/inbox/</code>，文件名用 UUID。启动时检查 bee_id 冲突，定期发送心跳</td></tr>
+  <tr><td>NATS Server</td><td><code>network/transport/server.conf</code></td><td>轻量消息总线，端口 4222。手动配置集群（routes、cluster_name），支持跨机器路由。NATS at-least-once 保证消息送达</td></tr>
+  <tr><td>swarm_listener</td><td><code>network/transport/listener.py</code></td><td>独立 asyncio 进程。订阅 NATS → 收消息 → 写 JSON 到 <code>mailbox/inbox/</code>，文件名用 UUID。启动时检查 bee_id 冲突，定期发送心跳</td></tr>
   <tr><td>swarm_publish / swarm_request</td><td><code>tools/swarm.py</code></td><td>两个 Tool：publish 保证送达（at-least-once），request 60 秒超时 + 3 次重试</td></tr>
 </table>
 
@@ -170,7 +170,7 @@ SWARM_NATS_URL=nats://localhost:4222          # NATS 地址
 SWARM_NATS_TIMEOUT=5                           # 连接超时（秒）
 
 # NATS Server 配置 — 单机
-# swarm/server.conf
+# network/transport/server.conf
 port: 4222
 http_port: 8222
 max_payload: 1MB
@@ -197,7 +197,7 @@ cluster {
   <tr><td>4</td><td>swarm_request 改为 60s 超时 + 3 次重试</td></tr>
   <tr><td>5</td><td>实现 mail-to-job / swarm-send / swarm-receive skill</td></tr>
   <tr><td>6</td><td>swarm_listener 加 heartbeat 定时发送（每 30 秒）</td></tr>
-  <tr><td>7</td><td>跨机器文件传输：HTTP 服务（<code>swarm/file_server.py</code>）</td></tr>
+  <tr><td>7</td><td>跨机器文件传输：HTTP 服务（<code>network/transport/file_server.py</code>）</td></tr>
 </table>
 
 <p class="takeaway"><strong>跨机器文件传输：</strong>不通过 NATS 发大文件。用 HTTP 服务暴露文件，通过 NATS 发 file_url，对方 HTTP 下载。</p>

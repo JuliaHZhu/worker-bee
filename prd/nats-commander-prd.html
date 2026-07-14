@@ -90,8 +90,8 @@ li{margin:4px 0}
 
 <table>
   <tr><th>组件</th><th>文件</th><th>职责</th></tr>
-  <tr><td>NATS Server</td><td><code>swarm/server.conf</code></td><td>轻量消息总线，端口 4222。手动配置集群（routes、cluster_name）</td></tr>
-  <tr><td>swarm_listener</td><td><code>swarm/listener.py</code></td><td>独立 asyncio 进程。订阅 NATS → 收消息 → 写 JSON 到 <code>mailbox/inbox/</code>，文件名用 UUID</td></tr>
+  <tr><td>NATS Server</td><td><code>network/transport/server.conf</code></td><td>轻量消息总线，端口 4222。手动配置集群（routes、cluster_name）</td></tr>
+  <tr><td>swarm_listener</td><td><code>network/transport/listener.py</code></td><td>独立 asyncio 进程。订阅 NATS → 收消息 → 写 JSON 到 <code>mailbox/inbox/</code>，文件名用 UUID</td></tr>
   <tr><td>swarm_publish</td><td><code>tools/swarm.py</code></td><td>fire-and-forget，保证送达（NATS at-least-once）</td></tr>
   <tr><td>swarm_request</td><td><code>tools/swarm.py</code></td><td>request-reply，60 秒超时，重试 3 次</td></tr>
 </table>
@@ -158,7 +158,7 @@ li{margin:4px 0}
 
 <h3>NATS cluster 配置</h3>
 
-<p><code>swarm/server.conf</code> 示例（3 台机器）：</p>
+<p><code>network/transport/server.conf</code> 示例（3 台机器）：</p>
 
 <pre><code># 机器 A（Mac）
 port: 4222
@@ -243,13 +243,13 @@ cluster {
 <table>
   <tr><th>#</th><th>项</th><th>文件</th></tr>
   <tr><td>1</td><td>config.json 加 <code>bee_id</code> 字段</td><td><code>config.json</code></td></tr>
-  <tr><td>2</td><td>实现 bee_id 冲突检测（启动时 + 心跳）</td><td><code>swarm/listener.py</code></td></tr>
+  <tr><td>2</td><td>实现 bee_id 冲突检测（启动时 + 心跳）</td><td><code>network/transport/listener.py</code></td></tr>
   <tr><td>3</td><td>swarm_request 加 timeout/retries 参数</td><td><code>tools/swarm.py</code></td></tr>
   <tr><td>4</td><td>消息 envelope 加 message_id (UUID) + sequence</td><td><code>tools/swarm.py</code></td></tr>
-  <tr><td>5</td><td>listener 写文件用 message_id 作为文件名</td><td><code>swarm/listener.py</code></td></tr>
+  <tr><td>5</td><td>listener 写文件用 message_id 作为文件名</td><td><code>network/transport/listener.py</code></td></tr>
   <tr><td>6</td><td>编写 <code>swarm-send</code> / <code>swarm-receive</code> / <code>mail-to-job</code> Skill</td><td><code>skills/</code></td></tr>
-  <tr><td>7</td><td>NATS cluster 配置模板（3 台机器）</td><td><code>swarm/server.conf</code></td></tr>
-  <tr><td>8</td><td>HTTP 文件服务启动脚本</td><td><code>swarm/file_server.py</code></td></tr>
+  <tr><td>7</td><td>NATS cluster 配置模板（3 台机器）</td><td><code>network/transport/server.conf</code></td></tr>
+  <tr><td>8</td><td>HTTP 文件服务启动脚本</td><td><code>network/transport/file_server.py</code></td></tr>
   <tr><td>9</td><td>跑测试（单机 + 跨机器）</td><td><code>tests/test_swarm.py</code></td></tr>
 </table>
 

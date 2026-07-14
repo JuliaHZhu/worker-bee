@@ -5,7 +5,7 @@ Serves files from the node's ~/.worker-bee/mailbox directory.
 Other nodes can fetch files via HTTP GET with an X-Token header.
 
 Usage:
-    FILE_SERVER_TOKEN=secret python swarm/file_server.py [port]
+    FILE_SERVER_TOKEN=secret python network/transport/file_server.py [port]
 """
 import http.server
 import os

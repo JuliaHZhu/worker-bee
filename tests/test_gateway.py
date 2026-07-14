@@ -8,10 +8,10 @@ from http.client import HTTPConnection
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from gateway.base import BasePlatformAdapter, MessageEvent, SendResult
-from gateway.config import GatewayConfig, PlatformConfig
-from gateway.platform_registry import PlatformEntry, PlatformRegistry, platform_registry
-from gateway.run import GatewayRunner
+from network.gateway.base import BasePlatformAdapter, MessageEvent, SendResult
+from network.gateway.config import GatewayConfig, PlatformConfig
+from network.gateway.platform_registry import PlatformEntry, PlatformRegistry, platform_registry
+from network.gateway.run import GatewayRunner
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -154,7 +154,7 @@ class TestGatewayRunner(unittest.TestCase):
             )
         )
 
-    @patch("gateway.run.platform_registry", new_callable=lambda: PlatformRegistry())
+    @patch("network.gateway.run.platform_registry", new_callable=lambda: PlatformRegistry())
     def test_start_stop(self, mock_global_reg):
         # Register locally on the patched global registry
         mock_global_reg.register(
@@ -180,7 +180,7 @@ class TestGatewayRunner(unittest.TestCase):
         self.assertFalse(runner._running)
         self.assertTrue(adapter.stopped)
 
-    @patch("gateway.run.platform_registry", new_callable=lambda: PlatformRegistry())
+    @patch("network.gateway.run.platform_registry", new_callable=lambda: PlatformRegistry())
     def test_disabled_platform_skipped(self, mock_global_reg):
         mock_global_reg.register(
             PlatformEntry(
@@ -199,7 +199,7 @@ class TestGatewayRunner(unittest.TestCase):
         self.assertNotIn("mock", runner.adapters)
         runner.stop()
 
-    @patch("gateway.run.platform_registry", new_callable=lambda: PlatformRegistry())
+    @patch("network.gateway.run.platform_registry", new_callable=lambda: PlatformRegistry())
     def test_route_incoming(self, mock_global_reg):
         mock_global_reg.register(
             PlatformEntry(
@@ -225,7 +225,7 @@ class TestGatewayRunner(unittest.TestCase):
 
         runner.stop()
 
-    @patch("gateway.run.platform_registry", new_callable=lambda: PlatformRegistry())
+    @patch("network.gateway.run.platform_registry", new_callable=lambda: PlatformRegistry())
     def test_process_with_agent_override(self, mock_global_reg):
         mock_global_reg.register(
             PlatformEntry(
@@ -271,10 +271,10 @@ def _wait_for_server(host: str, port: int, timeout: float = 5.0) -> None:
 class TestFeishuAdapter(unittest.TestCase):
     """Lightweight smoke tests for FeishuAdapter webhook server."""
 
-    @patch("gateway.platforms.feishu._get_feishu_token", return_value="fake_token")
-    @patch("gateway.platforms.feishu._send_reply", return_value={"data": {"message_id": "m1"}})
+    @patch("network.gateway.platforms.feishu._get_feishu_token", return_value="fake_token")
+    @patch("network.gateway.platforms.feishu._send_reply", return_value={"data": {"message_id": "m1"}})
     def test_webhook_challenge(self, mock_send, mock_token):
-        from gateway.platforms.feishu import FeishuAdapter
+        from network.gateway.platforms.feishu import FeishuAdapter
 
         cfg = MockConfig(port=18081, host="127.0.0.1")
         adapter = FeishuAdapter(cfg)
@@ -292,10 +292,10 @@ class TestFeishuAdapter(unittest.TestCase):
         finally:
             adapter.stop()
 
-    @patch("gateway.platforms.feishu._get_feishu_token", return_value="fake_token")
-    @patch("gateway.platforms.feishu._send_reply", return_value={"data": {"message_id": "m1"}})
+    @patch("network.gateway.platforms.feishu._get_feishu_token", return_value="fake_token")
+    @patch("network.gateway.platforms.feishu._send_reply", return_value={"data": {"message_id": "m1"}})
     def test_webhook_message_event(self, mock_send, mock_token):
-        from gateway.platforms.feishu import FeishuAdapter
+        from network.gateway.platforms.feishu import FeishuAdapter
 
         cfg = MockConfig(port=18082, host="127.0.0.1")
         adapter = FeishuAdapter(cfg)
@@ -343,10 +343,10 @@ class TestFeishuAdapter(unittest.TestCase):
         finally:
             adapter.stop()
 
-    @patch("gateway.platforms.feishu._get_feishu_token", return_value="fake_token")
-    @patch("gateway.platforms.feishu._send_reply", return_value={"data": {"message_id": "m99"}})
+    @patch("network.gateway.platforms.feishu._get_feishu_token", return_value="fake_token")
+    @patch("network.gateway.platforms.feishu._send_reply", return_value={"data": {"message_id": "m99"}})
     def test_send_p2p(self, mock_send, mock_token):
-        from gateway.platforms.feishu import FeishuAdapter
+        from network.gateway.platforms.feishu import FeishuAdapter
 
         cfg = MockConfig()
         adapter = FeishuAdapter(cfg)

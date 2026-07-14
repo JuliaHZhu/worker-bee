@@ -206,7 +206,7 @@ phase4_listeners() {
     fi
 
     warn "$role listener 未运行，启动中..."
-    local cmd="cd ~/worker-bee && nohup $VENV_PYTHON swarm/listener.py '$nats_url' >> ~/.worker-bee/listener.log 2>&1 &"
+    local cmd="cd ~/worker-bee && nohup $VENV_PYTHON network/transport/listener.py '$nats_url' >> ~/.worker-bee/listener.log 2>&1 &"
     if remote "$ip" "$cmd"; then
       sleep 1
       if remote "$ip" "test -f ~/.worker-bee/listener.pid && kill -0 \$(cat ~/.worker-bee/listener.pid) 2>/dev/null"; then

@@ -228,9 +228,11 @@ worker-bee/
 │   ├─── job_probe.py      # 后台 job 监控 + probe tick
 │   ├─── swarm.py          # NATS 蜂群发布/请求
 │   └─── ...
-├─── swarm/                # NATS 蜂群通信
-│   ├─── server.conf       # NATS 服务配置（单机/集群）
-│   └─── listener.py       # 后台监听：NATS → mailbox/inbox/
+├─── network/              # 通信层
+│   ├─── gateway/          # 协议网关（飞书 webhook 等）
+│   └─── transport/        # NATS 传输层
+│       ├─── server.conf   # NATS 服务配置（单机/集群）
+│       └─── listener.py   # 后台监听：NATS → mailbox/inbox/
 ├─── cron/                 # 后台定时器
 │   ├─── scheduler.py      # 每 60s tick 循环（集成 job probe）
 │   └─── jobs.py           # Job 定义
@@ -467,7 +469,7 @@ Agent 说 "查收件箱" → swarm-receive skill → 读 mailbox → 分类处�
 ```
 
 - **发送**：`swarm_publish`（广播，不等回复）或 `swarm_request`（请求回复）
-- **接收**：后台 `swarm/listener.py` 订阅 NATS → 写入 `~/.worker-bee/mailbox/inbox/`
+- **接收**：后台 `network/transport/listener.py` 订阅 NATS → 写入 `~/.worker-bee/mailbox/inbox/`
 - **CLI**：`wb swarm status`（检查状态）、`wb swarm listen`（启动监听）
 
 Agent 不直接 subscribe NATS。它读 mailbox — 和 Job Board 一样：所有状态在文件里。

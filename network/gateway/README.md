@@ -43,8 +43,8 @@ platforms (Feishu/Lark, etc.) into the internal Agent / NATS layer.
 ## Adding a New Platform
 
 ```python
-from gateway.base import BasePlatformAdapter, MessageEvent, SendResult
-from gateway.platform_registry import PlatformEntry, platform_registry
+from network.gateway.base import BasePlatformAdapter, MessageEvent, SendResult
+from network.gateway.platform_registry import PlatformEntry, platform_registry
 
 class MyAdapter(BasePlatformAdapter):
     def start(self): ...

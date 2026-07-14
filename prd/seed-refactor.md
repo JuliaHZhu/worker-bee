@@ -137,7 +137,7 @@ JuliaHZhu/skills (技能库) ← 独立 repo，各 Bee 拉取 skill
 | 种子 skill | `skills/seed.md` | **新增**：帮 Bee 发现自己该演化成什么角色 | ✅ |
 | 改装工具 | `tools/evolve.py` | **新增**：写 skill、改 config、git push | ✅ |
 | 定时调度 | `cron/` | 定时任务 | ✅ |
-| 消息通信 | `swarm/` | NATS listener, mailbox 收发 | ✅ |
+| 消息通信 | `network/transport/` | NATS listener, mailbox 收发 | ✅ |
 | 任务追踪 | `todo_ball_machine/` | job 管理 | ✅ |
 | 测试 | `tests/` | 单元测试 | ✅ |
 
@@ -210,7 +210,7 @@ worker-bee/
 │   └── web.py
 ├── skills/             # Skill 文件
 │   └── seed.md         # ★ 新增：种子 skill
-├── swarm/              # NATS 通信
+├── network/transport/              # NATS 通信
 │   ├── listener.py
 │   └── file_server.py
 ├── cron/               # 定时调度
@@ -680,7 +680,7 @@ def deploy_all(inventory, seed_repo, seed_branch):
 
 ```
 保留:
-  agent/  tools/  skills/  swarm/  cron/  todo_ball_machine/  tests/
+  agent/  tools/  skills/  network/transport/  cron/  todo_ball_machine/  tests/
   config.yaml  pyproject.toml  requirements.txt  README.md  .gitignore
 
 移出 → 新建 beebox repo:

@@ -374,8 +374,8 @@ def _compute_grace_seconds(schedule: dict) -> int:
             period_seconds = int((second - first).total_seconds())
             grace = period_seconds // 2
             return max(MIN_GRACE, min(grace, MAX_GRACE))
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed to compute grace period: %s", exc)
 
     return MIN_GRACE
 
@@ -461,8 +461,8 @@ def save_jobs(jobs: List[Dict[str, Any]]):
     except BaseException:
         try:
             os.unlink(tmp_path)
-        except OSError:
-            pass
+        except OSError as exc:
+            logger.warning("Failed to clean up temp file %s: %s", tmp_path, exc)
         raise
 
 
@@ -547,7 +547,12 @@ def create_job(
         context_from = None
 
     prompt_text = _coerce_job_text(prompt)
-    label_source = (prompt_text or (normalized_skills[0] if normalized_skills else None) or (normalized_script if normalized_no_agent else None)) or "cron job"
+    label_source = (
+        prompt_text
+        or (normalized_skills[0] if normalized_skills else None)
+        or (normalized_script if normalized_no_agent else None)
+        or "cron job"
+    )
     job = {
         "id": job_id,
         "name": name or label_source[:50].strip(),
@@ -987,8 +992,8 @@ def save_job_output(job_id: str, output: str):
     except BaseException:
         try:
             os.unlink(tmp_path)
-        except OSError:
-            pass
+        except OSError as exc:
+            logger.warning("Failed to clean up temp file %s: %s", tmp_path, exc)
         raise
 
     return output_file

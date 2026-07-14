@@ -1,3 +1,5 @@
+import logging
+
 """BeeBox skills sync — distribute skills from standalone repo to nodes (seed mode)."""
 from __future__ import annotations
 
@@ -7,15 +9,17 @@ from pathlib import Path
 
 from .core import ssh_cmd
 
+logger = logging.getLogger(__name__)
+
 
 def local_clone_or_update(url: str, branch: str, local_path: Path) -> None:
     if (local_path / ".git").exists():
-        print(f"[LOCAL] updating skills: {local_path}")
+        logger.info("[LOCAL] updating skills: %s", local_path)
         subprocess.run(["git", "-C", str(local_path), "fetch", "origin"], check=True)
         subprocess.run(["git", "-C", str(local_path), "checkout", branch], check=True)
         subprocess.run(["git", "-C", str(local_path), "pull", "origin", branch], check=True)
     else:
-        print(f"[LOCAL] cloning skills to: {local_path}")
+        logger.info("[LOCAL] cloning skills to: %s", local_path)
         local_path.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(
             ["git", "clone", "--branch", branch, "--depth", "1", url, str(local_path)],
@@ -34,7 +38,7 @@ def sync_to_server(
 ) -> None:
     """Sync all skills to a remote server (seed mode — no per-role filtering)."""
     if dry_run:
-        print(f"  [DRY-RUN] sync skills to {server_name}@{host}")
+        logger.info("[DRY-RUN] sync skills to %s@%s", server_name, host)
         return
 
     remote_dir = "~/.beebox/skills"
@@ -48,10 +52,10 @@ def sync_to_server(
         src,
         dst,
     ]
-    print(f"  [SYNC] skills → {server_name}@{host}:{remote_dir}")
+    logger.info("[SYNC] skills → %s@%s:%s", server_name, host, remote_dir)
     result = subprocess.run(rsync, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"  [WARN] rsync failed: {result.stderr.strip()}")
+        logger.warning("[WARN] rsync failed: %s", result.stderr.strip())
 
     # Write index
     skill_files = sorted(

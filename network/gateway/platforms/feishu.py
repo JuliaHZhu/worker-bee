@@ -53,8 +53,8 @@ def _get_feishu_token(app_id: str, app_secret: str, base_url: str = "https://ope
                 _feishu_token = data["tenant_access_token"]
                 _feishu_token_expires = now + data.get("expire", 7200)
             return _feishu_token
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Failed to get Feishu token: %s", exc)
     return None
 
 

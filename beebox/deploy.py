@@ -1,8 +1,7 @@
 """BeeBox deploy — bulk clone seed, install, NATS setup (seed mode)."""
-"""BeeBox deploy — bulk clone seed, install, NATS setup (seed mode)."""
-"""BeeBox deploy — bulk clone seed, install, NATS setup (seed mode)."""
 from __future__ import annotations
 
+import logging
 import os
 import shlex
 import textwrap
@@ -10,6 +9,8 @@ import time
 from pathlib import Path
 
 from .core import load_yaml, ssh_cmd
+
+logger = logging.getLogger(__name__)
 
 
 def deploy_nats(
@@ -23,7 +24,7 @@ def deploy_nats(
     nats_password: str = "",
 ) -> None:
     """Deploy NATS server on a remote host."""
-    print(f"  [NATS] deploying to {host} ...")
+    logger.info("[NATS] deploying to %s ...", host)
     routes = "\n    ".join(f'nats://{n["host"]}:6222' for n in nats_nodes)
     auth_block = ""
     if nats_user and nats_password:
@@ -65,9 +66,9 @@ def deploy_nats(
     )
     rc, _, err = ssh_cmd(host, user, key_file, port, cmd)
     if rc != 0:
-        print(f"  [NATS] warning: {host} may have failed: {err}")
+        logger.warning("[NATS] %s may have failed: %s", host, err)
     else:
-        print(f"  [NATS] {host} started")
+        logger.info("[NATS] %s started", host)
 
 
 def deploy_seed(
@@ -84,7 +85,7 @@ def deploy_seed(
     """Deploy worker-bee seed to a remote host. All servers get the same repo."""
     app_dir = "~/.beebox/worker-bee"
     venv_dir = "~/.beebox/venv"
-    print(f"  [SEED] deploying to {host} ({server_name}) ...")
+    logger.info("[SEED] deploying to %s (%s) ...", host, server_name)
 
     env_exports = " ".join(f'export {k}={shlex.quote(str(v))}; ' for k, v in env_vars.items() if v)
     cmd = textwrap.dedent(f"""\
@@ -109,11 +110,11 @@ def deploy_seed(
     """)
 
     if dry_run:
-        print(f"  [DRY-RUN] would run:\n{textwrap.indent(cmd, '    ')}")
+        logger.info("[DRY-RUN] would run:\n%s", textwrap.indent(cmd, "    "))
         return
 
     rc, out, err = ssh_cmd(host, user, key_file, port, cmd)
-    print(textwrap.indent(out, "    "))
+    logger.info("%s", textwrap.indent(out, "    "))
     if rc != 0:
         raise RuntimeError(f"seed@{host} deploy failed: {err}")
 
@@ -134,4 +135,4 @@ def write_log(log_dir: Path, inventory: dict) -> None:
     }
     with open(log_file, "w", encoding="utf-8") as f:
         yaml.dump(log_data, f, allow_unicode=True, sort_keys=False)
-    print(f"[LOG] deploy record saved: {log_file}")
+    logger.info("[LOG] deploy record saved: %s", log_file)

@@ -360,7 +360,8 @@ registry.register(
     description=(
         "Todo Ball Machine — 人生任务管理系统。\n"
         "支持抽球机制、场次管理、配额追踪。\n"
-        "Actions: dashboard, today, draw, quick_draw, complete, edit, redraw, box_list, cycle_status, new_cycle, history, day, stats, help"
+        "Actions: dashboard, today, draw, quick_draw, complete, edit, "
+        "redraw, box_list, cycle_status, new_cycle, history, day, stats, help"
     ),
     parameters={
         "properties": {

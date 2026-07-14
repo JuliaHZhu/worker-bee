@@ -40,8 +40,8 @@ def _nats_auth_from_config() -> tuple[Optional[str], Optional[str]]:
             password = auth.get("password", "")
             if user:
                 return user, password
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed to read NATS auth config from %s: %s", p, exc)
     return None, None
 
 
@@ -63,7 +63,8 @@ class GatewayRunner:
         cfg_path = Path.home() / ".worker-bee" / "config.json"
         try:
             cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
-        except Exception:
+        except Exception as exc:
+            logger.warning("Failed to load agent config: %s", exc)
             cfg = {}
         if not cfg.get("api_key"):
             raise RuntimeError(
@@ -176,7 +177,11 @@ class GatewayRunner:
                     "text": event.text,
                     "chat_id": event.raw.get("chat_id", "") if hasattr(event, "raw") else "",
                     "message_id": event.message_id,
-                    "timestamp": event.timestamp.isoformat() if hasattr(event.timestamp, "isoformat") else str(event.timestamp),
+                    "timestamp": (
+                        event.timestamp.isoformat()
+                        if hasattr(event.timestamp, "isoformat")
+                        else str(event.timestamp)
+                    ),
                 },
                 ensure_ascii=False,
             ).encode("utf-8")

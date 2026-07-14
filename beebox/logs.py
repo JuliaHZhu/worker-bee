@@ -6,6 +6,8 @@ import time
 from pathlib import Path
 
 from .core import ssh_cmd
+import logging
+logger = logging.getLogger(__name__)
 
 
 def collect_git_logs(host, user, key_file, port, server_name):
@@ -72,5 +74,5 @@ def save(collect_dir: Path, inventory: dict, all_logs: dict, since: str) -> Path
                 f.write("\n")
             f.write("\n")
 
-    print(f"[LOG] saved:\n  JSON: {json_file}\n  TXT:  {txt_file}")
+    logger.info("[LOG] saved:\n  JSON: %s\n  TXT: %s", json_file, txt_file)
     return json_file

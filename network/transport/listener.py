@@ -71,7 +71,8 @@ def _get_bee_id() -> str:
     try:
         cfg = json.loads((Path.home() / ".worker-bee" / "config.json").read_text(encoding="utf-8"))
         return cfg.get("bee_id", "unknown-bee")
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed to read bee_id from config: %s", exc)
         return "unknown-bee"
 
 

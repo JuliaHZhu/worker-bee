@@ -66,7 +66,10 @@ def main():
         # 2. 创建 repo（gh repo create 自动设置 remote 并 push）
         ok, out, err = run_ssh(
             ip,
-            f"cd ~/worker-bee && gh repo create {GITHUB_ORG}/worker-bee-{name} --private --source=. --remote=origin --push",
+            (
+                f"cd ~/worker-bee && gh repo create {GITHUB_ORG}/worker-bee-{name} "
+                f"--private --source=. --remote=origin --push"
+            ),
             timeout=60
         )
         if ok:
@@ -74,7 +77,13 @@ def main():
         else:
             print(f"  ❌ 创建失败: {err[:200]}")
             # Fallback：手动设置
-            run_ssh(ip, f"cd ~/worker-bee && git remote remove origin 2>/dev/null; git remote add origin https://github.com/{GITHUB_ORG}/worker-bee-{name}.git")
+            run_ssh(
+                ip,
+                (
+                    f"cd ~/worker-bee && git remote remove origin 2>/dev/null; "
+                    f"git remote add origin https://github.com/{GITHUB_ORG}/worker-bee-{name}.git"
+                ),
+            )
             run_ssh(ip, "cd ~/worker-bee && git push -u origin main", timeout=60)
 
     if mode != "dry-run":

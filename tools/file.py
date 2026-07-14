@@ -3,10 +3,16 @@ import fnmatch
 import hashlib
 import json
 import os
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 import shutil
 from pathlib import Path
-from agent.registry import registry
+from agent.registry import logging
+import re
+
+logger = logging.getLogger(__name__)gistry
 from agent.safety import is_write_denied, is_self_modify_target
 
 # Re-export for backward-compat with tests
@@ -162,8 +168,8 @@ def fs_snapshot_list(path: str | None = None) -> str:
                 )
             else:
                 lines.append(f"  {p} \u2014 (empty)")
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed to list snapshot for %s: %s", p, exc)
     return "\n".join(lines)
 
 
@@ -220,7 +226,8 @@ def _is_inside_workspace(path: str) -> bool:
         root = Path(_WORKSPACE).resolve()
         # Allow the root itself and any child
         return target == root or root in target.parents
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed to resolve path for workspace check: %s", exc)
         return False
 
 
@@ -305,8 +312,8 @@ def fs_search_files(pattern: str, path: str = ".", file_glob: str = "*") -> str:
                         results.append(f"{fp}:{i}: {line.strip()}")
                         if len(results) >= 30:
                             return "\n".join(results) + "\n... (truncated)"
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Failed to read file %s for grep: %s", fp, exc)
     return "\n".join(results) or "No matches"
 
 

@@ -13,6 +13,7 @@ Env:
     FEISHU_BASE_URL                       — defaults to https://open.feishu.cn
 """
 import argparse
+import hmac
 import json
 import os
 import sys
@@ -64,8 +65,8 @@ def _get_feishu_token() -> Optional[str]:
                 _feishu_token = data["tenant_access_token"]
                 _feishu_token_expires = now + data.get("expire", 7200)
             return _feishu_token
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Failed to get Feishu token: %s", exc)
     return None
 
 
@@ -128,12 +129,21 @@ def cmd_task(parts: list, ctx: dict) -> str:
     if len(parts) < 2:
         return "Usage: /task add <description> | /task list"
     sub = parts[1]
+    from agent.memory import SessionDB
+    db = SessionDB()
+    session_id = ctx.get("chat_id", "lark-cli-default")
     if sub == "add":
         desc = " ".join(parts[2:]) or "untitled"
-        # TODO: integrate with jobs/ board
+        db.add_task(session_id, desc)
         return f"✅ Task added: {desc}"
     elif sub == "list":
-        return "📝 Active tasks: (none — integrate with jobs board for real listing)"
+        tasks = db.list_tasks(session_id=session_id)
+        if not tasks:
+            return "📝 Active tasks: (none)"
+        lines = ["📝 Active tasks:"]
+        for tid, _, content, status, _, _, created_at in tasks:
+            lines.append(f"  [{tid}] {content} ({status}, {created_at[:19]})")
+        return "\n".join(lines)
     return f"Unknown /task subcommand: {sub}"
 
 
@@ -245,12 +255,12 @@ class LarkWebhookHandler(BaseHTTPRequestHandler):
         # 1. Challenge handshake (first-time event subscription setup)
         if payload.get("type") == "url_verification":
             self._respond_json({"challenge": payload.get("challenge", "")})
-            print(f"[Lark] Challenge handshake OK — {payload.get('token', 'n/a')[:8]}...")
+            logger.info("[Lark] Challenge handshake OK — %s...", payload.get("token", "n/a")[:8])
             return
 
         # 2. Optional verification token check
         header_token = payload.get("header", {}).get("token", "")
-        if FEISHU_VERIFICATION_TOKEN and header_token != FEISHU_VERIFICATION_TOKEN:
+        if FEISHU_VERIFICATION_TOKEN and not hmac.compare_digest(header_token, FEISHU_VERIFICATION_TOKEN):
             self._respond_json({"error": "forbidden"}, 403)
             return
 
@@ -312,7 +322,7 @@ class LarkWebhookHandler(BaseHTTPRequestHandler):
         rid = sender_open_id if chat_type == "p2p" else chat_id
         result = _send_reply(rid, rid_type, reply)
         if "error" in result:
-            print(f"[Lark] Reply failed: {result['error']}")
+            logger.error("[Lark] Reply failed: %s", result["error"])
 
 
 _bot_open_id: Optional[str] = None
@@ -336,8 +346,8 @@ def _get_bot_open_id() -> Optional[str]:
         if data.get("code") == 0:
             _bot_open_id = data.get("data", {}).get("open_id")
             return _bot_open_id
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Failed to get Feishu token: %s", exc)
     return None
 
 
@@ -346,10 +356,10 @@ def _get_bot_open_id() -> Optional[str]:
 def _check_env() -> bool:
     ok = True
     if not FEISHU_APP_ID or not FEISHU_APP_SECRET:
-        print("❌ FEISHU_APP_ID and FEISHU_APP_SECRET required.")
+        logger.error("❌ FEISHU_APP_ID and FEISHU_APP_SECRET required.")
         ok = False
     if not FEISHU_VERIFICATION_TOKEN:
-        print("⚠️  FEISHU_VERIFICATION_TOKEN not set (challenge handshake will be unsigned).")
+        logger.warning("⚠️  FEISHU_VERIFICATION_TOKEN not set (challenge handshake will be unsigned).")
     return ok
 
 
@@ -360,13 +370,13 @@ def run_server(port: int = 8080):
     # Bind to 127.0.0.1 by default; override via WORKER_BEE_HOST env var
     host = os.environ.get("WORKER_BEE_HOST", "127.0.0.1")
     server = HTTPServer((host, port), LarkWebhookHandler)
-    print(f"🐝 Worker Bee Lark bot listening on {host}:{port}")
-    print(f"   Event subscription URL: http://{host}:{port}/webhook")
-    print("   Press Ctrl+C to stop.")
+    logger.info("🐝 Worker Bee Lark bot listening on %s:%s", host, port)
+    logger.info("   Event subscription URL: http://%s:%s/webhook", host, port)
+    logger.info("   Press Ctrl+C to stop.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n⏹️  Shutting down.")
+        logger.info("\n⏹️  Shutting down.")
         server.shutdown()
 
 

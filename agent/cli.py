@@ -380,8 +380,8 @@ def _listener_is_running() -> tuple[bool, int | None]:
         # PID 文件残留但进程已死 → 清理
         try:
             pid_file.unlink(missing_ok=True)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed to clean up PID file: %s", exc)
         return False, None
 
 
@@ -483,8 +483,8 @@ def _swarm_menu(args):
         cfg = json.loads((Path.home() / ".worker-bee" / "config.json").read_text())
         bee_id = cfg.get("bee_id", "unknown")
         role = cfg.get("role", "seed")
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Failed to load config for swarm menu: %s", exc)
 
     def _print_header():
         logger.info("\n" + "=" * 50)
@@ -906,8 +906,8 @@ def _lark_notify(args):
     try:
         cfg = json.loads((Path.home() / ".worker-bee" / "config.json").read_text())
         bee_id = cfg.get("bee_id", "unknown-bee")
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Failed to load config for NATS delegate: %s", exc)
 
     payload = {
         "target_type": "user" if args.to else ("group" if args.group else "user"),

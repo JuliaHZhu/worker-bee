@@ -176,7 +176,9 @@ def setup():
 
     # Lark / Feishu write permission
     
-    lark_write = input("Allow lark-cli write operations? (send messages, upload files, edit docs) [y/N]: ").strip().lower()
+    lark_write = input(
+        "Allow lark-cli write operations? (send messages, upload files, edit docs) [y/N]: "
+    ).strip().lower()
     lark_allow_write = lark_write == "y"
 
     config = _make_config(provider, model, key, base, temperature=temperature)

@@ -54,7 +54,8 @@ def _is_inside_workspace(path: str) -> bool:
         target = Path(path).resolve()
         root = Path(_CRON_WORKSPACE).resolve()
         return target == root or root in target.parents
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed to check workspace path: %s", exc)
         return False
 
 

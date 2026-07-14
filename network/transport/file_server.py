@@ -7,11 +7,15 @@ Other nodes can fetch files via HTTP GET with an X-Token header.
 Usage:
     FILE_SERVER_TOKEN=secret python network/transport/file_server.py [port]
 """
+import hmac
+import logging
 import http.server
 import os
 import socketserver
 import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 SERVE_DIR = Path.home() / ".worker-bee" / "mailbox"
 FILE_SERVER_TOKEN = os.environ.get("FILE_SERVER_TOKEN", "")
@@ -27,7 +31,7 @@ class MailboxHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if FILE_SERVER_TOKEN:
             client_token = self.headers.get("X-Token", "")
-            if client_token != FILE_SERVER_TOKEN:
+            if not hmac.compare_digest(client_token, FILE_SERVER_TOKEN):
                 self.send_error(403, "Forbidden: Invalid or missing token")
                 return
         super().do_GET()
@@ -47,7 +51,7 @@ class MailboxHandler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):
         """Prefix logs."""
-        print(f"[FileServer] {self.client_address[0]} - {format % args}")
+        logger.info("[FileServer] %s - %s", self.client_address[0], format % args)
 
 
 def main():
@@ -55,10 +59,10 @@ def main():
         SERVE_DIR.mkdir(parents=True, exist_ok=True)
 
     if not FILE_SERVER_TOKEN:
-        print("[FileServer] ERROR: FILE_SERVER_TOKEN not set. Set it via environment variable to start the server.")
+        logger.error("[FileServer] FILE_SERVER_TOKEN not set. Set it via environment variable to start the server.")
         sys.exit(1)
     auth_status = "token required"
-    print(f"[FileServer] Serving {SERVE_DIR} on port {_get_port()} ({auth_status})")
+    logger.info("[FileServer] Serving %s on port %s (%s)", SERVE_DIR, _get_port(), auth_status)
     with socketserver.TCPServer(("", _get_port()), MailboxHandler) as httpd:
         httpd.serve_forever()
 

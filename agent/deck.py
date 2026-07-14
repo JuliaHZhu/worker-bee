@@ -254,7 +254,12 @@ class DeckManager:
         except OSError:
             pass
 
-    def _log_combo(self, tools: List[str], primary_skills: Optional[List[str]] = None, extended_skills: Optional[List[str]] = None):
+    def _log_combo(
+        self,
+        tools: List[str],
+        primary_skills: Optional[List[str]] = None,
+        extended_skills: Optional[List[str]] = None,
+    ):
         if not tools:
             return
         data = self._load_log()

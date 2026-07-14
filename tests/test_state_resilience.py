@@ -72,7 +72,9 @@ class TestTodoBallMachineStateResilience:
         eng._save()  # First save creates state.json (no prior backup yet)
         assert state_path.exists()
         # Second save should rotate backup
-        eng.state["days"]["2026-05-24"] = {"morning": {"box": "Work", "content": "T", "status": "planned", "ball_id": "w1"}}
+        eng.state["days"]["2026-05-24"] = {
+            "morning": {"box": "Work", "content": "T", "status": "planned", "ball_id": "w1"}
+        }
         eng._save()
         backup = state_path.with_suffix(".json.bak")
         assert backup.exists()

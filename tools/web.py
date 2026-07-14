@@ -169,7 +169,10 @@ registry.register(
 
 registry.register(
     name="net_web_extract",
-    description="Fetch a URL and extract plain text. Strips scripts/styles/HTML tags. Only http(s) external URLs allowed.",
+    description=(
+        "Fetch a URL and extract plain text. Strips scripts/styles/HTML tags. "
+        "Only http(s) external URLs allowed."
+    ),
     parameters={
         "properties": {
             "url": {"type": "string", "description": "Full http(s) URL to fetch"}

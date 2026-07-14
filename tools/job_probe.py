@@ -178,7 +178,8 @@ def _scan_sessions_for_jobs() -> List[Tuple[str, str, int]]:
     try:
         from agent.memory import SessionDB
         db = SessionDB()
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed to load SessionDB: %s", exc)
         return []
 
     results = []
@@ -202,7 +203,8 @@ def _generate_session_summary(session_id: str, job_id: str) -> str:
         from agent.memory import SessionDB
         db = SessionDB()
         msgs = db.get_messages(session_id, include_archived=False)
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed to read session %s: %s", session_id, exc)
         return "# Summary\n\n(error reading session)\n"
 
     user_msgs = [m for m in msgs if m.get("role") == "user"]
@@ -213,7 +215,10 @@ def _generate_session_summary(session_id: str, job_id: str) -> str:
         f"# Session Summary — {session_id}",
         "",
         f"- **Job:** {job_id}",
-        f"- **Messages:** {len(msgs)} total ({len(user_msgs)} user, {len(assistant_msgs)} assistant, {len(tool_msgs)} tool)",
+        (
+            f"- **Messages:** {len(msgs)} total "
+            f"({len(user_msgs)} user, {len(assistant_msgs)} assistant, {len(tool_msgs)} tool)"
+        ),
         f"- **Generated:** {datetime.now().isoformat()}",
         "",
     ]

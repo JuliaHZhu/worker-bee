@@ -8,6 +8,7 @@
 会在每台机上安装 nats-server、写配置、启动集群。
 """
 
+import logging
 import subprocess, sys, os
 from pathlib import Path
 
@@ -28,14 +29,16 @@ def _load_ips() -> list[str]:
         env_ips = os.getenv("NATS_CLUSTER_IPS", "").strip()
         if env_ips:
             return [ip.strip() for ip in env_ips.split(",") if ip.strip()]
-        print("⚠️  未配置集群 IP。请选择一种方式：")
-        print("  1. 设置环境变量 NATS_CLUSTER_IPS=192.168.1.101,192.168.1.102,...")
-        print("  2. 创建 ~/.worker-bee/nodes.yaml （参考 config/nodes.yaml.sample）")
+        logger.warning("⚠️  未配置集群 IP。请选择一种方式：")
+        logger.warning("  1. 设置环境变量 NATS_CLUSTER_IPS=192.168.1.101,192.168.1.102,...")
+        logger.warning("  2. 创建 ~/.worker-bee/nodes.yaml （参考 config/nodes.yaml.sample）")
         sys.exit(1)
     return unique
 
 
 IPS = _load_ips()
+logger = logging.getLogger(__name__)
+
 SSH_USER = "ubuntu"
 
 def _load_nats_auth() -> tuple[str | None, str | None]:
@@ -103,12 +106,12 @@ logtime: true
 def run_ssh(ip: str, cmd: str) -> str:
     """Run a command on a remote machine via SSH."""
     full = f"ssh -o StrictHostKeyChecking=no {SSH_USER}@{ip} '{cmd}'"
-    print(f"  [{ip}] {cmd[:80]}...")
+    logger.info("  [%s] %s...", ip, cmd[:80])
     r = subprocess.run(full, shell=True, capture_output=True, text=True, timeout=30)
     if r.returncode != 0:
-        print(f"  ❌ [{ip}] FAILED: {r.stderr.strip()}")
+        logger.error("  ❌ [%s] FAILED: %s", ip, r.stderr.strip())
     else:
-        print(f"  ✅ [{ip}] OK")
+        logger.info("  ✅ [%s] OK", ip)
     return r.stdout.strip()
 
 
@@ -117,20 +120,20 @@ def main():
         # 只生成配置，不执行
         for i, ip in enumerate(IPS):
             name = f"bee-{i+1:02d}"
-            print(f"\n{'='*60}\n{name} ({ip})\n{'='*60}")
-            print(gen_config(name, ip, IPS))
+            logger.info("\n%s\n%s (%s)\n%s", "="*60, name, ip, "="*60)
+            logger.info("%s", gen_config(name, ip, IPS))
         return
 
-    print(f"即将配置 {len(IPS)} 台 NATS Server:\n  " + "\n  ".join(IPS))
+    logger.info("即将配置 %d 台 NATS Server:\n  %s", len(IPS), "\n  ".join(IPS))
     ans = input("继续？[y/N] ").strip().lower()
     if ans != "y":
-        print("取消")
+        logger.info("取消")
         return
 
     for i, ip in enumerate(IPS):
         name = f"bee-{i+1:02d}"
         config = gen_config(name, ip, IPS)
-        print(f"\n── {name} ({ip}) ──")
+        logger.info("\n── %s (%s) ──", name, ip)
 
         # 1. 安装 nats-server（官方 release + SHA256 校验）
         NATS_VERSION = "2.10.24"
@@ -145,7 +148,8 @@ def main():
         )
         install_cmds = (
             f"set -e && "
-            f"curl -sfL 'https://github.com/nats-io/nats-server/releases/download/v{NATS_VERSION}/nats-server-v{NATS_VERSION}-linux-amd64.tar.gz' "
+            f"curl -sfL 'https://github.com/nats-io/nats-server/releases/"
+            f"download/v{NATS_VERSION}/nats-server-v{NATS_VERSION}-linux-amd64.tar.gz' "
             f"-o /tmp/nats-server.tar.gz && "
             f"{checksum_cmd}"
             f"tar -xzf /tmp/nats-server.tar.gz -C /tmp --strip-components=1 && "
@@ -167,7 +171,7 @@ def main():
         # 4. 验证
         run_ssh(ip, "nats server report --host localhost:8222 2>/dev/null | head -5")
 
-    print(f"\n✅ 完成。验证集群：ssh ubuntu@{IPS[0]} 'nats server list cluster' 2>/dev/null")
+    logger.info("\n✅ 完成。验证集群：ssh ubuntu@%s 'nats server list cluster' 2>/dev/null", IPS[0])
 
 
 if __name__ == "__main__":

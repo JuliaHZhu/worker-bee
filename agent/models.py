@@ -134,8 +134,8 @@ def build_counter(encoding_name: str) -> TokenCounter:
         if tiktoken is not None:
             try:
                 return _build_tiktoken_counter("cl100k_base")
-            except Exception:  # pragma: no cover
-                pass
+            except Exception as exc:  # pragma: no cover
+                logger.warning("tiktoken init failed (%s), falling back to character estimate", exc)
         logger.warning("tiktoken unavailable; falling back to character estimate")
         return _char_estimate
 

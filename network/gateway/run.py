@@ -83,8 +83,8 @@ class GatewayRunner:
         try:
             from gateway import _ensure_adapters_loaded
             _ensure_adapters_loaded()
-        except Exception:  # pragma: no cover
-            pass
+        except ImportError:
+            logger.debug("Gateway adapters not available for lazy-load")
 
         with self._lock:
             if self._running:

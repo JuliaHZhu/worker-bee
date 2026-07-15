@@ -55,8 +55,8 @@ def _load_nats_auth() -> tuple[str | None, str | None]:
             password = auth.get("password", "")
             if user:
                 return user, password
-        except Exception:
-            pass
+        except (OSError, yaml.YAMLError) as exc:
+            logger.debug("Failed to load NATS auth from %s: %s", p, exc)
     user = os.getenv("NATS_USER", "")
     password = os.getenv("NATS_PASSWORD", "")
     if user:
@@ -105,9 +105,12 @@ logtime: true
 
 def run_ssh(ip: str, cmd: str) -> str:
     """Run a command on a remote machine via SSH."""
-    full = f"ssh -o StrictHostKeyChecking=no {SSH_USER}@{ip} '{cmd}'"
+    ssh_cmd = [
+        "ssh", "-o", "StrictHostKeyChecking=no",
+        f"{SSH_USER}@{ip}", cmd,
+    ]
     logger.info("  [%s] %s...", ip, cmd[:80])
-    r = subprocess.run(full, shell=True, capture_output=True, text=True, timeout=30)
+    r = subprocess.run(ssh_cmd, shell=False, capture_output=True, text=True, timeout=30)
     if r.returncode != 0:
         logger.error("  ❌ [%s] FAILED: %s", ip, r.stderr.strip())
     else:
@@ -164,7 +167,12 @@ def main():
         run_ssh(ip, f"mkdir -p ~/.worker-bee && echo '{cfg_escaped}' > ~/.worker-bee/nats-server.conf")
 
         # 3. 杀掉旧进程，启动新的
-        run_ssh(ip, "pkill nats-server 2>/dev/null; sleep 1; nohup nats-server -c ~/.worker-bee/nats-server.conf > ~/.worker-bee/nats.log 2>&1 &")
+        restart_cmd = (
+            "pkill nats-server 2>/dev/null; sleep 1; "
+            "nohup nats-server -c ~/.worker-bee/nats-server.conf "
+            "> ~/.worker-bee/nats.log 2>&1 &"
+        )
+        run_ssh(ip, restart_cmd)
         import time
         time.sleep(2)
 

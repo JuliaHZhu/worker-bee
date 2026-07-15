@@ -12,7 +12,7 @@ from pathlib import Path
 from agent.registry import logging
 import re
 
-logger = logging.getLogger(__name__)gistry
+logger = logging.getLogger(__name__)
 from agent.safety import is_write_denied, is_self_modify_target
 
 # Re-export for backward-compat with tests
@@ -350,7 +350,10 @@ registry.register(
 
 registry.register(
     name="fs_search_files",
-    description="Search file contents with regex. Returns matching lines with file paths. Optionally filter by file glob (e.g. '*.py').",
+    description=(
+        "Search file contents with regex. Returns matching lines with file paths. "
+        "Optionally filter by file glob (e.g. '*.py')."
+    ),
     parameters={
         "properties": {
             "pattern": {"type": "string", "description": "Regex pattern to search"},

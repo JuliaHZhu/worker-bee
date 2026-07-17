@@ -3,7 +3,7 @@
 调用链：
   Agent → deck_manage Tool → DeckManager → 文件/内存
 """
-from agent.main import load_config
+from agent.config import load_config
 from agent.deck import DeckManager
 from agent.registry import registry
 

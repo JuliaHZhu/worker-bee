@@ -6,12 +6,14 @@ import threading
 from dataclasses import dataclass, field
 from typing import Any
 
+from agent.agent import AIAgent
+from agent.config import load_bee_config, load_config
 from agent.deck import DeckManager
 from agent.infra_toolsets import InfraToolSet
 from agent.memory import SessionDB
 from agent.registry import registry
 from agent.skills import SkillManager
-from agent.main import _cron_tick_loop, _tick_stop, _tick_thread, load_bee_config, load_config, AIAgent
+from agent.tick import _cron_tick_loop, _tick_stop, _tick_thread
 
 logger = logging.getLogger(__name__)
 

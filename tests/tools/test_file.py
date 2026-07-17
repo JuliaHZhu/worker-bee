@@ -2,6 +2,7 @@
 import os
 
 import tools.file as file_mod
+from agent.workspace import get_workspace
 
 
 class TestSensitiveDetection:
@@ -41,26 +42,26 @@ class TestWorkspaceGuard:
     """_is_inside_workspace boundary enforcement."""
 
     def test_file_in_workspace(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         path = temp_dir / "file.txt"
         assert file_mod._is_inside_workspace(str(path))
 
     def test_file_in_subdir(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         subdir = temp_dir / "subdir" / "file.txt"
         subdir.parent.mkdir(parents=True, exist_ok=True)
         assert file_mod._is_inside_workspace(str(subdir))
 
     def test_file_outside_workspace(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         assert not file_mod._is_inside_workspace("/etc/passwd")
 
     def test_workspace_root_itself(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         assert file_mod._is_inside_workspace(str(temp_dir))
 
     def test_symlink_escape(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         symlink = temp_dir / "escape"
         os.symlink("/etc/passwd", str(symlink))
         try:
@@ -73,22 +74,22 @@ class TestGuardPath:
     """_guard_path validation for reads and writes."""
 
     def test_write_inside_workspace_ok(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         err = file_mod._guard_path(str(temp_dir / "output.txt"), write=True)
         assert err == ""
 
     def test_write_outside_workspace_blocked(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         err = file_mod._guard_path("/etc/cron.d/bad", write=True)
         assert "outside workspace" in err
 
     def test_write_sensitive_blocked(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         err = file_mod._guard_path(str(temp_dir / ".env"), write=True)
         assert "sensitive" in err
 
     def test_read_outside_workspace_ok(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         err = file_mod._guard_path("/tmp/README.md", write=False)
         assert err == ""
 
@@ -124,26 +125,26 @@ class TestWriteFile:
     """fs_write_file with workspace guard."""
 
     def test_write_inside_workspace(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         path = temp_dir / "output.txt"
         result = file_mod.fs_write_file(str(path), "hello world")
         assert "Written" in result
         assert path.exists()
 
     def test_write_creates_parent_dirs(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         path = temp_dir / "deep" / "nested" / "file.txt"
         result = file_mod.fs_write_file(str(path), "deep content")
         assert "Written" in result
         assert path.exists()
 
     def test_write_outside_workspace_blocked(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         result = file_mod.fs_write_file("/tmp/should_not_exist_test.txt", "bad")
         assert "disallowed" in result.lower()
 
     def test_write_sensitive_blocked(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         path = temp_dir / ".env"
         result = file_mod.fs_write_file(str(path), "SECRET=123")
         assert "sensitive" in result.lower()
@@ -153,21 +154,21 @@ class TestSearchFiles:
     """fs_search_files with workspace guard."""
 
     def test_search_finds_content(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         (temp_dir / "a.txt").write_text("hello world")
         (temp_dir / "b.txt").write_text("goodbye world")
         result = file_mod.fs_search_files("hello", path=str(temp_dir))
         assert "a.txt" in result or "hello world" in result
 
     def test_search_with_file_glob(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         (temp_dir / "a.txt").write_text("needle")
         (temp_dir / "b.py").write_text("needle")
         result = file_mod.fs_search_files("needle", path=str(temp_dir), file_glob="*.py")
         assert "b.py" in result or "needle" in result
 
     def test_search_outside_workspace_blocked(self, temp_dir, monkeypatch):
-        monkeypatch.setattr(file_mod, "_WORKSPACE", str(temp_dir))
+        monkeypatch.setattr(file_mod, "get_workspace", lambda: temp_dir)
         result = file_mod.fs_search_files("root", path="/root")
         assert "disallowed" in result.lower()
 

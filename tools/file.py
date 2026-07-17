@@ -9,11 +9,9 @@ import re
 logger = logging.getLogger(__name__)
 import shutil
 from pathlib import Path
-from agent.registry import logging
-import re
-
-logger = logging.getLogger(__name__)
+from agent.registry import registry
 from agent.safety import is_write_denied, is_self_modify_target
+from agent.workspace import get_workspace
 
 # Re-export for backward-compat with tests
 _is_sensitive = is_write_denied
@@ -214,16 +212,13 @@ def fs_snapshot_diff(path: str, steps: int = 1) -> str:
         return f"Error generating diff: {e}"
 
 
-# ── Workspace guard ─────────────────────────────────────────────────
-
-_WORKSPACE = os.environ.get("WORKER_BEE_WORKSPACE", str(Path.cwd().resolve()))
-
+# ── Workspace guard ─────────────────────────────────────────────────────────────────────
 
 def _is_inside_workspace(path: str) -> bool:
     """Return True if path resolves inside the configured workspace."""
     try:
         target = Path(path).resolve()
-        root = Path(_WORKSPACE).resolve()
+        root = get_workspace().resolve()
         # Allow the root itself and any child
         return target == root or root in target.parents
     except Exception as exc:
@@ -246,7 +241,7 @@ def _guard_path(path: str, write: bool = False) -> str:
     if write and not _is_inside_workspace(str(p)):
         return (
             f"Error: write outside workspace disallowed. "
-            f"Target: {p} | Workspace: {_WORKSPACE}"
+            f"Target: {p} | Workspace: {get_workspace()}"
         )
 
     if write and is_self_modify_target(str(p)):
@@ -296,7 +291,7 @@ def fs_search_files(pattern: str, path: str = ".", file_glob: str = "*") -> str:
     if not _is_inside_workspace(str(search_root)):
         return (
             f"Error: search outside workspace disallowed. "
-            f"Target: {search_root} | Workspace: {_WORKSPACE}"
+            f"Target: {search_root} | Workspace: {get_workspace()}"
         )
     for root, _, files in os.walk(search_root):
         for f in files:

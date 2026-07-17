@@ -15,7 +15,7 @@ class TestSnapshot:
     def test_snapshot_created_on_write(self, tmp_path, monkeypatch):
         import tools.file
         monkeypatch.setattr(tools.file, "_SNAPSHOT_DIR", tmp_path / "snapshots")
-        monkeypatch.setattr(tools.file, "_WORKSPACE", str(tmp_path))
+        monkeypatch.setattr(tools.file, "get_workspace", lambda: tmp_path)
 
         target = tmp_path / "doc.txt"
         target.write_text("original")
@@ -27,7 +27,7 @@ class TestSnapshot:
     def test_no_snapshot_for_new_file(self, tmp_path, monkeypatch):
         import tools.file
         monkeypatch.setattr(tools.file, "_SNAPSHOT_DIR", tmp_path / "snapshots")
-        monkeypatch.setattr(tools.file, "_WORKSPACE", str(tmp_path))
+        monkeypatch.setattr(tools.file, "get_workspace", lambda: tmp_path)
 
         target = tmp_path / "newfile.txt"
         fs_write_file(str(target), "hello")
@@ -38,7 +38,7 @@ class TestSnapshot:
         """Writing v1 -> v2 -> v3 leaves .bak.0=v2 and .bak.1=v1."""
         import tools.file
         monkeypatch.setattr(tools.file, "_SNAPSHOT_DIR", tmp_path / "snapshots")
-        monkeypatch.setattr(tools.file, "_WORKSPACE", str(tmp_path))
+        monkeypatch.setattr(tools.file, "get_workspace", lambda: tmp_path)
 
         target = tmp_path / "versioned.txt"
         target.write_text("v1")
@@ -67,7 +67,7 @@ class TestSnapshot:
         """Only _SNAPSHOT_MAX versions are kept; oldest is dropped."""
         import tools.file
         monkeypatch.setattr(tools.file, "_SNAPSHOT_DIR", tmp_path / "snapshots")
-        monkeypatch.setattr(tools.file, "_WORKSPACE", str(tmp_path))
+        monkeypatch.setattr(tools.file, "get_workspace", lambda: tmp_path)
 
         target = tmp_path / "capped.txt"
         target.write_text("v0")
@@ -87,7 +87,7 @@ class TestRollback:
     def test_rollback_restores_content(self, tmp_path, monkeypatch):
         import tools.file
         monkeypatch.setattr(tools.file, "_SNAPSHOT_DIR", tmp_path / "snapshots")
-        monkeypatch.setattr(tools.file, "_WORKSPACE", str(tmp_path))
+        monkeypatch.setattr(tools.file, "get_workspace", lambda: tmp_path)
 
         target = tmp_path / "doc.txt"
         target.write_text("original")
@@ -110,7 +110,7 @@ class TestRollback:
     def test_rollback_creates_parent_dirs(self, tmp_path, monkeypatch):
         import tools.file
         monkeypatch.setattr(tools.file, "_SNAPSHOT_DIR", tmp_path / "snapshots")
-        monkeypatch.setattr(tools.file, "_WORKSPACE", str(tmp_path))
+        monkeypatch.setattr(tools.file, "get_workspace", lambda: tmp_path)
 
         target = tmp_path / "deep" / "nested" / "file.txt"
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -127,7 +127,7 @@ class TestRollback:
         """Rollback with steps=2 restores .bak.1 (two versions back)."""
         import tools.file
         monkeypatch.setattr(tools.file, "_SNAPSHOT_DIR", tmp_path / "snapshots")
-        monkeypatch.setattr(tools.file, "_WORKSPACE", str(tmp_path))
+        monkeypatch.setattr(tools.file, "get_workspace", lambda: tmp_path)
 
         target = tmp_path / "steps.txt"
         target.write_text("v1")
@@ -143,7 +143,7 @@ class TestSnapshotList:
     def test_list_single_file(self, tmp_path, monkeypatch):
         import tools.file
         monkeypatch.setattr(tools.file, "_SNAPSHOT_DIR", tmp_path / "snapshots")
-        monkeypatch.setattr(tools.file, "_WORKSPACE", str(tmp_path))
+        monkeypatch.setattr(tools.file, "get_workspace", lambda: tmp_path)
 
         target = tmp_path / "listed.txt"
         target.write_text("v1")
@@ -157,7 +157,7 @@ class TestSnapshotList:
     def test_list_all(self, tmp_path, monkeypatch):
         import tools.file
         monkeypatch.setattr(tools.file, "_SNAPSHOT_DIR", tmp_path / "snapshots")
-        monkeypatch.setattr(tools.file, "_WORKSPACE", str(tmp_path))
+        monkeypatch.setattr(tools.file, "get_workspace", lambda: tmp_path)
 
         for name in ("a.txt", "b.txt"):
             p = tmp_path / name
@@ -181,7 +181,7 @@ class TestSnapshotDiff:
     def test_diff_shows_changes(self, tmp_path, monkeypatch):
         import tools.file
         monkeypatch.setattr(tools.file, "_SNAPSHOT_DIR", tmp_path / "snapshots")
-        monkeypatch.setattr(tools.file, "_WORKSPACE", str(tmp_path))
+        monkeypatch.setattr(tools.file, "get_workspace", lambda: tmp_path)
 
         target = tmp_path / "diff.txt"
         target.write_text("line one\nline two\n")
@@ -195,7 +195,7 @@ class TestSnapshotDiff:
     def test_diff_no_changes(self, tmp_path, monkeypatch):
         import tools.file
         monkeypatch.setattr(tools.file, "_SNAPSHOT_DIR", tmp_path / "snapshots")
-        monkeypatch.setattr(tools.file, "_WORKSPACE", str(tmp_path))
+        monkeypatch.setattr(tools.file, "get_workspace", lambda: tmp_path)
 
         target = tmp_path / "same.txt"
         target.write_text("unchanged")

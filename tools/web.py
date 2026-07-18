@@ -1,5 +1,6 @@
 import ipaddress
 import re
+import socket
 import urllib.request
 import urllib.parse
 from urllib.parse import urlparse
@@ -32,21 +33,66 @@ _BLOCKED_NETWORKS = [
 ]
 
 
+def _normalize_ip(hostname: str) -> list[str]:
+    """尝试将 hostname 规范化为 IP 地址列表。
+
+    处理顺序：
+    1. 标准 IPv4/IPv6 格式
+    2. 十进制/八进制/十六进制整数
+    3. DNS 解析
+    """
+    # 1. 标准格式
+    try:
+        addr = ipaddress.ip_address(hostname)
+        return [str(addr)]
+    except ValueError:
+        pass
+
+    # 2. 数值格式
+    try:
+        if hostname.isdigit():
+            return [str(ipaddress.ip_address(int(hostname)))]
+        if hostname.startswith(("0x", "0X")):
+            return [str(ipaddress.ip_address(int(hostname, 16)))]
+        if hostname.startswith("0") and len(hostname) > 1:
+            return [str(ipaddress.ip_address(int(hostname, 8)))]
+    except (ValueError, OverflowError):
+        pass
+
+    # 3. DNS 解析
+    try:
+        infos = socket.getaddrinfo(hostname, None)
+        return list(dict.fromkeys(info[4][0] for info in infos))
+    except socket.gaierror:
+        return []
+
+
 def _is_blocked_host(hostname: str) -> bool:
     """Return True if hostname is internal/reserved."""
     h = hostname.lower().rstrip(".")
     if h in _BLOCKED_HOSTS:
         return True
-    if h.startswith("127.") or h.startswith("10.") or h.startswith("192.168."):
-        return True
-    # Check IP ranges
-    try:
-        addr = ipaddress.ip_address(h)
-        for net in _BLOCKED_NETWORKS:
-            if addr in net:
-                return True
-    except ValueError:
-        pass
+
+    # ● 规范化所有可能的 IP 表示，逐个检查
+    for ip_str in _normalize_ip(h):
+        try:
+            addr = ipaddress.ip_address(ip_str)
+            # 处理 IPv4-mapped IPv6 (::ffff:127.0.0.1)
+            addrs_to_check = [addr]
+            if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped:
+                addrs_to_check.append(addr.ipv4_mapped)
+            for check_addr in addrs_to_check:
+                for net in _BLOCKED_NETWORKS:
+                    # 确保 IP 版本与网络版本匹配
+                    if isinstance(check_addr, ipaddress.IPv4Address) and isinstance(net, ipaddress.IPv4Network):
+                        if check_addr in net:
+                            return True
+                    elif isinstance(check_addr, ipaddress.IPv6Address) and isinstance(net, ipaddress.IPv6Network):
+                        if check_addr in net:
+                            return True
+        except ValueError:
+            continue
+
     return False
 
 

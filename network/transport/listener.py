@@ -94,7 +94,33 @@ def _load_nats_auth_from_config() -> tuple[str | None, str | None]:
             logger.debug("Failed to load NATS auth from config: %s", exc)
             return None, None
 
-# ── 心跳 ────────────────────────────────────────────────────────────────────
+import hashlib
+import hmac
+
+def _get_swarm_secret() -> str | None:
+    """Read swarm_shared_secret from config.json or env."""
+    secret = os.environ.get("SWARM_SHARED_SECRET", "")
+    if secret:
+        return secret
+    try:
+        cfg = json.loads((Path.home() / ".worker-bee" / "config.json").read_text(encoding="utf-8"))
+        return cfg.get("swarm_shared_secret", "") or None
+    except Exception:
+        return None
+
+
+def _verify_swarm_signature(payload: dict, secret: str) -> bool:
+    """Verify HMAC-SHA256 signature on NATS swarm messages."""
+    sig = payload.get("sig", "")
+    if not sig:
+        return False
+    body = {k: v for k, v in payload.items() if k != "sig"}
+    msg = json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
+    expected = hmac.new(secret.encode(), msg, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, sig)
+
+
+# ── 心跳 ────────────────────────────────────────────────────────────────────────────────────────────
 
 async def _heartbeat_loop(nc, bee_id: str):
     """每 30 秒发送一次心跳，包含当前能力清单。"""
@@ -126,6 +152,11 @@ def _next_seq() -> int:
     return _sender_sequence
 
 
+import re
+
+_VALID_MESSAGE_ID = re.compile(r"^[A-Za-z0-9._-]+$", re.ASCII)
+_MAX_MESSAGE_ID_LEN = 64
+
 def _write_envelope(subject: str, reply_to: str, data: bytes):
     """将一条 NATS 消息写成 mailbox JSON 文件。"""
     MAILBOX_INBOX.mkdir(parents=True, exist_ok=True)
@@ -135,7 +166,7 @@ def _write_envelope(subject: str, reply_to: str, data: bytes):
     except (json.JSONDecodeError, UnicodeDecodeError):
         payload = {"raw": data.decode("utf-8", errors="replace")}
 
-    # 如果消息本身已经包含 message_id（发送方已包裵），则直接使用
+    # 如果消息本身已经包含 message_id（发送方已包装），则直接使用
     if isinstance(payload, dict) and "message_id" in payload:
         envelope = dict(payload)
         envelope.setdefault("reply_to", reply_to or "")
@@ -150,9 +181,28 @@ def _write_envelope(subject: str, reply_to: str, data: bytes):
             "sequence": _next_seq(),
         }
 
-    filename = f"{envelope['message_id']}.json"
+    msg_id = str(envelope.get("message_id", ""))
+    if not _VALID_MESSAGE_ID.match(msg_id) or len(msg_id) > _MAX_MESSAGE_ID_LEN:
+        logger.warning(
+            "[swarm-listener] ❌ 无效 message_id %r ，已屏蔽", msg_id
+        )
+        return
+
+    filename = f"{msg_id}.json"
     filepath = MAILBOX_INBOX / filename
+
+    # ● 路径穿越防护：确保最终文件在 MAILBOX_INBOX 内
+    try:
+        resolved = filepath.resolve()
+        resolved.relative_to(MAILBOX_INBOX.resolve())
+    except (ValueError, RuntimeError):
+        logger.warning(
+            "[swarm-listener] ❌ 路径穿越攻击被阻止: %s", filepath
+        )
+        return
+
     filepath.write_text(json.dumps(envelope, ensure_ascii=False, indent=2), encoding="utf-8")
+    logger.debug("[swarm-listener] ✅ 写入 envelope: %s", filename)
 
 
 def _handle_feishu_notify(data: bytes):
@@ -173,6 +223,15 @@ def _handle_feishu_notify(data: bytes):
     except (json.JSONDecodeError, UnicodeDecodeError):
         logger.warning("[swarm-listener] ⚠️ Invalid feishu notify payload")
         return
+
+    # ● Sender authentication via HMAC
+    secret = _get_swarm_secret()
+    if secret:
+        if not _verify_swarm_signature(payload, secret):
+            logger.warning("[swarm-listener] ❌ Feishu notify signature invalid — dropping")
+            return
+    else:
+        logger.warning("[swarm-listener] ⚠️ SWARM_SHARED_SECRET not set — accepting unsigned feishu notify")
 
     target_type = payload.get("target_type", "user")
     target_id = payload.get("target_id", "")

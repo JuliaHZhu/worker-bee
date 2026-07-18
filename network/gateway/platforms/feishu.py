@@ -87,6 +87,18 @@ def _send_reply(
         return {"error": str(e)}
 
 
+import hashlib
+
+
+def _verify_lark_signature(body: str, signature: str, timestamp: str, nonce: str, secret: str) -> bool:
+    """Verify Feishu v3 X-Lark-Signature (HMAC-SHA256)."""
+    if not secret:
+        return False
+    msg = f"{timestamp}{nonce}{body}"
+    expected = hmac.new(secret.encode(), msg.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature)
+
+
 class _FeishuWebhookHandler(BaseHTTPRequestHandler):
     """HTTP handler that parses Feishu events and forwards to adapter.
 
@@ -96,6 +108,7 @@ class _FeishuWebhookHandler(BaseHTTPRequestHandler):
 
     adapter: Optional["FeishuAdapter"] = None
     verification_token: str = ""
+    app_secret: str = ""
 
     def log_message(self, fmt: str, *args: Any) -> None:
         pass  # Suppress noisy default HTTP logs
@@ -131,7 +144,16 @@ class _FeishuWebhookHandler(BaseHTTPRequestHandler):
             self._respond_json({"error": "forbidden"}, 403)
             return
 
-        # 3. Route message events
+        # 3. X-Lark-Signature verification (v3)
+        signature = self.headers.get("X-Lark-Signature", "")
+        timestamp = self.headers.get("X-Lark-Request-Timestamp", "")
+        nonce = self.headers.get("X-Lark-Request-Nonce", "")
+        if self.app_secret and signature:
+            if not _verify_lark_signature(body, signature, timestamp, nonce, self.app_secret):
+                self._respond_json({"error": "invalid signature"}, 403)
+                return
+
+        # 4. Route message events
         event_type = payload.get("header", {}).get("event_type", "")
         if event_type == "im.message.receive_v1":
             _webhook_executor.submit(self._handle_message, payload)
@@ -216,7 +238,7 @@ class FeishuAdapter(BasePlatformAdapter):
         handler_cls = type(
             "_BoundFeishuHandler",
             (_FeishuWebhookHandler,),
-            {"adapter": self, "verification_token": self._verification_token},
+            {"adapter": self, "verification_token": self._verification_token, "app_secret": self._app_secret},
         )
         self._server = HTTPServer((self._host, self._port), handler_cls)
         self._thread = threading.Thread(

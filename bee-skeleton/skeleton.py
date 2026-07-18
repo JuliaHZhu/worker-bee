@@ -32,12 +32,24 @@ def safe_write(path: str | Path, content: str, approved_by: str = "") -> None:
     """
     写 arch/ 必须带 approved_by（厂长在回路时的批准标记）。
     Research Mode 不提供 approved_by，写 arch/ 直接报错。
-    drafts/ 无需批准。
+    所有写操作必须在 BASE_DIR 内。
     """
     path = Path(path)
-    path_str = str(path)
 
-    if any(p in path_str for p in CONSTITUTION_PATHS):
+    # ● 沙箱：任何写操作必须在 BASE_DIR 内
+    try:
+        path.resolve().relative_to(BASE_DIR.resolve())
+    except ValueError:
+        raise PermissionError(
+            f"[Skeleton] 越权写操作：{path} 不在 BASE_DIR {BASE_DIR} 内"
+        )
+
+    # ● 宪法路径：用 Path.parts 精确匹配，不是 substring
+    path_parts = path.resolve().parts
+    in_constitution = any(
+        part == "arch" for part in path_parts
+    )
+    if in_constitution:
         if not approved_by:
             raise PermissionError(
                 f"[Skeleton] 写 arch/ 必须提供 approved_by：{path}"
